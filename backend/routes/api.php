@@ -8,6 +8,7 @@ use App\Http\Controllers\TransaksiMasukController;
 use App\Http\Controllers\TransaksiKeluarController;
 use App\Http\Controllers\StokController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\LaporanController;
 
 // ========================
 // AUTH ROUTES (public)
@@ -53,4 +54,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Dashboard
         Route::get('/dashboard', [DashboardController::class, 'index']);
+
+    // Laporan
+        Route::get('/laporan/transaksi-masuk',  [LaporanController::class, 'transaksiMasuk']);
+        Route::get('/laporan/transaksi-keluar', [LaporanController::class, 'transaksiKeluar']);
+        Route::get('/laporan/stok',             [LaporanController::class, 'stok']);
 });
