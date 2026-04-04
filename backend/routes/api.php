@@ -6,6 +6,8 @@ use App\Http\Controllers\BarangController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\TransaksiMasukController;
 use App\Http\Controllers\TransaksiKeluarController;
+use App\Http\Controllers\StokController;
+use App\Http\Controllers\DashboardController;
 
 // ========================
 // AUTH ROUTES (public)
@@ -43,4 +45,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/transaksi-keluar',      [TransaksiKeluarController::class, 'index']);
         Route::post('/transaksi-keluar',     [TransaksiKeluarController::class, 'store']);
         Route::get('/transaksi-keluar/{id}', [TransaksiKeluarController::class, 'show']);
+
+    // Stok & Notifikasi
+        Route::get('/stok',          [StokController::class, 'index']);
+        Route::get('/stok/rendah',   [StokController::class, 'stokRendah']);
+        Route::get('/notifikasi',    [StokController::class, 'notifikasi']);
+
+    // Dashboard
+        Route::get('/dashboard', [DashboardController::class, 'index']);
 });
