@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BarangController;
 use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\TransaksiMasukController;
 
 // ========================
 // AUTH ROUTES (public)
@@ -31,5 +32,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/supplier/{id}',    [SupplierController::class, 'show']);
         Route::put('/supplier/{id}',    [SupplierController::class, 'update']);
         Route::delete('/supplier/{id}', [SupplierController::class, 'destroy']);
-        
+    
+    // Transaksi Masuk
+        Route::get('/transaksi-masuk',       [TransaksiMasukController::class, 'index']);
+        Route::post('/transaksi-masuk',      [TransaksiMasukController::class, 'store']);
+        Route::get('/transaksi-masuk/{id}',  [TransaksiMasukController::class, 'show']);
 });
