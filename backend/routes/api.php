@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BarangController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\TransaksiMasukController;
+use App\Http\Controllers\TransaksiKeluarController;
 
 // ========================
 // AUTH ROUTES (public)
@@ -37,4 +38,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/transaksi-masuk',       [TransaksiMasukController::class, 'index']);
         Route::post('/transaksi-masuk',      [TransaksiMasukController::class, 'store']);
         Route::get('/transaksi-masuk/{id}',  [TransaksiMasukController::class, 'show']);
+
+    // Transaksi Keluar
+        Route::get('/transaksi-keluar',      [TransaksiKeluarController::class, 'index']);
+        Route::post('/transaksi-keluar',     [TransaksiKeluarController::class, 'store']);
+        Route::get('/transaksi-keluar/{id}', [TransaksiKeluarController::class, 'show']);
 });
