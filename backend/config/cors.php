@@ -2,7 +2,7 @@
 
 return [
 
-    'paths' => ['api/*'],
+    'paths' => ['api/*','sanctum/csrf-cookies'],
 
     'allowed_methods' => ['*'],
 
@@ -11,6 +11,7 @@ return [
         'http://localhost:3000',    // React CRA (development)
         'http://127.0.0.1:5173',
         'http://127.0.0.1:3000',
+        'https://cv-amrita-jayasri.vercel.app',
     ],
 
     'allowed_origins_patterns' => [],
