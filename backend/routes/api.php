@@ -13,7 +13,7 @@ use App\Http\Controllers\LaporanController;
 // ========================
 // AUTH ROUTES (public)
 // ========================
-Route::get('/fix-password', [AuthController::class, 'fixPassword']);
+// Route::get('/fix-password', [AuthController::class, 'fixPassword']);
 Route::post('/login', [AuthController::class, 'login']);
 
 // ========================
