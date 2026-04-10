@@ -28,6 +28,10 @@ class TransaksiKeluarController extends Controller
             $query->where('barang_id', $request->barang_id);
         }
 
+         if ($request->has('konsumen_id') && $request->konsumen_id != '') {
+            $query->where('konsumen_id', $request->konsumen_id);
+        }
+
         $transaksi = $query->orderBy('tanggal_keluar', 'desc')->get();
 
         return response()->json([
@@ -106,7 +110,7 @@ class TransaksiKeluarController extends Controller
     // GET /api/transaksi-keluar/{id} - Detail transaksi keluar
     public function show($id)
     {
-        $transaksi = TransaksiKeluar::with(['barang', 'user'])->find($id);
+        $transaksi = TransaksiKeluar::with(['barang', 'user', 'konsumen'])->find($id);
 
         if (!$transaksi) {
             return response()->json([
