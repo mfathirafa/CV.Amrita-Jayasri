@@ -35,14 +35,21 @@ class BarangController extends Controller
             'harga'        => 'required|numeric|min:0',
             'stok'         => 'required|integer|min:0',
             'stok_minimum' => 'required|integer|min:0',
+            'satuan'       => 'nullable|string|max:50',
         ]);
 
+        $count        = \App\Models\Barang::count() + 1;
+        $idReferensi  = 'BRG-ATK' . str_pad($count, 3, '0', STR_PAD_LEFT);
+
+
         $barang = Barang::create([
+            'id_referensi' => $idReferensi,
             'nama_barang'  => $request->nama_barang,
             'kategori'     => $request->kategori,
             'harga'        => $request->harga,
             'stok'         => $request->stok,
             'stok_minimum' => $request->stok_minimum,
+            'satuan'       => $request->satuan ?? 'Unit',
         ]);
 
         return response()->json([
@@ -89,6 +96,7 @@ class BarangController extends Controller
             'harga'        => 'required|numeric|min:0',
             'stok'         => 'required|integer|min:0',
             'stok_minimum' => 'required|integer|min:0',
+            'satuan'       => 'nullable|string|max:50',
         ]);
 
         $barang->update([
@@ -97,6 +105,7 @@ class BarangController extends Controller
             'harga'        => $request->harga,
             'stok'         => $request->stok,
             'stok_minimum' => $request->stok_minimum,
+            'satuan'       => $request->satuan ?? $barang->satuan,
         ]);
 
         return response()->json([
