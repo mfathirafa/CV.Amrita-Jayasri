@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   LayoutDashboard, Box, Truck, Users, 
   ArrowDownRight, ArrowUpRight, Activity, 
@@ -6,14 +6,18 @@ import {
   Calendar, AlertTriangle, TrendingUp, Minus, AlertCircle, CircleUser
 } from 'lucide-react';
 
+// 1. IMPORT MODAL KALENDER DI SINI
+import DateRangePickerModal from './DateRangePickerModal';
+
 const Dashboard = ({ onLogout, onNavigate }) => {
+  // 2. STATE UNTUK MENAMPILKAN POP-UP KALENDER
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
   return (
     <div className="flex h-screen bg-[#F8F9FA] font-sans overflow-hidden">
       
       {/* ================= SIDEBAR ================= */}
       <aside className="w-[260px] bg-white border-r border-gray-100 flex flex-col z-20 shrink-0">
-        
-        {/* === LOGO AREA (UPDATED) === */}
         <div className="p-6">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-[#5452F6] rounded-xl flex items-center justify-center shrink-0 shadow-sm shadow-indigo-100">
@@ -31,60 +35,28 @@ const Dashboard = ({ onLogout, onNavigate }) => {
         </div>
         
         <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto mt-2">
-          <button 
-            onClick={() => onNavigate('dashboard')} 
-            className="w-full flex items-center gap-3 px-4 py-3 bg-[#F0EFFF] text-[#5452F6] rounded-xl font-bold text-sm transition-colors text-left"
-          >
+          <button onClick={() => onNavigate('dashboard')} className="w-full flex items-center gap-3 px-4 py-3 bg-[#F0EFFF] text-[#5452F6] rounded-xl font-bold text-sm transition-colors text-left">
             <LayoutDashboard className="w-5 h-5" /> Dashboard
           </button>
-          
-          <button 
-            onClick={() => onNavigate('data-barang')} 
-            className="w-full flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 hover:text-gray-800 rounded-xl font-medium text-sm transition-colors text-left"
-          >
+          <button onClick={() => onNavigate('data-barang')} className="w-full flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 hover:text-gray-800 rounded-xl font-medium text-sm transition-colors text-left">
             <Box className="w-5 h-5" /> Data Barang
           </button>
-          
-          {/* TOMBOL PEMASOK SUDAH BISA DIKLIK */}
-          <button 
-            onClick={() => onNavigate('pemasok')} 
-            className="w-full flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 hover:text-gray-800 rounded-xl font-medium text-sm transition-colors text-left"
-          >
+          <button onClick={() => onNavigate('pemasok')} className="w-full flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 hover:text-gray-800 rounded-xl font-medium text-sm transition-colors text-left">
             <Truck className="w-5 h-5" /> Pemasok
           </button>
-
-          <button 
-            onClick={() => onNavigate('konsumen')} 
-            className="w-full flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 hover:text-gray-800 rounded-xl font-medium text-sm transition-colors text-left"
-          >
+          <button onClick={() => onNavigate('konsumen')} className="w-full flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 hover:text-gray-800 rounded-xl font-medium text-sm transition-colors text-left">
             <Users className="w-5 h-5" /> Konsumen
           </button>
-
-          <button 
-            onClick={() => onNavigate('barang-masuk')} 
-            className="w-full flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 hover:text-gray-800 rounded-xl font-medium text-sm transition-colors text-left"
-          >
+          <button onClick={() => onNavigate('barang-masuk')} className="w-full flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 hover:text-gray-800 rounded-xl font-medium text-sm transition-colors text-left">
             <ArrowDownRight className="w-5 h-5" /> Barang Masuk
           </button>
-
-          <button 
-            onClick={() => onNavigate('barang-keluar')} 
-            className="w-full flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 hover:text-gray-800 rounded-xl font-medium text-sm transition-colors text-left"
-          >
+          <button onClick={() => onNavigate('barang-keluar')} className="w-full flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 hover:text-gray-800 rounded-xl font-medium text-sm transition-colors text-left">
             <ArrowUpRight className="w-5 h-5" /> Barang Keluar
           </button>
-
-          <button 
-            onClick={() => onNavigate('monitoring-stok')} 
-            className="w-full flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 hover:text-gray-800 rounded-xl font-medium text-sm transition-colors text-left"
-          >
+          <button onClick={() => onNavigate('monitoring-stok')} className="w-full flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 hover:text-gray-800 rounded-xl font-medium text-sm transition-colors text-left">
             <Activity className="w-5 h-5" /> Monitoring Stok
           </button>
-
-          <button 
-            onClick={() => onNavigate('laporan')} 
-            className="w-full flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 hover:text-gray-800 rounded-xl font-medium text-sm transition-colors text-left"
-          >
+          <button onClick={() => onNavigate('laporan')} className="w-full flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 hover:text-gray-800 rounded-xl font-medium text-sm transition-colors text-left">
             <BarChart2 className="w-5 h-5" /> Laporan
           </button>
         </nav>
@@ -98,70 +70,54 @@ const Dashboard = ({ onLogout, onNavigate }) => {
 
       {/* ================= MAIN CONTENT ================= */}
       <main className="flex-1 flex flex-col overflow-hidden relative">
-        
-        {/* === HEADER (UPDATED) === */}
         <header className="h-20 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between px-8 z-10 sticky top-0 shrink-0">
-          
-          {/* Kiri: Judul */}
           <div className="flex items-center">
             <h2 className="font-bold text-[#1E232C] text-base hidden md:block">SIMPB - CV. Amrita Jayasri</h2>
           </div>
-          
-          {/* Kanan: Search, Lonceng, Profil */}
           <div className="flex items-center gap-6">
-            
-            {/* Search Bar Capsule */}
             <div className="relative w-72 hidden sm:block">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input 
-                type="text" 
-                placeholder="Cari stok alat tulis..." 
-                className="w-full pl-11 pr-4 py-2.5 bg-[#F4F7FC] border-transparent rounded-full text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] focus:ring-1 focus:ring-[#5452F6] transition-all" 
-              />
+              <input type="text" placeholder="Cari stok alat tulis..." className="w-full pl-11 pr-4 py-2.5 bg-[#F4F7FC] border-transparent rounded-full text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] focus:ring-1 focus:ring-[#5452F6] transition-all" />
             </div>
-            
-            {/* Bell Icon */}
             <button className="relative text-gray-500 hover:text-gray-800 transition-colors">
               <Bell className="w-5 h-5" />
               <span className="absolute -top-0.5 right-0.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
             </button>
-            
             <div className="h-6 w-px bg-gray-200"></div>
-            
-            {/* Profile */}
             <div className="flex items-center gap-2.5 cursor-pointer">
               <CircleUser className="w-8 h-8 text-[#5452F6]" strokeWidth={1.5} />
               <span className="text-sm font-semibold text-[#1E232C]">Administrator</span>
             </div>
-            
           </div>
         </header>
 
-        {/* ================= AREA SCROLL DASHBOARD ================= */}
         <div className="flex-1 overflow-y-auto p-8 pb-12">
           
-          {/* Top Section */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
             <div>
               <h1 className="text-2xl font-bold text-gray-800">Ringkasan Dashboard</h1>
               <p className="text-sm text-gray-500 mt-1">Sistem Informasi Manajemen Persediaan Barang ATK</p>
             </div>
             <div className="flex items-center gap-3">
-              <button className="flex items-center gap-2 px-4 py-2.5 bg-gray-100/80 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-200 transition-colors">
-                <Calendar className="w-4 h-4" /> Bulan Ini
+              
+              {/* 3. TOMBOL UNTUK MEMBUKA POP-UP KALENDER */}
+              <button 
+                onClick={() => setShowDatePicker(true)}
+                className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 shadow-sm rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                <Calendar className="w-4 h-4 text-[#5452F6]" /> Minggu Ini
               </button>
-              <button className="flex items-center gap-2 px-4 py-2.5 bg-[#5452F6] hover:bg-[#4341E3] rounded-xl text-sm font-semibold text-white transition-colors shadow-lg shadow-indigo-500/30">
+
+              <button onClick={() => onNavigate('barang-masuk')} className="flex items-center gap-2 px-4 py-2.5 bg-[#5452F6] hover:bg-[#4341E3] rounded-xl text-sm font-semibold text-white transition-colors shadow-lg shadow-indigo-500/30">
                 <Plus className="w-4 h-4" /> Transaksi Masuk
               </button>
-              <button className="flex items-center gap-2 px-4 py-2.5 bg-[#5452F6] hover:bg-[#4341E3] rounded-xl text-sm font-semibold text-white transition-colors shadow-lg shadow-indigo-500/30">
+              <button onClick={() => onNavigate('barang-keluar')} className="flex items-center gap-2 px-4 py-2.5 bg-[#5452F6] hover:bg-[#4341E3] rounded-xl text-sm font-semibold text-white transition-colors shadow-lg shadow-indigo-500/30">
                 <Plus className="w-4 h-4" /> Transaksi Keluar
               </button>
             </div>
           </div>
 
-          {/* 4 Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-            
             <div className="bg-[#FAEDFF] p-5 rounded-[20px] shadow-sm flex flex-col relative overflow-hidden">
               <div className="flex justify-between items-start mb-4">
                 <div className="w-10 h-10 bg-[#A855F7] text-white rounded-lg flex items-center justify-center"><Box className="w-5 h-5" /></div>
@@ -212,10 +168,7 @@ const Dashboard = ({ onLogout, onNavigate }) => {
             </div>
           </div>
 
-          {/* Charts Section */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-            
-            {/* Bar Chart */}
             <div className="lg:col-span-2 bg-white rounded-[20px] p-6 shadow-sm border border-gray-100">
               <div className="flex justify-between items-center mb-6">
                 <div>
@@ -249,7 +202,6 @@ const Dashboard = ({ onLogout, onNavigate }) => {
               </div>
             </div>
 
-            {/* Donut Chart */}
             <div className="bg-white rounded-[20px] p-6 shadow-sm border border-gray-100 flex flex-col">
               <h3 className="text-lg font-bold text-gray-800">Distribusi Stok</h3>
               <p className="text-xs text-gray-500 mb-6">Berdasarkan kategori barang</p>
@@ -290,10 +242,7 @@ const Dashboard = ({ onLogout, onNavigate }) => {
             </div>
           </div>
 
-          {/* ================= BOTTOM SECTION ================= */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            {/* Transaksi Terakhir */}
             <div className="lg:col-span-2 bg-white rounded-[20px] p-6 shadow-sm border border-gray-100 flex flex-col">
               <div className="flex justify-between items-center mb-6">
                 <div>
@@ -314,7 +263,6 @@ const Dashboard = ({ onLogout, onNavigate }) => {
                   </div>
 
                   <div className="space-y-1">
-                    {/* Item 1 */}
                     <div className="grid grid-cols-12 gap-4 items-center px-2 py-3 hover:bg-gray-50 rounded-xl transition-colors border-b border-gray-50 last:border-0">
                       <div className="col-span-4 flex items-center gap-3">
                         <div className="w-10 h-10 bg-gray-100 rounded-lg shrink-0 flex items-center justify-center overflow-hidden">
@@ -335,7 +283,6 @@ const Dashboard = ({ onLogout, onNavigate }) => {
                       <div className="col-span-1 text-[11px] font-bold text-[#059669]">Selesai</div>
                     </div>
 
-                    {/* Item 2 */}
                     <div className="grid grid-cols-12 gap-4 items-center px-2 py-3 hover:bg-gray-50 rounded-xl transition-colors border-b border-gray-50 last:border-0">
                       <div className="col-span-4 flex items-center gap-3">
                         <div className="w-10 h-10 bg-gray-100 rounded-lg shrink-0 flex items-center justify-center overflow-hidden">
@@ -356,7 +303,6 @@ const Dashboard = ({ onLogout, onNavigate }) => {
                       <div className="col-span-1 text-[11px] font-bold text-[#059669]">Selesai</div>
                     </div>
 
-                    {/* Item 3 */}
                     <div className="grid grid-cols-12 gap-4 items-center px-2 py-3 hover:bg-gray-50 rounded-xl transition-colors border-b border-gray-50 last:border-0">
                       <div className="col-span-4 flex items-center gap-3">
                         <div className="w-10 h-10 bg-gray-100 rounded-lg shrink-0 flex items-center justify-center overflow-hidden">
@@ -377,7 +323,6 @@ const Dashboard = ({ onLogout, onNavigate }) => {
                       <div className="col-span-1 text-[11px] font-bold text-[#059669]">Selesai</div>
                     </div>
 
-                    {/* Item 4 */}
                     <div className="grid grid-cols-12 gap-4 items-center px-2 py-3 hover:bg-gray-50 rounded-xl transition-colors border-b border-gray-50 last:border-0">
                       <div className="col-span-4 flex items-center gap-3">
                         <div className="w-10 h-10 bg-gray-100 rounded-lg shrink-0 flex items-center justify-center overflow-hidden">
@@ -397,13 +342,11 @@ const Dashboard = ({ onLogout, onNavigate }) => {
                       <div className="col-span-2 text-xs font-bold text-gray-800">5 Pack</div>
                       <div className="col-span-1 text-[11px] font-bold text-[#D97706]">Proses</div>
                     </div>
-
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Kolom Kanan (Peringatan & Nilai Persediaan) */}
             <div className="flex flex-col gap-6">
               
               <div className="bg-white rounded-[20px] p-6 shadow-sm border border-gray-100 flex flex-col">
@@ -469,6 +412,13 @@ const Dashboard = ({ onLogout, onNavigate }) => {
 
         </div>
       </main>
+
+      {/* 4. KOMPONEN POP UP DIPANGGIL DI SINI */}
+      <DateRangePickerModal 
+        isOpen={showDatePicker} 
+        onClose={() => setShowDatePicker(false)} 
+      />
+
     </div>
   );
 };

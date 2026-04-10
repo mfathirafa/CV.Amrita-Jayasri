@@ -31,12 +31,10 @@ const App = () => {
     setActivePage('dashboard');
   };
 
-  // Handler logout dengan menghapus data di localStorage
   const handleLogout = async () => {
     const token = localStorage.getItem('token');
 
     try {
-      // Opsional: Panggil API logout backend jika diperlukan
       await fetch('https://cvamrita-jayasri-production.up.railway.app/api/logout', {
         method: 'POST',
         headers: {
