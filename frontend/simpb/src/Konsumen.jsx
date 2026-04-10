@@ -2,7 +2,7 @@ import React from 'react';
 import { 
   Search, Bell, Plus, Edit2, Trash2, 
   LayoutDashboard, Box, Users, Truck, ArrowDownRight, 
-  ArrowUpRight, Activity, BarChart2, CornerDownLeft, 
+  ArrowUpRight, Activity, BarChart2, ArrowDownLeft, 
   History, Bookmark, Star, ChevronLeft, ChevronRight, CircleUser, Info
 } from 'lucide-react';
 
@@ -94,9 +94,10 @@ const Konsumen = ({ onNavigate, onLogout }) => {
           </button>
         </nav>
 
-        <div className="p-4 border-t border-gray-100">
-          <button onClick={onLogout} className="flex items-center gap-3 px-4 py-3 w-full text-gray-500 hover:bg-red-50 hover:text-red-500 rounded-xl font-semibold text-sm transition-colors">
-            <CornerDownLeft className="w-5 h-5 rotate-90" /> Keluar
+        {/* === TOMBOL LOGOUT DIPERBARUI === */}
+        <div className="p-4 border-t border-gray-100 mt-auto">
+          <button onClick={onLogout} className="flex items-center gap-3 px-4 py-3 w-full text-[#64748B] hover:bg-gray-50 hover:text-[#334155] rounded-xl font-semibold text-sm transition-colors">
+            <ArrowDownLeft className="w-5 h-5 text-[#829AB1]" strokeWidth={2.5} /> Keluar
           </button>
         </div>
       </aside>
