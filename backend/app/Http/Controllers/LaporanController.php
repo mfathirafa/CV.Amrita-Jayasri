@@ -10,7 +10,6 @@ use App\Models\Barang;
 class LaporanController extends Controller
 {
     // GET /api/laporan/transaksi-masuk
-    // Laporan barang masuk dengan filter tanggal
     public function transaksiMasuk(Request $request)
     {
         $request->validate([
@@ -19,18 +18,12 @@ class LaporanController extends Controller
         ]);
 
         $transaksi = TransaksiMasuk::with(['barang', 'supplier', 'user'])
-            ->whereBetween('tanggal_masuk', [
-                $request->start_date,
-                $request->end_date
-            ])
+            ->whereBetween('tanggal_masuk', [$request->start_date, $request->end_date])
             ->orderBy('tanggal_masuk', 'asc')
             ->get();
 
-        // Hitung total keseluruhan
-        $totalJumlahBarang = $transaksi->sum('jumlah');
-        $totalNilai        = $transaksi->sum(function ($item) {
-            return $item->jumlah * $item->harga_beli;
-        });
+        $totalJumlah = $transaksi->sum('jumlah');
+        $totalNilai  = $transaksi->sum(fn($i) => $i->jumlah * $i->harga_beli);
 
         return response()->json([
             'success' => true,
@@ -40,16 +33,15 @@ class LaporanController extends Controller
                 'end_date'   => $request->end_date,
             ],
             'ringkasan' => [
-                'total_transaksi'    => $transaksi->count(),
-                'total_jumlah_barang'=> $totalJumlahBarang,
-                'total_nilai'        => $totalNilai,
+                'total_transaksi'     => $transaksi->count(),
+                'total_jumlah_barang' => $totalJumlah,
+                'total_nilai'         => $totalNilai,
             ],
             'data' => $transaksi,
         ], 200);
     }
 
     // GET /api/laporan/transaksi-keluar
-    // Laporan barang keluar dengan filter tanggal
     public function transaksiKeluar(Request $request)
     {
         $request->validate([
@@ -57,19 +49,17 @@ class LaporanController extends Controller
             'end_date'   => 'required|date|after_or_equal:start_date',
         ]);
 
-        $transaksi = TransaksiKeluar::with(['barang', 'user'])
-            ->whereBetween('tanggal_keluar', [
-                $request->start_date,
-                $request->end_date
-            ])
-            ->orderBy('tanggal_keluar', 'asc')
-            ->get();
+        $query = TransaksiKeluar::with(['barang', 'user', 'konsumen'])
+            ->whereBetween('tanggal_keluar', [$request->start_date, $request->end_date]);
 
-        // Hitung total keseluruhan
-        $totalJumlahBarang = $transaksi->sum('jumlah');
-        $totalNilai        = $transaksi->sum(function ($item) {
-            return $item->jumlah * $item->harga_jual;
-        });
+        // Filter berdasarkan konsumen (opsional)
+        if ($request->has('konsumen_id') && $request->konsumen_id != '') {
+            $query->where('konsumen_id', $request->konsumen_id);
+        }
+
+        $transaksi   = $query->orderBy('tanggal_keluar', 'asc')->get();
+        $totalJumlah = $transaksi->sum('jumlah');
+        $totalNilai  = $transaksi->sum(fn($i) => $i->jumlah * $i->harga_jual);
 
         return response()->json([
             'success' => true,
@@ -80,7 +70,7 @@ class LaporanController extends Controller
             ],
             'ringkasan' => [
                 'total_transaksi'     => $transaksi->count(),
-                'total_jumlah_barang' => $totalJumlahBarang,
+                'total_jumlah_barang' => $totalJumlah,
                 'total_nilai'         => $totalNilai,
             ],
             'data' => $transaksi,
@@ -88,38 +78,28 @@ class LaporanController extends Controller
     }
 
     // GET /api/laporan/stok
-    // Laporan stok semua barang saat ini
     public function stok(Request $request)
     {
         $query = Barang::select(
-            'id',
-            'nama_barang',
-            'kategori',
-            'harga',
-            'stok',
-            'stok_minimum'
+            'id', 'id_referensi', 'nama_barang',
+            'kategori', 'harga', 'stok', 'stok_minimum', 'satuan'
         );
 
-        // Filter kategori
         if ($request->has('kategori') && $request->kategori != '') {
             $query->where('kategori', $request->kategori);
         }
 
         $barang = $query->orderBy('kategori')->orderBy('nama_barang')->get();
 
-        // Tambahkan info status dan nilai stok
         $barang->transform(function ($item) {
-            $item->status_stok  = $item->stok <= $item->stok_minimum ? 'rendah' : 'aman';
-            $item->nilai_stok   = $item->stok * $item->harga;
+            $item->status_stok = $item->stok <= $item->stok_minimum ? 'rendah' : 'aman';
+            $item->nilai_stok  = $item->stok * $item->harga;
             return $item;
         });
 
-        // Hitung ringkasan
         $totalNilaiStok  = $barang->sum('nilai_stok');
         $totalStokRendah = $barang->where('status_stok', 'rendah')->count();
-
-        // Ambil daftar kategori unik untuk filter frontend
-        $daftarKategori = Barang::distinct()->pluck('kategori');
+        $daftarKategori  = Barang::distinct()->pluck('kategori');
 
         return response()->json([
             'success' => true,
