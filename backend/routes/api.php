@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BarangController;
 use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\KonsumenController;
 use App\Http\Controllers\TransaksiMasukController;
 use App\Http\Controllers\TransaksiKeluarController;
 use App\Http\Controllers\StokController;
@@ -38,6 +39,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/supplier/{id}',    [SupplierController::class, 'update']);
         Route::delete('/supplier/{id}', [SupplierController::class, 'destroy']);
     
+    
+    // Konsumen
+        Route::get('/konsumen',         [KonsumenController::class, 'index']);
+        Route::post('/konsumen',        [KonsumenController::class, 'store']);
+        Route::get('/konsumen/{id}',    [KonsumenController::class, 'show']);
+        Route::put('/konsumen/{id}',    [KonsumenController::class, 'update']);
+        Route::delete('/konsumen/{id}', [KonsumenController::class, 'destroy']);
+
     // Transaksi Masuk
         Route::get('/transaksi-masuk',       [TransaksiMasukController::class, 'index']);
         Route::post('/transaksi-masuk',      [TransaksiMasukController::class, 'store']);

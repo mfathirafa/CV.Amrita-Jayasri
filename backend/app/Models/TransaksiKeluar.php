@@ -11,6 +11,7 @@ class TransaksiKeluar extends Model
     protected $fillable = [
         'barang_id',
         'user_id',
+        'konsumen_id',
         'nama_instansi',
         'jumlah',
         'harga_jual',
@@ -28,5 +29,11 @@ class TransaksiKeluar extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    // Relasi ke konsumen
+    public function konsumen()
+    {
+        return $this->belongsTo(Konsumen::class, 'konsumen_id');
     }
 }

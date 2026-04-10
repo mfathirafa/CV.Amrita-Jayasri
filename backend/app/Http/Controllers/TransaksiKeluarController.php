@@ -42,6 +42,7 @@ class TransaksiKeluarController extends Controller
     {
         $request->validate([
             'barang_id'      => 'required|exists:barang,id',
+            'konsumen_id'    => 'required|exists:konsumen,id',
             'nama_instansi'  => 'required|string|max:200',
             'jumlah'         => 'required|integer|min:1',
             'harga_jual'     => 'required|numeric|min:0',
@@ -69,6 +70,7 @@ class TransaksiKeluarController extends Controller
             $transaksi = TransaksiKeluar::create([
                 'barang_id'      => $request->barang_id,
                 'user_id'        => $request->user()->id,
+                'konsumen_id'    => $request->konsumen_id,
                 'nama_instansi'  => $request->nama_instansi,
                 'jumlah'         => $request->jumlah,
                 'harga_jual'     => $request->harga_jual,
@@ -83,7 +85,7 @@ class TransaksiKeluarController extends Controller
             DB::commit();
 
             // Load relasi untuk response
-            $transaksi->load(['barang', 'user']);
+            $transaksi->load(['barang', 'user', 'konsumen']);
 
             return response()->json([
                 'success' => true,
