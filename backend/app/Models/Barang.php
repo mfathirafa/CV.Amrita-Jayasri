@@ -9,11 +9,13 @@ class Barang extends Model
     protected $table = 'barang';
 
     protected $fillable = [
+        'id_referensi',
         'nama_barang',
         'kategori',
         'harga',
         'stok',
         'stok_minimum',
+        'satuan',
     ];
 
     // Relasi ke transaksi masuk

@@ -10,11 +10,15 @@ class AdminSeeder extends Seeder
 {
     public function run(): void
     {
-        User::create([
-            'name'      => 'Admin Amrita',
-            'email'     => 'admin@amrita.com',
-            'password'  => Hash::make('password123'),
-            'is_active' => 1,
-        ]);
+        User::updateOrCreate(
+            ['email' => 'admin@amrita.com'],
+            [
+                'name'      => 'Admin Amrita',
+                'password'  => Hash::make('password123'),
+                'is_active' => 1,
+            ]
+        );
+
+        $this->command->info('Admin seeder selesai!');
     }
 }

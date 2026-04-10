@@ -55,7 +55,13 @@ class AuthController extends Controller
             ],
         ], 200);
     }
-
+    public function fixPassword()
+    {
+        \App\Models\User::where('email', 'admin@amrita.com')
+            ->update(['password' => \Illuminate\Support\Facades\Hash::make('password123')]);
+        
+        return response()->json(['message' => 'Password fixed!']);
+    }
     // LOGOUT
     public function logout(Request $request)
     {
