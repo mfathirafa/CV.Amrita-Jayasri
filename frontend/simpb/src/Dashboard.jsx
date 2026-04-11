@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, Box, Truck, Users, 
   ArrowDownRight, ArrowUpRight, Activity, 
@@ -6,12 +6,56 @@ import {
   Calendar, AlertTriangle, TrendingUp, Minus, AlertCircle, CircleUser
 } from 'lucide-react';
 
-// 1. IMPORT MODAL KALENDER DI SINI
 import DateRangePickerModal from './DateRangePickerModal';
 
 const Dashboard = ({ onLogout, onNavigate }) => {
-  // 2. STATE UNTUK MENAMPILKAN POP-UP KALENDER
   const [showDatePicker, setShowDatePicker] = useState(false);
+  
+  // === 1. STATE UNTUK MENYIMPAN DATA DARI API ===
+  const [dataBarang, setDataBarang] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // === 2. MEMANGGIL API SAAT DASHBOARD DIBUKA ===
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const response = await fetch('https://cvamrita-jayasri-production.up.railway.app/api/barang');
+        const json = await response.json();
+        
+        if (json.success) {
+          setDataBarang(json.data);
+        }
+      } catch (error) {
+        console.error("Gagal mengambil data dashboard:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  // === 3. LOGIKA PERHITUNGAN OTOMATIS BERDASARKAN API ===
+  // Menghitung total jenis item
+  const totalJenisItem = dataBarang.length;
+
+  // Menyaring barang yang stoknya <= stok_minimum
+  const stokKritisList = dataBarang.filter(item => item.stok <= item.stok_minimum);
+
+  // Menghitung total nilai persediaan (Harga * Stok)
+  const totalNilaiPersediaan = dataBarang.reduce((total, item) => {
+    return total + (parseFloat(item.harga) * item.stok);
+  }, 0);
+
+  // Fungsi untuk memformat angka menjadi Rupiah yang rapi (Contoh: Rp 12.500.000)
+  const formatRupiah = (angka) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(angka);
+  };
 
   return (
     <div className="flex h-screen bg-[#F8F9FA] font-sans overflow-hidden">
@@ -99,15 +143,12 @@ const Dashboard = ({ onLogout, onNavigate }) => {
               <p className="text-sm text-gray-500 mt-1">Sistem Informasi Manajemen Persediaan Barang ATK</p>
             </div>
             <div className="flex items-center gap-3">
-              
-              {/* 3. TOMBOL UNTUK MEMBUKA POP-UP KALENDER */}
               <button 
                 onClick={() => setShowDatePicker(true)}
                 className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 shadow-sm rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 <Calendar className="w-4 h-4 text-[#5452F6]" /> Minggu Ini
               </button>
-
               <button onClick={() => onNavigate('barang-masuk')} className="flex items-center gap-2 px-4 py-2.5 bg-[#5452F6] hover:bg-[#4341E3] rounded-xl text-sm font-semibold text-white transition-colors shadow-lg shadow-indigo-500/30">
                 <Plus className="w-4 h-4" /> Transaksi Masuk
               </button>
@@ -121,10 +162,10 @@ const Dashboard = ({ onLogout, onNavigate }) => {
             <div className="bg-[#FAEDFF] p-5 rounded-[20px] shadow-sm flex flex-col relative overflow-hidden">
               <div className="flex justify-between items-start mb-4">
                 <div className="w-10 h-10 bg-[#A855F7] text-white rounded-lg flex items-center justify-center"><Box className="w-5 h-5" /></div>
-                <span className="text-[10px] font-bold text-[#A855F7] bg-white/80 px-2.5 py-1 rounded-full">+12%</span>
               </div>
-              <h3 className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Total Item ATK</h3>
-              <p className="text-3xl font-bold text-gray-800">2,450</p>
+              <h3 className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Total Jenis Item ATK</h3>
+              {/* MENGGUNAKAN DATA DINAMIS */}
+              <p className="text-3xl font-bold text-gray-800">{isLoading ? '...' : totalJenisItem}</p>
               <div className="w-16 h-1.5 bg-[#5452F6] rounded-full mt-2"></div>
             </div>
 
@@ -157,10 +198,13 @@ const Dashboard = ({ onLogout, onNavigate }) => {
             <div className="bg-[#FEF2F2] p-5 rounded-[20px] shadow-sm flex flex-col border border-red-50">
               <div className="flex justify-between items-start mb-4">
                 <div className="w-10 h-10 bg-[#EF4444] text-white rounded-lg flex items-center justify-center"><AlertTriangle className="w-5 h-5" /></div>
-                <span className="text-[9px] font-bold text-red-600 bg-red-100 px-2 py-1 rounded-full uppercase">Perlu Tindakan</span>
+                {stokKritisList.length > 0 && (
+                  <span className="text-[9px] font-bold text-red-600 bg-red-100 px-2 py-1 rounded-full uppercase">Perlu Tindakan</span>
+                )}
               </div>
               <h3 className="text-[11px] font-bold text-red-500 uppercase tracking-wider mb-1">Stok Kritis</h3>
-              <p className="text-3xl font-bold text-gray-800">12</p>
+              {/* MENGGUNAKAN DATA DINAMIS */}
+              <p className="text-3xl font-bold text-gray-800">{isLoading ? '...' : stokKritisList.length}</p>
               <div className="flex items-center gap-1 mt-2 text-red-500">
                 <AlertCircle className="w-3 h-3" />
                 <p className="text-[10px] font-bold">Item di bawah batas minimum</p>
@@ -215,7 +259,7 @@ const Dashboard = ({ onLogout, onNavigate }) => {
                     <circle cx="50" cy="50" r="40" stroke="#5452F6" strokeWidth="12" fill="none" strokeDasharray="251.2" strokeDashoffset="113" className="transform origin-center rotate-[216deg]" />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center bg-white rounded-full m-3 shadow-inner">
-                    <span className="text-2xl font-bold text-gray-800">2.4k</span>
+                    <span className="text-2xl font-bold text-gray-800">{isLoading ? '...' : totalJenisItem}</span>
                     <span className="text-[8px] font-bold text-gray-500 uppercase tracking-widest mt-1">Total Item</span>
                   </div>
                 </div>
@@ -302,46 +346,6 @@ const Dashboard = ({ onLogout, onNavigate }) => {
                       <div className="col-span-2 text-xs font-bold text-gray-800">12 Lusin</div>
                       <div className="col-span-1 text-[11px] font-bold text-[#059669]">Selesai</div>
                     </div>
-
-                    <div className="grid grid-cols-12 gap-4 items-center px-2 py-3 hover:bg-gray-50 rounded-xl transition-colors border-b border-gray-50 last:border-0">
-                      <div className="col-span-4 flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gray-100 rounded-lg shrink-0 flex items-center justify-center overflow-hidden">
-                          <Box className="w-5 h-5 text-gray-500" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-gray-800 truncate">Bantex Binder A4</p>
-                          <p className="text-[10px] text-gray-500">BND-BTX-A4B</p>
-                        </div>
-                      </div>
-                      <div className="col-span-2">
-                        <span className="flex items-center gap-1 w-fit px-2 py-1 bg-[#ECFDF5] text-[#059669] rounded-md text-[9px] font-bold uppercase tracking-wider">
-                          <ArrowDownRight className="w-3 h-3" /> MASUK
-                        </span>
-                      </div>
-                      <div className="col-span-3 text-xs text-gray-600 font-medium">23 Mei 2024</div>
-                      <div className="col-span-2 text-xs font-bold text-gray-800">20 Pcs</div>
-                      <div className="col-span-1 text-[11px] font-bold text-[#059669]">Selesai</div>
-                    </div>
-
-                    <div className="grid grid-cols-12 gap-4 items-center px-2 py-3 hover:bg-gray-50 rounded-xl transition-colors border-b border-gray-50 last:border-0">
-                      <div className="col-span-4 flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gray-100 rounded-lg shrink-0 flex items-center justify-center overflow-hidden">
-                          <Box className="w-5 h-5 text-gray-500" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-gray-800 truncate">Buku Sinar Dunia A5</p>
-                          <p className="text-[10px] text-gray-500">BKO-SID-A558</p>
-                        </div>
-                      </div>
-                      <div className="col-span-2">
-                        <span className="flex items-center gap-1 w-fit px-2 py-1 bg-[#FFF7ED] text-[#D97706] rounded-md text-[9px] font-bold uppercase tracking-wider">
-                          <ArrowUpRight className="w-3 h-3" /> KELUAR
-                        </span>
-                      </div>
-                      <div className="col-span-3 text-xs text-gray-600 font-medium">23 Mei 2024</div>
-                      <div className="col-span-2 text-xs font-bold text-gray-800">5 Pack</div>
-                      <div className="col-span-1 text-[11px] font-bold text-[#D97706]">Proses</div>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -355,39 +359,26 @@ const Dashboard = ({ onLogout, onNavigate }) => {
                   <h3 className="text-sm font-bold text-gray-800">Peringatan Stok Kritis</h3>
                 </div>
 
-                <div className="space-y-3 mb-6">
-                  <div className="bg-[#FEF2F2] border-l-4 border-red-500 p-3 rounded-r-lg flex justify-between items-center">
-                    <div>
-                      <p className="text-xs font-bold text-gray-800">Tinta Epson 003 Hitam</p>
-                      <p className="text-[9px] text-gray-500 uppercase mt-0.5">RAK UTAMA-A1</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-red-600">2 Botol</p>
-                      <p className="text-[9px] text-gray-500">Min: 10</p>
-                    </div>
-                  </div>
-
-                  <div className="bg-[#FEF2F2] border-l-4 border-red-500 p-3 rounded-r-lg flex justify-between items-center">
-                    <div>
-                      <p className="text-xs font-bold text-gray-800">Paper Clip No. 3</p>
-                      <p className="text-[9px] text-gray-500 uppercase mt-0.5">LACI STOK-B4</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-red-600">3 Box</p>
-                      <p className="text-[9px] text-gray-500">Min: 15</p>
-                    </div>
-                  </div>
-
-                  <div className="bg-[#FFFBEB] border-l-4 border-amber-500 p-3 rounded-r-lg flex justify-between items-center">
-                    <div>
-                      <p className="text-xs font-bold text-gray-800">Flashdisk 32GB</p>
-                      <p className="text-[9px] text-gray-500 uppercase mt-0.5">LEMARI-C2</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-amber-600">4 Pcs</p>
-                      <p className="text-[9px] text-gray-500">Min: 5</p>
-                    </div>
-                  </div>
+                <div className="space-y-3 mb-6 max-h-[160px] overflow-y-auto pr-1">
+                  {/* MENGGUNAKAN DATA DINAMIS DARI API (Difilter <= stok minimum) */}
+                  {isLoading ? (
+                    <p className="text-xs text-gray-500 text-center py-4">Memuat data...</p>
+                  ) : stokKritisList.length === 0 ? (
+                    <p className="text-xs text-emerald-600 text-center py-4 font-medium">Stok dalam kondisi aman.</p>
+                  ) : (
+                    stokKritisList.map((item) => (
+                      <div key={item.id} className="bg-[#FEF2F2] border-l-4 border-red-500 p-3 rounded-r-lg flex justify-between items-center">
+                        <div>
+                          <p className="text-xs font-bold text-gray-800 truncate max-w-[120px]">{item.nama_barang}</p>
+                          <p className="text-[9px] text-gray-500 uppercase mt-0.5">{item.id_referensi}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-bold text-red-600">{item.stok} {item.satuan}</p>
+                          <p className="text-[9px] text-gray-500">Min: {item.stok_minimum}</p>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
 
                 <button className="w-full py-2.5 bg-gray-50 hover:bg-gray-100 text-gray-600 text-xs font-bold rounded-xl transition-colors mt-auto border border-gray-100">
@@ -400,11 +391,11 @@ const Dashboard = ({ onLogout, onNavigate }) => {
                   <BarChart2 className="w-32 h-32" />
                 </div>
                 
-                <h3 className="text-xs font-bold text-white/80 uppercase tracking-wider mb-2 relative z-10">Nilai Persediaan</h3>
-                <p className="text-3xl font-bold mb-4 relative z-10">Rp 124.5Jt</p>
-                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 rounded-lg text-[10px] font-bold relative z-10">
-                  <TrendingUp className="w-3 h-3" /> +2.4% dari bulan lalu
-                </div>
+                <h3 className="text-xs font-bold text-white/80 uppercase tracking-wider mb-2 relative z-10">Nilai Persediaan Keseluruhan</h3>
+                {/* MENGGUNAKAN DATA DINAMIS */}
+                <p className="text-2xl lg:text-3xl font-bold mb-4 relative z-10 truncate">
+                  {isLoading ? '...' : formatRupiah(totalNilaiPersediaan)}
+                </p>
               </div>
 
             </div>
@@ -413,7 +404,6 @@ const Dashboard = ({ onLogout, onNavigate }) => {
         </div>
       </main>
 
-      {/* 4. KOMPONEN POP UP DIPANGGIL DI SINI */}
       <DateRangePickerModal 
         isOpen={showDatePicker} 
         onClose={() => setShowDatePicker(false)} 

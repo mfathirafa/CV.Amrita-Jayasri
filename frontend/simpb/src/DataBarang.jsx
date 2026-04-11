@@ -16,15 +16,8 @@ const DataBarang = ({ onNavigate, onLogout }) => {
   const [tableData, setTableData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // --- MOCK DATA (Stats & Categories sementara tetap static) ---
+  // --- KATEGORI (Sementara static) ---
   const categories = ['Semua Barang', 'Buku & Jurnal', 'Kertas & Media', 'Alat Tulis', 'Arsip & Penyimpanan', 'Tinta & Toner'];
-  
-  const stats = [
-    { title: 'TOTAL BARANG', value: '1.284', icon: Box, color: 'bg-purple-100 text-purple-600', badge: '+12%' },
-    { title: 'STOK MENIPIS', value: '18', icon: AlertTriangle, color: 'bg-red-100 text-red-600', badge: 'PERLU TINDAKAN', badgeColor: 'bg-red-500 text-white' },
-    { title: 'NILAI INVENTARIS', value: 'Rp 420 Juta', icon: Banknote, color: 'bg-green-100 text-green-600' },
-    { title: 'PESANAN AKTIF', value: '24', icon: History, color: 'bg-pink-100 text-pink-600' }
-  ];
 
   // --- FUNGSI FORMAT RUPIAH ---
   const formatRupiah = (angka) => {
@@ -34,6 +27,47 @@ const DataBarang = ({ onNavigate, onLogout }) => {
       minimumFractionDigits: 0
     }).format(angka);
   };
+
+  // --- LOGIKA MENGHITUNG STATISTIK OTOMATIS DARI API ---
+  const totalBarang = tableData.length;
+  
+  // Hitung barang yang stoknya menipis atau kritis (stok <= stok_minimum * 1.5)
+  const stokMenipisCount = tableData.filter(item => item.stok <= item.stok_minimum * 1.5).length;
+  
+  // Hitung total nilai inventaris (Harga * Stok)
+  const nilaiInventaris = tableData.reduce((total, item) => {
+    return total + (parseFloat(item.harga) * item.stok);
+  }, 0);
+
+  // Data Statistik yang sudah dinamis (kecuali Pesanan Aktif)
+  const stats = [
+    { 
+      title: 'TOTAL BARANG', 
+      value: totalBarang.toString(), 
+      icon: Box, 
+      color: 'bg-purple-100 text-purple-600' 
+    },
+    { 
+      title: 'STOK MENIPIS/KRITIS', 
+      value: stokMenipisCount.toString(), 
+      icon: AlertTriangle, 
+      color: 'bg-red-100 text-red-600', 
+      badge: stokMenipisCount > 0 ? 'PERLU TINDAKAN' : 'AMAN', 
+      badgeColor: stokMenipisCount > 0 ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white' 
+    },
+    { 
+      title: 'NILAI INVENTARIS', 
+      value: formatRupiah(nilaiInventaris), 
+      icon: Banknote, 
+      color: 'bg-green-100 text-green-600' 
+    },
+    { 
+      title: 'PESANAN AKTIF', 
+      value: '24', // Ini masih mock data karena butuh API transaksi
+      icon: History, 
+      color: 'bg-pink-100 text-pink-600' 
+    }
+  ];
 
   // --- FUNGSI HITUNG STATUS STOK ---
   const getStockStatus = (stok, stok_minimum) => {
@@ -87,7 +121,6 @@ const DataBarang = ({ onNavigate, onLogout }) => {
 
   // --- FUNGSI HAPUS DATA KE BACKEND ---
   const handleDelete = async (id, namaBarang) => {
-    // Tampilkan popup konfirmasi standar browser
     const isConfirm = window.confirm(`Apakah Anda yakin ingin menghapus "${namaBarang}"? Tindakan ini tidak dapat dibatalkan.`);
     
     if (isConfirm) {
@@ -96,7 +129,6 @@ const DataBarang = ({ onNavigate, onLogout }) => {
         const rawApiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
         const cleanApiUrl = rawApiUrl.replace(/\/$/, ""); 
         
-        // Endpoint hapus biasanya membutuhkan ID di akhirnya
         const endpoint = cleanApiUrl.endsWith('/api') 
           ? `${cleanApiUrl}/barang/${id}` 
           : `${cleanApiUrl}/api/barang/${id}`;
@@ -110,7 +142,6 @@ const DataBarang = ({ onNavigate, onLogout }) => {
         });
 
         if (response.ok) {
-          // Jika sukses di database, hapus langsung dari state (tampilan) tanpa perlu refresh page
           setTableData(prevData => prevData.filter(item => item.id !== id));
           alert('Barang berhasil dihapus dari sistem.');
         } else {
@@ -269,7 +300,7 @@ const DataBarang = ({ onNavigate, onLogout }) => {
                   )}
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold text-gray-800">{stat.value}</h3>
+                  <h3 className="text-2xl font-bold text-gray-800">{isLoading ? '...' : stat.value}</h3>
                   <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mt-1">{stat.title}</p>
                 </div>
               </div>

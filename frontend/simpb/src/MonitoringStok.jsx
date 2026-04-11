@@ -1,20 +1,95 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, Box, Truck, Users, 
   ArrowDownRight, ArrowUpRight, Activity, 
   BarChart2, Search, Bell, CircleUser, ArrowDownLeft,
   Package, AlertTriangle, ShoppingCart, Coins,
   FileText, Zap, ChevronLeft, ChevronRight,
-  Filter, Download, PenTool, Printer, Edit2 // Menambahkan Edit2 untuk tombol aksi
+  Filter, Download, PenTool, Printer, Edit2, Loader2
 } from 'lucide-react';
 
 const MonitoringStok = ({ onLogout, onNavigate }) => {
-  // Mock data tabel sesuai screenshot
-  const inventarisData = [
-    { name: 'Kertas A4 80gr Sinar Dunia', id: 'ATK-KRT-001', category: 'Kertas', current: '8 RIM', min: 20, trend: 'down', status: 'STOK RENDAH', statusColor: 'bg-red-100 text-red-600', icon: FileText, iconColor: 'text-gray-400' },
-    { name: 'Pulpen Gel Pilot G2 Hitam', id: 'ATK-PLP-002', category: 'Alat Tulis', current: '144 PCS', min: 50, trend: 'up', status: 'OPTIMAL', statusColor: 'bg-emerald-100 text-emerald-600', icon: PenTool, iconColor: 'text-blue-500' },
-    { name: 'Toner HP Laserjet CF283A', id: 'ATK-TNR-005', category: 'Tinta & Toner', current: '4 BOX', min: 3, trend: 'flat', status: 'PESAN SEGERA', statusColor: 'bg-orange-100 text-orange-700', icon: Printer, iconColor: 'text-gray-500' }
-  ];
+  // === STATES ===
+  const [tableData, setTableData] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  // === FUNGSI AMBIL DATA DARI BACKEND ===
+  useEffect(() => {
+    const fetchBarang = async () => {
+      try {
+        setIsLoading(true);
+        const token = localStorage.getItem('token');
+        const rawApiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+        const cleanApiUrl = rawApiUrl.replace(/\/$/, ""); 
+        
+        const endpoint = cleanApiUrl.endsWith('/api') 
+          ? `${cleanApiUrl}/barang` 
+          : `${cleanApiUrl}/api/barang`;
+
+        const response = await fetch(endpoint, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          const arrayData = Array.isArray(data) ? data : (data.data || []);
+          setTableData(arrayData);
+        } else {
+          console.error("Gagal mengambil data:", data);
+        }
+      } catch (error) {
+        console.error("Error Fetching:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchBarang();
+  }, []);
+
+  // === PERHITUNGAN STATISTIK OTOMATIS ===
+  const totalItems = tableData.length;
+  // Hitung stok rendah (stok di bawah atau sama dengan batas minimum, tapi belum habis)
+  const stokRendahCount = tableData.filter(item => Number(item.stok) <= Number(item.stok_minimum) && Number(item.stok) > 0).length;
+  // Hitung stok habis
+  const stokHabisCount = tableData.filter(item => Number(item.stok) <= 0).length;
+  // Hitung total valuasi
+  const valuasiTotal = tableData.reduce((total, item) => total + (parseFloat(item.harga) * Number(item.stok)), 0);
+
+  // Format Rupiah
+  const formatRupiah = (angka) => {
+    if (angka >= 1000000000) {
+      return `Rp ${(angka / 1000000000).toFixed(1)}M`;
+    } else if (angka >= 1000000) {
+      return `Rp ${(angka / 1000000).toFixed(1)}Jt`;
+    }
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
+  };
+
+  // === FUNGSI STATUS & ICON DINAMIS ===
+  const getStatus = (stok, min) => {
+    const current = Number(stok);
+    const minimum = Number(min);
+    if (current <= 0) return { label: 'PESAN SEGERA', color: 'bg-orange-100 text-orange-700', trend: 'flat' };
+    if (current <= minimum) return { label: 'STOK RENDAH', color: 'bg-red-100 text-red-600', trend: 'down' };
+    return { label: 'OPTIMAL', color: 'bg-emerald-100 text-emerald-600', trend: 'up' };
+  };
+
+  const getCategoryIcon = (category) => {
+    const cat = (category || '').toLowerCase();
+    if (cat.includes('kertas') || cat.includes('buku')) return { icon: FileText, color: 'text-gray-500' };
+    if (cat.includes('tulis') || cat.includes('pulpen')) return { icon: PenTool, color: 'text-blue-500' };
+    if (cat.includes('tinta') || cat.includes('toner')) return { icon: Printer, color: 'text-purple-500' };
+    return { icon: Box, color: 'text-indigo-500' };
+  };
 
   const renderTrendIcon = (trend) => {
     const bars = [3, 2, 4, 1, 3, 2, 4];
@@ -24,17 +99,29 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
           let color = "bg-gray-200";
           if (trend === 'down' && index > bars.length - 4) color = "bg-red-400";
           if (trend === 'up' && index > bars.length - 4) color = "bg-emerald-400";
+          if (trend === 'flat' && index > bars.length - 4) color = "bg-orange-400";
           return <div key={index} className={`w-1 rounded-full ${color}`} style={{ height: `${height * 5}px` }}></div>
         })}
       </div>
     );
   };
 
+  // === FILTER & PAGINATION ===
+  const filteredData = tableData.filter((item) => {
+    const search = searchQuery.toLowerCase();
+    return (item.nama_barang || '').toLowerCase().includes(search) || 
+           (item.id_referensi || '').toLowerCase().includes(search);
+  });
+
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const currentData = filteredData.slice(startIndex, startIndex + itemsPerPage);
+
   return (
     <div className="flex h-screen bg-[#F4F7FC] font-sans overflow-hidden">
       
       {/* ================= SIDEBAR ================= */}
-      <aside className="w-[260px] bg-white border-r border-gray-100 flex flex-col z-20 shrink-0">
+      <aside className="w-[260px] bg-white border-r border-gray-100 flex flex-col z-20 shrink-0 hidden md:flex">
         <div className="p-6">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-[#5452F6] rounded-xl flex items-center justify-center shrink-0 shadow-sm shadow-indigo-100">
@@ -76,7 +163,6 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
           </button>
         </nav>
 
-        {/* === TOMBOL LOGOUT DIPERBARUI DI SINI === */}
         <div className="p-4 border-t border-gray-100 mt-auto">
           <button onClick={onLogout} className="flex items-center gap-3 px-4 py-3 w-full text-[#64748B] hover:bg-gray-50 hover:text-[#334155] rounded-xl font-semibold text-sm transition-colors">
             <ArrowDownLeft className="w-5 h-5 text-[#829AB1]" strokeWidth={2.5} /> Keluar
@@ -88,17 +174,25 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
       <main className="flex-1 flex flex-col overflow-hidden relative">
         <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-8 z-10 sticky top-0 shrink-0">
           <div className="flex items-center">
-            <h2 className="font-bold text-[#1E232C] text-base">SIMPB - CV. Amrita Jayasri</h2>
+            <h2 className="font-bold text-[#1E232C] text-base hidden md:block">SIMPB - CV. Amrita Jayasri</h2>
           </div>
           
           <div className="flex items-center gap-6">
             <div className="relative w-72 hidden sm:block">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input type="text" placeholder="Cari stok alat tulis..." className="w-full pl-11 pr-4 py-2.5 bg-[#F4F7FC] border-transparent rounded-full text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] focus:ring-1 focus:ring-[#5452F6] transition-all" />
+              <input 
+                type="text" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Cari nama barang atau ID..." 
+                className="w-full pl-11 pr-4 py-2.5 bg-[#F4F7FC] border-transparent rounded-full text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] focus:ring-1 focus:ring-[#5452F6] transition-all" 
+              />
             </div>
             <button className="relative text-gray-500 hover:text-gray-800 transition-colors">
               <Bell className="w-5 h-5" />
-              <span className="absolute -top-0.5 right-0.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+              {stokRendahCount + stokHabisCount > 0 && (
+                <span className="absolute -top-0.5 right-0.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+              )}
             </button>
             <div className="h-6 w-px bg-gray-200"></div>
             <div className="flex items-center gap-2.5 cursor-pointer">
@@ -122,10 +216,9 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
                 <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600">
                   <Package className="w-5 h-5" />
                 </div>
-                <span className="text-[10px] font-bold text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full">+12%</span>
               </div>
               <div className="mt-auto">
-                <h3 className="text-3xl font-black text-gray-800 leading-none">1,284</h3>
+                <h3 className="text-3xl font-black text-gray-800 leading-none">{isLoading ? '...' : totalItems}</h3>
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-2">TOTAL ITEM SKU</p>
               </div>
             </div>
@@ -136,10 +229,12 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
                 <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center text-red-500">
                   <AlertTriangle className="w-5 h-5" />
                 </div>
-                <span className="text-[10px] font-bold text-white bg-red-500 px-2.5 py-1 rounded-full shadow-sm shadow-red-200">PERLU TINDAKAN</span>
+                {stokRendahCount > 0 && (
+                  <span className="text-[10px] font-bold text-white bg-red-500 px-2.5 py-1 rounded-full shadow-sm shadow-red-200 animate-pulse">PERLU TINDAKAN</span>
+                )}
               </div>
               <div className="mt-auto">
-                <h3 className="text-3xl font-black text-gray-800 leading-none">24</h3>
+                <h3 className="text-3xl font-black text-gray-800 leading-none">{isLoading ? '...' : stokRendahCount}</h3>
                 <p className="text-[10px] font-bold text-red-500 uppercase tracking-widest mt-2">STOK RENDAH (KRITIS)</p>
               </div>
             </div>
@@ -152,8 +247,8 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
                 </div>
               </div>
               <div className="mt-auto">
-                <h3 className="text-3xl font-black text-gray-800 leading-none">03</h3>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-2">PESAN SEGERA</p>
+                <h3 className="text-3xl font-black text-gray-800 leading-none">{isLoading ? '...' : stokHabisCount}</h3>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-2">HABIS / PESAN SEGERA</p>
               </div>
             </div>
 
@@ -165,7 +260,7 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
                 </div>
               </div>
               <div className="mt-auto z-10">
-                <h3 className="text-3xl font-black leading-none">Rp 2,4M</h3>
+                <h3 className="text-3xl font-black leading-none">{isLoading ? '...' : formatRupiah(valuasiTotal)}</h3>
                 <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest mt-2">VALUASI INVENTARIS</p>
               </div>
               <Coins className="absolute -right-4 -bottom-4 w-28 h-28 opacity-10" />
@@ -173,7 +268,7 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
           </div>
 
           {/* Table Area */}
-          <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 overflow-hidden">
+          <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 overflow-hidden relative min-h-[300px]">
             <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/30">
               <h3 className="text-lg font-bold text-gray-800">Status Inventaris</h3>
               <div className="flex gap-2">
@@ -186,70 +281,118 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-gray-50/80 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100">
-                    <th className="py-5 px-6">NAMA BARANG / ID</th>
-                    <th className="py-5 px-6">KATEGORI</th>
-                    <th className="py-5 px-6 text-center">STOK</th>
-                    <th className="py-5 px-6 text-center">MIN.</th>
-                    <th className="py-5 px-6">TREN</th>
-                    <th className="py-5 px-6 text-center">STATUS</th>
-                    <th className="py-5 px-6 text-right">AKSI</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {inventarisData.map((item, index) => (
-                    <tr key={index} className="hover:bg-gray-50/50 transition-all duration-200">
-                      <td className="py-4 px-6">
-                        <div className="flex items-center gap-3.5">
-                          <div className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center border border-gray-100 shadow-inner">
-                            <item.icon className={`w-5 h-5 ${item.iconColor}`} />
-                          </div>
-                          <div>
-                            <p className="font-bold text-gray-800 text-sm leading-tight">{item.name}</p>
-                            <p className="text-[10px] text-gray-400 mt-1 font-bold uppercase tracking-wider">{item.id}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <span className="text-[10px] font-bold text-gray-500 uppercase bg-gray-100 px-2 py-1 rounded-md tracking-wider">
-                          {item.category}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6 text-center text-sm font-black text-gray-800">{item.current}</td>
-                      <td className="py-4 px-6 text-center text-xs font-bold text-gray-300">{item.min}</td>
-                      <td className="py-4 px-6">{renderTrendIcon(item.trend)}</td>
-                      <td className="py-4 px-6 text-center">
-                        <span className={`text-[9px] font-black px-3 py-1.5 rounded-lg uppercase tracking-widest ${item.statusColor}`}>
-                          {item.status}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6 text-right">
-                        <button 
-                          onClick={() => onNavigate('edit-barang')}
-                          className="p-2 text-[#5452F6] hover:bg-indigo-50 rounded-lg transition-colors"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                      </td>
+            {isLoading ? (
+              <div className="absolute inset-0 z-10 bg-white/80 flex flex-col items-center justify-center mt-20">
+                <Loader2 className="w-8 h-8 text-[#5452F6] animate-spin mb-4" />
+                <p className="text-sm font-bold text-gray-500">Menganalisis stok gudang...</p>
+              </div>
+            ) : currentData.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 text-center mt-10">
+                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                  <Box className="w-8 h-8 text-gray-300" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-800">Data Tidak Ditemukan</h3>
+                <p className="text-sm text-gray-500 mt-1">Belum ada barang di database atau tidak cocok dengan pencarian.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50/80 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100">
+                      <th className="py-5 px-6">NAMA BARANG / ID</th>
+                      <th className="py-5 px-6">KATEGORI</th>
+                      <th className="py-5 px-6 text-center">STOK</th>
+                      <th className="py-5 px-6 text-center">MIN.</th>
+                      <th className="py-5 px-6">TREN</th>
+                      <th className="py-5 px-6 text-center">STATUS</th>
+                      <th className="py-5 px-6 text-right">AKSI</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {currentData.map((item, index) => {
+                      const status = getStatus(item.stok, item.stok_minimum);
+                      const iconData = getCategoryIcon(item.kategori);
+                      const IconComponent = iconData.icon;
+
+                      return (
+                        <tr key={item.id} className="hover:bg-gray-50/50 transition-all duration-200">
+                          <td className="py-4 px-6">
+                            <div className="flex items-center gap-3.5">
+                              <div className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center border border-gray-100 shadow-inner">
+                                <IconComponent className={`w-5 h-5 ${iconData.color}`} />
+                              </div>
+                              <div>
+                                <p className="font-bold text-gray-800 text-sm leading-tight">{item.nama_barang}</p>
+                                <p className="text-[10px] text-gray-400 mt-1 font-bold uppercase tracking-wider">{item.id_referensi || `BRG-${item.id}`}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6">
+                            <span className="text-[10px] font-bold text-gray-500 uppercase bg-gray-100 px-2 py-1 rounded-md tracking-wider">
+                              {item.kategori}
+                            </span>
+                          </td>
+                          <td className="py-4 px-6 text-center text-sm font-black text-gray-800">
+                            {item.stok} <span className="text-[10px] uppercase font-bold text-gray-400 ml-1">{item.satuan}</span>
+                          </td>
+                          <td className="py-4 px-6 text-center text-xs font-bold text-gray-300">{item.stok_minimum}</td>
+                          <td className="py-4 px-6">{renderTrendIcon(status.trend)}</td>
+                          <td className="py-4 px-6 text-center">
+                            <span className={`text-[9px] font-black px-3 py-1.5 rounded-lg uppercase tracking-widest ${status.color}`}>
+                              {status.label}
+                            </span>
+                          </td>
+                          <td className="py-4 px-6 text-right">
+                            <button 
+                              onClick={() => onNavigate('edit-barang', item.id)}
+                              className="p-2 text-[#5452F6] hover:bg-indigo-50 rounded-lg transition-colors"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
             
             {/* Pagination */}
-            <div className="p-6 bg-gray-50/30 border-t border-gray-100 flex justify-between items-center">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Menampilkan 1-3 dari 1,284 Item</p>
-              <div className="flex gap-1.5">
-                <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-400 hover:bg-gray-50 transition-colors"><ChevronLeft className="w-4 h-4" /></button>
-                <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#5452F6] text-white text-xs font-bold shadow-md shadow-indigo-100">1</button>
-                <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 text-xs font-bold hover:bg-gray-50 transition-colors">2</button>
-                <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-400 hover:bg-gray-50 transition-colors"><ChevronRight className="w-4 h-4" /></button>
+            {!isLoading && filteredData.length > 0 && (
+              <div className="p-6 bg-gray-50/30 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 mt-auto">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                  Menampilkan {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredData.length)} dari {filteredData.length} Item
+                </p>
+                <div className="flex gap-1.5">
+                  <button 
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-400 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#5452F6] text-white text-xs font-bold shadow-md shadow-indigo-100">
+                    {currentPage}
+                  </button>
+                  {totalPages > 1 && currentPage < totalPages && (
+                    <button 
+                      onClick={() => setCurrentPage(prev => prev + 1)}
+                      className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 text-xs font-bold hover:bg-gray-50 transition-colors"
+                    >
+                      {currentPage + 1}
+                    </button>
+                  )}
+                  <button 
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-400 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </main>
