@@ -1,13 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Search, Bell, Plus, Edit2, Trash2, 
   LayoutDashboard, Box, Users, Truck, ArrowDownRight, 
   ArrowUpRight, Activity, BarChart2, ArrowDownLeft, 
-  History, Bookmark, Star, ChevronLeft, ChevronRight, CircleUser, Info
+  History, Bookmark, Star, ChevronLeft, ChevronRight, CircleUser, Info,
+  Loader2, Phone // <-- Menambahkan Loader2 dan Phone
 } from 'lucide-react';
 
-// === IMPORT MODAL KONSUMEN KITA DI SINI ===
-// Sesuaikan path import (../components/modals/...) jika diletakkan di dalam folder terpisah
 import TambahKonsumenModal from './TambahKonsumenModal';
 import EditKonsumenModal from './EditKonsumenModal';
 
@@ -17,17 +16,63 @@ const Konsumen = ({ onNavigate, onLogout }) => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedKonsumen, setSelectedKonsumen] = useState(null);
 
-  // Mock data untuk tabel konsumen
-  const konsumenData = [
-    { id: 'KSM-0012', name: 'PT. Maju Bersama Nusantara', initial: 'PT', address: 'Jl. Industri No. 45, Kawasan Rungkut, Surabaya, Jawa Timur', phone: '(031) 555-1234' },
-    { id: 'KSM-0045', name: 'CV. Global Logistik Sejahtera', initial: 'CV', address: 'Komp. Pergudangan Sunrise Block B-12, Jakarta Utara', phone: '(021) 888-9900' },
-    { id: 'KSM-0089', name: 'UD. Karya Mandiri Abadi', initial: 'UD', address: 'Jl. Gatot Subroto No. 201, Denpasar, Bali', phone: '(0361) 224-556' },
-    { id: 'KSM-0102', name: 'PT. Sinar Jaya Elektronik', initial: 'PT', address: 'Pusat Grosir Senen Jaya, Lt. 3 Blok A, Jakarta Pusat', phone: '(021) 345-6789' }
-  ];
+  // === STATE UNTUK DATA API ===
+  const [konsumens, setKonsumens] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Handler Modal
+  // === FUNGSI AMBIL DATA DARI API (GET) ===
+  const fetchKonsumens = async () => {
+    try {
+      setIsLoading(true);
+      const token = localStorage.getItem('token');
+      const rawApiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+      const cleanApiUrl = rawApiUrl.replace(/\/$/, ""); 
+      
+      // Asumsi endpoint adalah /api/konsumen (sesuaikan jika di backend pakai nama lain)
+      const endpoint = cleanApiUrl.endsWith('/api') 
+        ? `${cleanApiUrl}/konsumen` 
+        : `${cleanApiUrl}/api/konsumen`;
+
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setKonsumens(data.data || []);
+      } else {
+        console.error("Gagal mengambil data konsumen:", data);
+      }
+    } catch (error) {
+      console.error("Error Fetching Konsumen:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Panggil saat halaman pertama kali dirender
+  useEffect(() => {
+    fetchKonsumens();
+  }, []);
+
+  // === FUNGSI HELPER UNTUK INISIAL OTOMATIS ===
+  const getInitial = (name) => {
+    if (!name) return '??';
+    const firstWord = name.split(' ')[0].toUpperCase();
+    if (['PT', 'CV', 'UD', 'RSUD', 'SMAN', 'DINAS', 'KANTOR'].includes(firstWord)) {
+        return firstWord.substring(0, 4); // Ambil maksimal 4 huruf awal
+    }
+    return name.substring(0, 2).toUpperCase(); 
+  };
+
+  // === HANDLER MODAL ===
   const handleSaveNewKonsumen = (newData) => {
-    console.log("Data Konsumen Baru:", newData);
+    fetchKonsumens(); // Refresh tabel otomatis
     setIsAddModalOpen(false);
   };
 
@@ -37,7 +82,7 @@ const Konsumen = ({ onNavigate, onLogout }) => {
   };
 
   const handleSaveEditKonsumen = (updatedData) => {
-    console.log("Data Konsumen Diperbarui:", updatedData);
+    fetchKonsumens(); // Refresh tabel otomatis
     setIsEditModalOpen(false);
   };
 
@@ -110,7 +155,7 @@ const Konsumen = ({ onNavigate, onLogout }) => {
             <div className="flex items-center gap-6">
               <div className="relative w-72 hidden sm:block">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input type="text" placeholder="Cari stok alat tulis..." className="w-full pl-11 pr-4 py-2.5 bg-[#F4F7FC] border-transparent rounded-full text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] focus:ring-1 focus:ring-[#5452F6] transition-all" />
+                <input type="text" placeholder="Cari konsumen..." className="w-full pl-11 pr-4 py-2.5 bg-[#F4F7FC] border-transparent rounded-full text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] focus:ring-1 focus:ring-[#5452F6] transition-all" />
               </div>
               
               <button className="relative text-gray-500 hover:text-gray-800 transition-colors">
@@ -153,8 +198,8 @@ const Konsumen = ({ onNavigate, onLogout }) => {
                   <Users className="w-5 h-5 text-[#A855F7]" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold text-gray-800">30</h3>
-                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mt-1">TOTAL MITRA</p>
+                  <h3 className="text-2xl font-bold text-gray-800">{isLoading ? '...' : konsumens.length}</h3>
+                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mt-1">TOTAL KONSUMEN</p>
                   <span className="text-[10px] font-bold text-[#5452F6] bg-[#EBF4FF] px-2.5 py-1 rounded-full mt-2.5 inline-block">+4 bulan ini</span>
                 </div>
               </div>
@@ -167,7 +212,7 @@ const Konsumen = ({ onNavigate, onLogout }) => {
                   <Bookmark className="w-5 h-5 text-[#5452F6]" />
                 </div>
                 <div className="relative z-10">
-                  <h3 className="text-2xl font-bold text-gray-800">28</h3>
+                  <h3 className="text-2xl font-bold text-gray-800">{isLoading ? '...' : konsumens.length}</h3>
                   <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mt-1">KONTRAK AKTIF</p>
                   <p className="text-[10px] text-gray-500 mt-2">di 5 wilayah</p>
                 </div>
@@ -189,72 +234,90 @@ const Konsumen = ({ onNavigate, onLogout }) => {
             </div>
 
             {/* Data Table */}
-            <div className="bg-white rounded-[20px] shadow-sm border border-gray-100 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-[900px]">
-                  <thead>
-                    <tr className="bg-gray-50/80 border-b border-gray-100">
-                      <th className="py-4 px-6 text-xs font-bold text-gray-400 uppercase tracking-wider">NAMA KONSUMEN</th>
-                      <th className="py-4 px-6 text-xs font-bold text-gray-400 uppercase tracking-wider">ALAMAT</th>
-                      <th className="py-4 px-6 text-xs font-bold text-gray-400 uppercase tracking-wider">NOMOR TELEPON</th>
-                      <th className="py-4 px-6 text-xs font-bold text-gray-400 uppercase tracking-wider text-right">AKSI</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {konsumenData.map((item) => (
-                      <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
-                        <td className="py-4 px-6">
-                          <div className="flex items-center gap-3.5">
-                            <div className="w-11 h-11 bg-gray-100 text-gray-500 font-bold text-lg rounded-full flex items-center justify-center flex-shrink-0 uppercase border border-gray-200 shadow-inner">
-                              {item.initial}
-                            </div>
-                            <div>
-                              <p className="font-bold text-gray-800 text-sm truncate max-w-[250px]">{item.name}</p>
-                              <p className="text-[11px] text-gray-400 mt-0.5 font-medium uppercase tracking-wider">ID: {item.id}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-4 px-6">
-                          <p className="text-xs text-gray-600 font-medium leading-relaxed max-w-[300px]">{item.address}</p>
-                        </td>
-                        <td className="py-4 px-6">
-                          <div className="flex items-center gap-2.5">
-                            <span className="w-8 h-8 rounded-lg bg-gray-100 text-gray-500 flex items-center justify-center border border-gray-200">
-                                ( )
-                            </span>
-                            <p className="text-sm font-semibold text-gray-700">{item.phone}</p>
-                          </div>
-                        </td>
-                        <td className="py-4 px-6 text-right">
-                          <div className="flex items-center justify-end gap-2.5">
-                            {/* TOMBOL EDIT MEMBUKA MODAL */}
-                            <button 
-                              onClick={() => handleEditClick(item)}
-                              className="p-2.5 text-[#5452F6] hover:bg-indigo-50 rounded-lg transition-colors border border-gray-100 shadow-inner bg-gray-50/50"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button className="p-2.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-gray-100 shadow-inner bg-gray-50/50">
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Pagination */}
-              <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t border-gray-100 bg-white gap-3">
-                <p className="text-xs text-gray-500 font-medium">Menampilkan 1 - 4 dari 30 konsumen</p>
-                <div className="flex items-center gap-1.5 pagination-pills">
-                  <button className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 border border-gray-100"><ChevronLeft className="w-4 h-4" /></button>
-                  <button className="w-8 h-8 flex items-center justify-center bg-[#5452F6] text-white rounded-lg text-xs font-bold">1</button>
-                  <button className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-lg text-xs font-bold border border-gray-100">2</button>
-                  <button className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-lg text-xs font-bold border border-gray-100">3</button>
-                  <button className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 border border-gray-100"><ChevronRight className="w-4 h-4" /></button>
+            <div className="bg-white rounded-[20px] shadow-sm border border-gray-100 overflow-hidden relative min-h-[300px]">
+              {isLoading ? (
+                // Loading State
+                <div className="absolute inset-0 z-10 bg-white/80 flex flex-col items-center justify-center mt-20">
+                  <Loader2 className="w-8 h-8 text-[#5452F6] animate-spin mb-4" />
+                  <p className="text-sm font-bold text-gray-500">Menarik data dari database...</p>
                 </div>
+              ) : konsumens.length === 0 ? (
+                // Empty State
+                <div className="flex flex-col items-center justify-center py-20 text-center mt-10">
+                  <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 border border-gray-100">
+                    <Users className="w-8 h-8 text-gray-300" />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-800">Belum Ada Konsumen</h3>
+                  <p className="text-sm text-gray-500 mt-1">Silakan klik tombol "Tambah Konsumen" untuk mulai mencatat.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse min-w-[900px]">
+                    <thead>
+                      <tr className="bg-gray-50/80 border-b border-gray-100">
+                        <th className="py-4 px-6 text-xs font-bold text-gray-400 uppercase tracking-wider">NAMA KONSUMEN</th>
+                        <th className="py-4 px-6 text-xs font-bold text-gray-400 uppercase tracking-wider">ALAMAT</th>
+                        <th className="py-4 px-6 text-xs font-bold text-gray-400 uppercase tracking-wider">NOMOR TELEPON</th>
+                        <th className="py-4 px-6 text-xs font-bold text-gray-400 uppercase tracking-wider text-right">AKSI</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {konsumens.map((item) => (
+                        <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
+                          <td className="py-4 px-6">
+                            <div className="flex items-center gap-3.5">
+                              <div className="w-11 h-11 bg-purple-50 text-purple-600 font-bold text-sm rounded-full flex items-center justify-center flex-shrink-0 uppercase border border-purple-100 shadow-sm">
+                                {getInitial(item.nama_konsumen)}
+                              </div>
+                              <div>
+                                <p className="font-bold text-gray-800 text-sm truncate max-w-[250px]">{item.nama_konsumen}</p>
+                                <p className="text-[11px] text-gray-400 mt-0.5 font-medium uppercase tracking-wider">ID: KSM-{String(item.id).padStart(4, '0')}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6">
+                            <p className="text-xs text-gray-600 font-medium leading-relaxed max-w-[300px]">{item.alamat}</p>
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="flex items-center gap-2.5">
+                              <span className="w-8 h-8 rounded-lg bg-gray-50 text-gray-400 flex items-center justify-center border border-gray-100">
+                                  <Phone className="w-3.5 h-3.5" />
+                              </span>
+                              <p className="text-sm font-semibold text-gray-700">{item.no_telepon}</p>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6 text-right">
+                            <div className="flex items-center justify-end gap-2.5">
+                              {/* TOMBOL EDIT MEMBUKA MODAL */}
+                              <button 
+                                onClick={() => handleEditClick(item)}
+                                className="p-2.5 text-[#5452F6] hover:bg-indigo-50 rounded-lg transition-colors border border-gray-100 shadow-inner bg-gray-50/50"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button 
+                                onClick={() => alert(`Fitur hapus untuk ID ${item.id} akan dikembangkan.`)}
+                                className="p-2.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-gray-100 shadow-inner bg-gray-50/50"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Pagination */}
+            <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border border-gray-100 bg-white rounded-xl mt-4 gap-3">
+              <p className="text-xs text-gray-500 font-medium">Menampilkan {konsumens.length} konsumen</p>
+              <div className="flex items-center gap-1.5 pagination-pills">
+                <button className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 border border-gray-100"><ChevronLeft className="w-4 h-4" /></button>
+                <button className="w-8 h-8 flex items-center justify-center bg-[#5452F6] text-white rounded-lg text-xs font-bold">1</button>
+                <button className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 border border-gray-100"><ChevronRight className="w-4 h-4" /></button>
               </div>
             </div>
 
