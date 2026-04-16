@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Barang;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class BarangController extends Controller
 {
@@ -16,6 +17,10 @@ class BarangController extends Controller
         if ($request->has('search') && $request->search != '') {
             $query->where('nama_barang', 'like', '%' . $request->search . '%');
         }
+
+        if ($request->has('kategori') && $request->kategori != '') {
+            $query->where('kategori', $request->kategori);
+        }   
 
         $barang = $query->orderBy('nama_barang', 'asc')->get();
 
@@ -36,11 +41,24 @@ class BarangController extends Controller
             'stok'         => 'required|integer|min:0',
             'stok_minimum' => 'required|integer|min:0',
             'satuan'       => 'nullable|string|max:50',
+            'foto'         => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
         $count        = \App\Models\Barang::count() + 1;
         $idReferensi  = 'BRG-ATK' . str_pad($count, 3, '0', STR_PAD_LEFT);
 
+        // Upload foto ke Cloudinary kalau ada
+        $fotoUrl = null;
+        $fotoPublicId = null;
+
+        if ($request->hasFile('foto')) {
+            $upload = Cloudinary::upload(
+                $request->file('foto')->getRealPath(),
+                ['folder' => 'amrita/barang']
+            );
+            $fotoUrl = $upload->getSecurePath();
+            $fotoPublicId = $upload->getPublicId();
+        }
 
         $barang = Barang::create([
             'id_referensi' => $idReferensi,
@@ -50,6 +68,8 @@ class BarangController extends Controller
             'stok'         => $request->stok,
             'stok_minimum' => $request->stok_minimum,
             'satuan'       => $request->satuan ?? 'Unit',
+            'foto_url'     => $fotoUrl,
+            'foto_public_id' => $fotoPublicId,
         ]);
 
         return response()->json([
@@ -97,7 +117,26 @@ class BarangController extends Controller
             'stok'         => 'required|integer|min:0',
             'stok_minimum' => 'required|integer|min:0',
             'satuan'       => 'nullable|string|max:50',
+            'foto'         => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',  
         ]);
+
+        $fotoUrl = $barang->foto_url;
+        $fotoPublicId = $barang->foto_public_id;
+
+        if ($request->hasFile('foto')) {
+            // Hapus foto lama dari Cloudinary kalau ada
+            if ($barang->foto_public_id) {
+                Cloudinary::destroy($barang->foto_public_id);
+            }
+
+            // Upload foto baru
+            $upload = Cloudinary::upload(
+                $request->file('foto')->getRealPath(),
+                ['folder' => 'amrita/barang']
+            );
+            $fotoUrl = $upload->getSecurePath();
+            $fotoPublicId = $upload->getPublicId();
+        }
 
         $barang->update([
             'nama_barang'  => $request->nama_barang,
@@ -106,6 +145,8 @@ class BarangController extends Controller
             'stok'         => $request->stok,
             'stok_minimum' => $request->stok_minimum,
             'satuan'       => $request->satuan ?? $barang->satuan,
+            'foto_url'     => $fotoUrl,
+            'foto_public_id' => $fotoPublicId,
         ]);
 
         return response()->json([
@@ -138,6 +179,10 @@ class BarangController extends Controller
             ], 409);
         }
 
+        // Hapus foto dari Cloudinary kalau ada
+        if ($barang->foto_public_id) {
+            Cloudinary::destroy($barang->foto_public_id);
+        }
         $barang->delete();
 
         return response()->json([
