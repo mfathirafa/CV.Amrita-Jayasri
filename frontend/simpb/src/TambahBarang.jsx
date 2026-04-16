@@ -1,14 +1,121 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   LayoutDashboard, Box, Truck, Users, 
   ArrowDownRight, ArrowUpRight, Activity, 
-  BarChart2, LogOut, Search, Bell, CircleUser,
+  BarChart2, ArrowDownLeft, Search, Bell, CircleUser,
   ChevronDown, Camera, Lock, Info, Save,
   RotateCcw, QrCode, ShieldCheck,
-  AlertTriangle // <--- SUDAH DITAMBAHKAN
+  AlertTriangle, AlertCircle, Loader2, X
 } from 'lucide-react';
 
+import SuccessModal from './SuccessModal';
+
 const TambahBarang = ({ onNavigate, onLogout }) => {
+  // 1. STATE UNTUK FORM INPUT (Ditambah 'satuan')
+  const [namaBarang, setNamaBarang] = useState('');
+  const [kategori, setKategori] = useState('');
+  const [satuan, setSatuan] = useState(''); // <-- State Baru untuk Satuan
+  const [harga, setHarga] = useState('');
+  const [stok, setStok] = useState('');
+  const [ambangBatas, setAmbangBatas] = useState('');
+  
+  // STATE BARU UNTUK FILE FOTO & PREVIEW (Hanya UI visual sementara)
+  const [foto, setFoto] = useState(null);
+  const [previewFoto, setPreviewFoto] = useState(null);
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(''); 
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [savedItemName, setSavedItemName] = useState('');
+
+  // FUNGSI UNTUK MENANGKAP FILE GAMBAR YANG DIPILIH
+  const handleFotoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFoto(file);
+      setPreviewFoto(URL.createObjectURL(file)); 
+    }
+  };
+
+  // FUNGSI UNTUK MENGHAPUS GAMBAR JIKA BATAL
+  const handleRemoveFoto = (e) => {
+    e.stopPropagation(); 
+    setFoto(null);
+    setPreviewFoto(null);
+    document.getElementById('input-foto').value = ''; 
+  };
+
+  const handleSimpan = async () => {
+    // Validasi Sederhana (ditambah satuan)
+    if (!namaBarang || !kategori || !satuan || !harga || !stok || !ambangBatas) {
+      setErrorMessage('Semua kolom berlabel bintang merah (*) wajib diisi!');
+      return;
+    }
+
+    setIsLoading(true);
+    setErrorMessage('');
+
+    try {
+      const token = localStorage.getItem('token');
+      const rawApiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+      const cleanApiUrl = rawApiUrl.replace(/\/$/, ""); 
+      
+      const endpoint = cleanApiUrl.endsWith('/api') 
+        ? `${cleanApiUrl}/barang` 
+        : `${cleanApiUrl}/api/barang`;
+
+      // 2. KEMBALI MENGGUNAKAN JSON SESUAI POSTMAN
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json', // Gunakan tipe JSON
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({
+          nama_barang: namaBarang,
+          kategori: kategori,
+          harga: Number(harga), // Pastikan format angka
+          stok: Number(stok), // Pastikan format angka
+          stok_minimum: Number(ambangBatas), // Pastikan format angka
+          satuan: satuan // <-- Masukkan payload satuan ke sini
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok || data.success === true) {
+        setSavedItemName(namaBarang);
+        setShowSuccessModal(true);
+        
+        // Reset Form
+        setNamaBarang('');
+        setKategori('');
+        setSatuan('');
+        setHarga('');
+        setStok('');
+        setAmbangBatas('');
+        setFoto(null);
+        setPreviewFoto(null);
+      } else {
+        const errorMsg = data.errors 
+          ? Object.values(data.errors)[0][0] 
+          : (data.message || 'Gagal menyimpan barang.');
+        setErrorMessage(errorMsg);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      setErrorMessage('Koneksi ke server gagal. Pastikan backend di Railway berjalan.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowSuccessModal(false);
+    onNavigate('data-barang'); 
+  };
+
   return (
     <div className="flex h-screen bg-[#F8F9FA] font-sans overflow-hidden">
       
@@ -32,11 +139,9 @@ const TambahBarang = ({ onNavigate, onLogout }) => {
           <button onClick={() => onNavigate('dashboard')} className="w-full flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 hover:text-gray-800 rounded-xl font-medium text-sm transition-colors text-left">
             <LayoutDashboard className="w-5 h-5" /> Dashboard
           </button>
-          
           <button onClick={() => onNavigate('data-barang')} className="w-full flex items-center gap-3 px-4 py-3 bg-[#F0EFFF] text-[#5452F6] rounded-xl font-bold text-sm transition-colors text-left">
             <Box className="w-5 h-5" /> Data Barang
           </button>
-          
           <button onClick={() => onNavigate('pemasok')} className="w-full flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 hover:text-gray-800 rounded-xl font-medium text-sm transition-colors text-left">
             <Truck className="w-5 h-5" /> Pemasok
           </button>
@@ -57,9 +162,10 @@ const TambahBarang = ({ onNavigate, onLogout }) => {
           </button>
         </nav>
 
+        {/* === TOMBOL LOGOUT DIPERBARUI DI SINI === */}
         <div className="p-4 border-t border-gray-100 mt-auto">
-          <button onClick={onLogout} className="flex items-center gap-3 px-4 py-3 w-full text-gray-500 hover:bg-red-50 hover:text-red-500 rounded-xl font-semibold text-sm transition-colors">
-            <LogOut className="w-5 h-5 rotate-90" /> Keluar
+          <button onClick={onLogout} className="flex items-center gap-3 px-4 py-3 w-full text-[#64748B] hover:bg-gray-50 hover:text-[#334155] rounded-xl font-semibold text-sm transition-colors">
+            <ArrowDownLeft className="w-5 h-5 text-[#829AB1]" strokeWidth={2.5} /> Keluar
           </button>
         </div>
       </aside>
@@ -107,23 +213,60 @@ const TambahBarang = ({ onNavigate, onLogout }) => {
             <p className="text-sm text-gray-500 mt-1">Lengkapi informasi di bawah ini untuk menambahkan atau memperbarui data barang di sistem inventaris.</p>
           </div>
 
+          {/* Area Notifikasi Error SAJA */}
+          {errorMessage && (
+            <div className="mb-6 p-4 rounded-xl flex items-center gap-3 animate-in fade-in bg-red-50 text-red-600 border border-red-100">
+              <AlertCircle className="w-5 h-5" />
+              <span className="text-sm font-bold">{errorMessage}</span>
+            </div>
+          )}
+
           {/* Main Form Card */}
           <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 p-8 mb-8">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
               
               {/* Kolom Kiri: Foto & ID */}
               <div className="lg:col-span-4 flex flex-col items-center">
-                <div className="w-full aspect-square bg-[#F4F7FC] rounded-2xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors group mb-6">
-                  <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-sm mb-3 group-hover:scale-110 transition-transform">
-                    <Camera className="w-6 h-6 text-gray-400" />
-                  </div>
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Unggah Foto Barang</p>
+                
+                {/* AREA UNGGAH FOTO (Visual UI Saja) */}
+                <div 
+                  onClick={() => document.getElementById('input-foto').click()}
+                  className="w-full aspect-square bg-[#F4F7FC] rounded-2xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors group mb-6 relative overflow-hidden"
+                >
+                  {previewFoto ? (
+                    <>
+                      <img src={previewFoto} alt="Preview Barang" className="w-full h-full object-cover" />
+                      <button 
+                        onClick={handleRemoveFoto}
+                        className="absolute top-3 right-3 bg-red-500/90 backdrop-blur text-white p-2 rounded-full hover:bg-red-600 hover:scale-110 transition-all shadow-md"
+                        title="Hapus foto"
+                      >
+                        <X className="w-4 h-4" strokeWidth={3} />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-sm mb-3 group-hover:scale-110 transition-transform">
+                        <Camera className="w-6 h-6 text-gray-400" />
+                      </div>
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider text-center px-4">Unggah Foto Barang<br/><span className="text-[9px] font-medium opacity-70">(Visual UI Saja)</span></p>
+                    </>
+                  )}
+                  
+                  {/* Input file yang disembunyikan */}
+                  <input 
+                    id="input-foto"
+                    type="file" 
+                    accept="image/*"
+                    onChange={handleFotoChange}
+                    className="hidden" 
+                  />
                 </div>
 
                 <div className="w-full">
                   <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">ID REFERENSI SISTEM</label>
                   <div className="flex items-center justify-between bg-[#E9ECF5] px-4 py-3 rounded-xl border border-gray-100">
-                    <span className="text-sm font-bold text-[#5452F6]">BRG-2023-0941</span>
+                    <span className="text-sm font-bold text-[#5452F6]">AUTO-GENERATE</span>
                     <Lock className="w-4 h-4 text-gray-400" />
                   </div>
                   <p className="text-[10px] text-gray-400 mt-2 italic">ID dihasilkan secara otomatis oleh sistem.</p>
@@ -136,28 +279,69 @@ const TambahBarang = ({ onNavigate, onLogout }) => {
                   <label className="block text-xs font-bold text-gray-800 mb-2">Nama Barang <span className="text-red-500">*</span></label>
                   <input 
                     type="text" 
-                    placeholder="Contoh: Kertas A4 80gr" 
-                    className="w-full px-4 py-3 bg-[#F4F7FC] border-transparent rounded-xl text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] transition-all"
+                    value={namaBarang}
+                    onChange={(e) => setNamaBarang(e.target.value)}
+                    disabled={isLoading}
+                    placeholder="Contoh: Kertas A3 80gr" 
+                    className="w-full px-4 py-3 bg-[#F4F7FC] border-transparent rounded-xl text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] focus:ring-1 focus:ring-[#5452F6] transition-all disabled:opacity-60"
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Grid 3 Kolom untuk Kategori, Satuan, Harga */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
-                    <label className="block text-xs font-bold text-gray-800 mb-2">Kategori</label>
+                    <label className="block text-xs font-bold text-gray-800 mb-2">Kategori <span className="text-red-500">*</span></label>
                     <div className="relative">
-                      <select className="w-full px-4 py-3 bg-[#F4F7FC] border-transparent rounded-xl text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] appearance-none cursor-pointer">
-                        <option>Pilih Kategori</option>
-                        <option>Kertas & Media</option>
-                        <option>Alat Tulis</option>
+                      <select 
+                        value={kategori}
+                        onChange={(e) => setKategori(e.target.value)}
+                        disabled={isLoading}
+                        className="w-full px-4 py-3 bg-[#F4F7FC] border-transparent rounded-xl text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] focus:ring-1 focus:ring-[#5452F6] appearance-none cursor-pointer disabled:opacity-60"
+                      >
+                        <option value="" disabled>Pilih Kategori</option>
+                        <option value="Kertas & Media">Kertas & Media</option>
+                        <option value="Alat Tulis">Alat Tulis</option>
+                        <option value="Tinta & Toner">Tinta & Toner</option>
+                        <option value="Arsip & Penyimpanan">Arsip & Penyimpanan</option>
                       </select>
                       <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                     </div>
                   </div>
+
+                  {/* KOLOM SATUAN */}
                   <div>
-                    <label className="block text-xs font-bold text-gray-800 mb-2">Harga Satuan (Rp)</label>
-                    <div className="flex items-center bg-[#F4F7FC] px-4 py-3 rounded-xl">
+                    <label className="block text-xs font-bold text-gray-800 mb-2">Satuan <span className="text-red-500">*</span></label>
+                    <div className="relative">
+                      <select 
+                        value={satuan}
+                        onChange={(e) => setSatuan(e.target.value)}
+                        disabled={isLoading}
+                        className="w-full px-4 py-3 bg-[#F4F7FC] border-transparent rounded-xl text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] focus:ring-1 focus:ring-[#5452F6] appearance-none cursor-pointer disabled:opacity-60"
+                      >
+                        <option value="" disabled>Pilih Satuan</option>
+                        <option value="Rim">Rim</option>
+                        <option value="Box">Box</option>
+                        <option value="Pcs">Pcs</option>
+                        <option value="Pack">Pack</option>
+                        <option value="Lusin">Lusin</option>
+                        <option value="Unit">Unit</option>
+                      </select>
+                      <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-800 mb-2">Harga / {satuan || 'Satuan'} <span className="text-red-500">*</span></label>
+                    <div className="flex items-center bg-[#F4F7FC] px-4 py-3 rounded-xl focus-within:bg-white focus-within:ring-1 focus-within:ring-[#5452F6]">
                       <span className="text-sm text-gray-400 font-bold mr-2">Rp</span>
-                      <input type="text" placeholder="0" className="bg-transparent w-full text-sm outline-none" />
+                      <input 
+                        type="number" 
+                        value={harga}
+                        onChange={(e) => setHarga(e.target.value)}
+                        disabled={isLoading}
+                        placeholder="55000" 
+                        className="bg-transparent w-full text-sm outline-none disabled:opacity-60" 
+                      />
                     </div>
                   </div>
                 </div>
@@ -165,22 +349,36 @@ const TambahBarang = ({ onNavigate, onLogout }) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-[#F4F7FC]/50 rounded-2xl border border-gray-50">
                   <div>
                     <div className="flex items-center gap-2 mb-2">
-                      <label className="text-xs font-bold text-gray-800">Stok Awal</label>
+                      <label className="text-xs font-bold text-gray-800">Stok Awal <span className="text-red-500">*</span></label>
                     </div>
-                    <div className="flex items-center bg-white border border-gray-100 rounded-xl overflow-hidden">
-                      <input type="text" placeholder="0" className="flex-1 px-4 py-3 text-sm outline-none" />
-                      <div className="bg-gray-100 px-4 py-3 text-[10px] font-bold text-gray-500">UNIT</div>
+                    <div className="flex items-center bg-white border border-gray-100 rounded-xl overflow-hidden focus-within:ring-1 focus-within:ring-[#5452F6]">
+                      <input 
+                        type="number" 
+                        value={stok}
+                        onChange={(e) => setStok(e.target.value)}
+                        disabled={isLoading}
+                        placeholder="500" 
+                        className="flex-1 px-4 py-3 text-sm outline-none disabled:bg-gray-50" 
+                      />
+                      <div className="bg-gray-100 px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest">{satuan || 'UNIT'}</div>
                     </div>
                     <p className="text-[10px] text-gray-400 mt-2">Jumlah fisik saat ini di gudang.</p>
                   </div>
                   <div>
                     <div className="flex items-center gap-2 mb-2 text-[#D97706]">
                       <AlertTriangle className="w-3.5 h-3.5" />
-                      <label className="text-xs font-bold">Ambang Batas Minimum</label>
+                      <label className="text-xs font-bold">Ambang Batas Minimum <span className="text-red-500">*</span></label>
                     </div>
-                    <div className="flex items-center bg-white border border-gray-100 rounded-xl overflow-hidden">
-                      <input type="text" placeholder="5" className="flex-1 px-4 py-3 text-sm outline-none text-[#D97706] font-bold" />
-                      <div className="bg-gray-100 px-4 py-3 text-[10px] font-bold text-gray-500">UNIT</div>
+                    <div className="flex items-center bg-white border border-gray-100 rounded-xl overflow-hidden focus-within:ring-1 focus-within:ring-[#D97706]">
+                      <input 
+                        type="number" 
+                        value={ambangBatas}
+                        onChange={(e) => setAmbangBatas(e.target.value)}
+                        disabled={isLoading}
+                        placeholder="50" 
+                        className="flex-1 px-4 py-3 text-sm outline-none text-[#D97706] font-bold disabled:bg-gray-50" 
+                      />
+                      <div className="bg-orange-50 px-4 py-3 text-[10px] font-bold text-orange-600 border-l border-orange-100 uppercase tracking-widest">{satuan || 'UNIT'}</div>
                     </div>
                     <p className="text-[10px] text-[#D97706] mt-2 font-medium">Peringatan stok akan muncul jika di bawah angka ini.</p>
                   </div>
@@ -197,12 +395,21 @@ const TambahBarang = ({ onNavigate, onLogout }) => {
               <div className="flex items-center gap-4 w-full md:w-auto">
                 <button 
                   onClick={() => onNavigate('data-barang')}
-                  className="flex-1 md:flex-none px-8 py-3 text-sm font-bold text-gray-500 hover:text-gray-800 transition-colors"
+                  disabled={isLoading}
+                  className="flex-1 md:flex-none px-8 py-3 text-sm font-bold text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition-colors disabled:opacity-50"
                 >
                   Batal
                 </button>
-                <button className="flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-3 bg-[#5452F6] hover:bg-[#4341E3] text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-500/30 transition-all">
-                  <Save className="w-4 h-4" /> Simpan Barang
+                <button 
+                  onClick={handleSimpan}
+                  disabled={isLoading}
+                  className="flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-3 bg-[#5452F6] hover:bg-[#4341E3] text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-500/30 transition-all disabled:bg-indigo-300 disabled:shadow-none"
+                >
+                  {isLoading ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Memproses...</>
+                  ) : (
+                    <><Save className="w-4 h-4" /> Simpan Barang</>
+                  )}
                 </button>
               </div>
             </div>
@@ -241,7 +448,6 @@ const TambahBarang = ({ onNavigate, onLogout }) => {
             </div>
           </div>
 
-          {/* Footer Copyright */}
           <div className="mt-12 text-center">
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-loose">
               © 2026 CV. AMRITA JAYASRI • MANAJEMEN INVENTARIS BERKINERJA TINGGI
@@ -250,6 +456,14 @@ const TambahBarang = ({ onNavigate, onLogout }) => {
 
         </div>
       </main>
+
+      {/* RENDER POP UP MODAL DI SINI */}
+      <SuccessModal 
+        isOpen={showSuccessModal} 
+        onClose={handleCloseModal} 
+        itemName={savedItemName}
+      />
+
     </div>
   );
 };
