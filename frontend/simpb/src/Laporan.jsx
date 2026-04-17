@@ -4,7 +4,7 @@ import {
   ArrowDownRight, ArrowUpRight, ArrowDownLeft, Activity, 
   BarChart2, Search, Bell, CircleUser, 
   Calendar, FileText, Download, FileSpreadsheet, 
-  ChevronDown, Filter, Coins, Loader2, ArrowUpDown
+  ChevronDown, Filter, Loader2, ArrowUpDown
 } from 'lucide-react';
 
 const Laporan = ({ onLogout, onNavigate }) => {
@@ -36,7 +36,6 @@ const Laporan = ({ onLogout, onNavigate }) => {
         const resMasuk = await fetch(`${cleanApiUrl}/api/laporan/transaksi-masuk${params}`, { headers });
         const jsonMasuk = await resMasuk.json();
         if (jsonMasuk.success) {
-          // Tambahkan flag _type untuk membedakan saat digabung
           masukData = jsonMasuk.data.map(item => ({ ...item, _type: 'masuk' }));
         }
       }
@@ -55,7 +54,7 @@ const Laporan = ({ onLogout, onNavigate }) => {
       combinedData.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
       setLaporanData(combinedData);
 
-      // Hitung ringkasan dinamis
+      // Hitung ringkasan dinamis (karena kita menggabungkan 2 API di frontend)
       const total_transaksi = combinedData.length;
       const total_jumlah_barang = combinedData.reduce((acc, curr) => acc + curr.jumlah, 0);
       const total_nilai = combinedData.reduce((acc, curr) => {
@@ -76,7 +75,7 @@ const Laporan = ({ onLogout, onNavigate }) => {
 
   useEffect(() => {
     fetchLaporan();
-  }, [startDate, endDate, activeTab]);
+  }, [startDate, endDate, activeTab]); 
 
   // === FUNGSI HELPER FORMATTING ===
   const formatRupiah = (angka) => {
@@ -142,7 +141,7 @@ const Laporan = ({ onLogout, onNavigate }) => {
           <div className="flex items-center gap-6">
             <div className="relative w-72 hidden sm:block">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input type="text" placeholder="Cari stok alat tulis..." className="w-full pl-11 pr-4 py-2.5 bg-[#F4F7FC] border-transparent rounded-full text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] focus:ring-1 focus:ring-[#5452F6] transition-all" />
+              <input type="text" placeholder="Cari laporan..." className="w-full pl-11 pr-4 py-2.5 bg-[#F4F7FC] border-transparent rounded-full text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] focus:ring-1 focus:ring-[#5452F6] transition-all" />
             </div>
             <button className="relative text-gray-500 hover:text-gray-800 transition-colors">
               <Bell className="w-5 h-5" />
@@ -158,7 +157,7 @@ const Laporan = ({ onLogout, onNavigate }) => {
 
         <div className="flex-1 overflow-y-auto p-8 pb-12">
           
-          {/* === TOP SECTION (MATCHING FIGMA) === */}
+          {/* === TOP SECTION === */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
             
             {/* Kiri: Card Text & Tombol */}
@@ -183,37 +182,41 @@ const Laporan = ({ onLogout, onNavigate }) => {
             {/* Kanan: Filter Tanggal & Tipe */}
             <div className="lg:col-span-7 bg-white p-6 md:p-8 rounded-[24px] shadow-sm border border-gray-100 flex flex-col justify-between">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
+                
+                {/* 1. Rentang Tanggal */}
                 <div>
                   <label className="text-[10px] font-black text-gray-800 uppercase tracking-widest mb-4 block">Rentang Tanggal</label>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     <div className="relative flex-1">
-                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
                       <input 
                         type="date" 
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
-                        className="w-full pl-9 pr-2 py-3 bg-[#F4F7FC] border border-transparent rounded-xl text-xs font-bold text-gray-600 focus:outline-none focus:bg-white focus:border-[#5452F6] transition-colors" 
+                        className="w-full pl-8 pr-1 py-3 bg-[#F4F7FC] border border-transparent rounded-xl text-[10px] font-bold text-gray-600 focus:outline-none focus:bg-white focus:border-[#5452F6] transition-colors" 
                       />
                     </div>
-                    <span className="text-gray-300 text-[11px] font-bold">s/d</span>
+                    <span className="text-gray-300 text-[10px] font-bold">-</span>
                     <div className="relative flex-1">
-                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
                       <input 
                         type="date" 
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
-                        className="w-full pl-9 pr-2 py-3 bg-[#F4F7FC] border border-transparent rounded-xl text-xs font-bold text-gray-600 focus:outline-none focus:bg-white focus:border-[#5452F6] transition-colors" 
+                        className="w-full pl-8 pr-1 py-3 bg-[#F4F7FC] border border-transparent rounded-xl text-[10px] font-bold text-gray-600 focus:outline-none focus:bg-white focus:border-[#5452F6] transition-colors" 
                       />
                     </div>
                   </div>
                 </div>
+
+                {/* 2. Tipe Transaksi */}
                 <div>
                   <label className="text-[10px] font-black text-gray-800 uppercase tracking-widest mb-4 block">Tipe Transaksi</label>
                   <div className="relative">
                     <select 
                       value={activeTab}
                       onChange={(e) => setActiveTab(e.target.value)}
-                      className="w-full pl-4 pr-10 py-3 bg-[#F4F7FC] border border-transparent rounded-xl text-xs font-bold text-gray-600 appearance-none focus:outline-none focus:bg-white focus:border-[#5452F6] transition-colors cursor-pointer"
+                      className="w-full pl-4 pr-10 py-3 bg-[#F4F7FC] border border-transparent rounded-xl text-[11px] font-bold text-gray-600 appearance-none focus:outline-none focus:bg-white focus:border-[#5452F6] transition-colors cursor-pointer"
                     >
                       <option value="semua">Semua Transaksi</option>
                       <option value="masuk">Transaksi Masuk</option>
@@ -222,6 +225,7 @@ const Laporan = ({ onLogout, onNavigate }) => {
                     <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                   </div>
                 </div>
+
               </div>
 
               <div className="flex items-center gap-2 mt-auto pt-2">
@@ -231,10 +235,9 @@ const Laporan = ({ onLogout, onNavigate }) => {
             </div>
           </div>
 
-          {/* === MIDDLE TOOLBAR (MATCHING FIGMA) === */}
+          {/* === MIDDLE TOOLBAR === */}
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6">
             <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
-              {/* Toggle Semua/Masuk/Keluar */}
               <div className="flex items-center bg-white p-1 rounded-[14px] border border-gray-100 shadow-sm">
                 {['semua', 'masuk', 'keluar'].map((tab) => (
                   <button
@@ -251,7 +254,6 @@ const Laporan = ({ onLogout, onNavigate }) => {
                 ))}
               </div>
 
-              {/* Tampilan Tanggal */}
               <button className="flex items-center gap-3 px-5 py-2.5 bg-white border border-gray-100 rounded-[14px] text-xs font-bold text-gray-600 shadow-sm">
                 <Calendar className="w-4 h-4 text-gray-400" />
                 {displayDateRange}
@@ -315,7 +317,7 @@ const Laporan = ({ onLogout, onNavigate }) => {
                       const formattedRupiah = formatRupiah(totalNilai);
 
                       const infoTujuan = isMasuk 
-                        ? `Gudang Utama` // Disesuaikan dengan visual Figma
+                        ? `Supplier: ${item.supplier?.nama_supplier || 'Umum'}`
                         : `Klien: ${item.nama_instansi || item.konsumen?.nama_konsumen || 'Umum'}`;
                       
                       return (
@@ -352,7 +354,7 @@ const Laporan = ({ onLogout, onNavigate }) => {
                             <p className="text-xs font-black text-gray-800">
                               {isMasuk ? '+' : '-'} {item.jumlah} Unit
                             </p>
-                            <p className="text-[10px] text-gray-400 mt-0.5 font-medium truncate max-w-[120px]" title={infoTujuan}>
+                            <p className="text-[10px] text-gray-400 mt-0.5 font-medium truncate max-w-[150px]" title={infoTujuan}>
                               {infoTujuan}
                             </p>
                           </td>
@@ -369,7 +371,7 @@ const Laporan = ({ onLogout, onNavigate }) => {
             
             <div className="p-6 bg-white border-t border-gray-100 flex justify-between items-center">
               <p className="text-xs font-medium text-gray-500">
-                Menampilkan <span className="font-bold text-gray-800">1</span> sampai <span className="font-bold text-gray-800">{laporanData.length}</span> dari <span className="font-bold text-gray-800">{ringkasan.total_transaksi}</span> transaksi
+                Menampilkan <span className="font-bold text-gray-800">{laporanData.length > 0 ? 1 : 0}</span> sampai <span className="font-bold text-gray-800">{laporanData.length}</span> dari <span className="font-bold text-gray-800">{ringkasan.total_transaksi}</span> transaksi
               </p>
               <div className="flex items-center gap-1.5 ml-auto">
                 <button className="text-[11px] font-bold text-gray-500 hover:text-gray-800 mr-2 transition-colors">Sebelumnya</button>
@@ -377,7 +379,6 @@ const Laporan = ({ onLogout, onNavigate }) => {
                 <button className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-50 text-gray-600 text-[11px] font-bold transition-colors">2</button>
                 <button className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-50 text-gray-600 text-[11px] font-bold transition-colors">3</button>
                 <span className="px-1 text-gray-400 text-[11px] font-bold">...</span>
-                <button className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-50 text-gray-600 text-[11px] font-bold transition-colors">125</button>
                 <button className="text-[11px] font-bold text-gray-500 hover:text-gray-800 ml-2 transition-colors">Berikutnya</button>
               </div>
             </div>
