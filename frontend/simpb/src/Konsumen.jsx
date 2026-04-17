@@ -4,17 +4,23 @@ import {
   LayoutDashboard, Box, Users, Truck, ArrowDownRight, 
   ArrowUpRight, Activity, BarChart2, ArrowDownLeft, 
   History, Bookmark, Star, ChevronLeft, ChevronRight, CircleUser, Info,
-  Loader2, Phone // <-- Menambahkan Loader2 dan Phone
+  Loader2, Phone
 } from 'lucide-react';
 
 import TambahKonsumenModal from './TambahKonsumenModal';
 import EditKonsumenModal from './EditKonsumenModal';
+import DeleteConfirmModal from './DeleteConfirmModal'; // <-- Import Modal Hapus
 
 const Konsumen = ({ onNavigate, onLogout }) => {
   // === STATE UNTUK KONTROL MODAL ===
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedKonsumen, setSelectedKonsumen] = useState(null);
+
+  // === STATE UNTUK MODAL HAPUS ===
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState({ id: null, namaKonsumen: '' });
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // === STATE UNTUK DATA API ===
   const [konsumens, setKonsumens] = useState([]);
@@ -28,7 +34,6 @@ const Konsumen = ({ onNavigate, onLogout }) => {
       const rawApiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
       const cleanApiUrl = rawApiUrl.replace(/\/$/, ""); 
       
-      // Asumsi endpoint adalah /api/konsumen (sesuaikan jika di backend pakai nama lain)
       const endpoint = cleanApiUrl.endsWith('/api') 
         ? `${cleanApiUrl}/konsumen` 
         : `${cleanApiUrl}/api/konsumen`;
@@ -55,7 +60,6 @@ const Konsumen = ({ onNavigate, onLogout }) => {
     }
   };
 
-  // Panggil saat halaman pertama kali dirender
   useEffect(() => {
     fetchKonsumens();
   }, []);
@@ -65,14 +69,14 @@ const Konsumen = ({ onNavigate, onLogout }) => {
     if (!name) return '??';
     const firstWord = name.split(' ')[0].toUpperCase();
     if (['PT', 'CV', 'UD', 'RSUD', 'SMAN', 'DINAS', 'KANTOR'].includes(firstWord)) {
-        return firstWord.substring(0, 4); // Ambil maksimal 4 huruf awal
+        return firstWord.substring(0, 4); 
     }
     return name.substring(0, 2).toUpperCase(); 
   };
 
-  // === HANDLER MODAL ===
+  // === HANDLER MODAL TAMBAH & EDIT ===
   const handleSaveNewKonsumen = (newData) => {
-    fetchKonsumens(); // Refresh tabel otomatis
+    fetchKonsumens(); 
     setIsAddModalOpen(false);
   };
 
@@ -82,8 +86,51 @@ const Konsumen = ({ onNavigate, onLogout }) => {
   };
 
   const handleSaveEditKonsumen = (updatedData) => {
-    fetchKonsumens(); // Refresh tabel otomatis
+    fetchKonsumens(); 
     setIsEditModalOpen(false);
+  };
+
+  // === HANDLER MODAL HAPUS ===
+  const openDeleteModal = (id, namaKonsumen) => {
+    setItemToDelete({ id, namaKonsumen });
+    setIsDeleteModalOpen(true);
+  };
+
+  const executeDelete = async () => {
+    if (!itemToDelete.id) return;
+    
+    setIsDeleting(true);
+    try {
+      const token = localStorage.getItem('token');
+      const rawApiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+      const cleanApiUrl = rawApiUrl.replace(/\/$/, ""); 
+      
+      const endpoint = cleanApiUrl.endsWith('/api') 
+        ? `${cleanApiUrl}/konsumen/${itemToDelete.id}` 
+        : `${cleanApiUrl}/api/konsumen/${itemToDelete.id}`;
+
+      const response = await fetch(endpoint, {
+        method: 'DELETE',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        // Refresh data setelah berhasil dihapus
+        fetchKonsumens();
+        setIsDeleteModalOpen(false);
+      } else {
+        const errorData = await response.json();
+        alert(`Gagal menghapus konsumen: ${errorData.message || 'Server error'}`);
+      }
+    } catch (error) {
+      console.error("Error Deleting:", error);
+      alert('Terjadi kesalahan jaringan saat menghapus.');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -117,7 +164,6 @@ const Konsumen = ({ onNavigate, onLogout }) => {
               <Truck className="w-5 h-5" /> Pemasok
             </button>
             
-            {/* MENU KONSUMEN AKTIF */}
             <button onClick={() => onNavigate('konsumen')} className="w-full flex items-center gap-3 px-4 py-3 bg-[#F0EFFF] text-[#5452F6] rounded-xl font-bold text-sm transition-colors text-left">
               <Users className="w-5 h-5" /> Konsumen
             </button>
@@ -146,7 +192,6 @@ const Konsumen = ({ onNavigate, onLogout }) => {
         {/* ================= MAIN CONTENT ================= */}
         <main className="flex-1 flex flex-col overflow-hidden relative">
           
-          {/* === HEADER === */}
           <header className="h-20 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between px-8 z-10 sticky top-0 shrink-0">
             <div className="flex items-center">
               <h2 className="font-bold text-[#1E232C] text-base hidden md:block">SIMPB - CV. Amrita Jayasri</h2>
@@ -172,17 +217,14 @@ const Konsumen = ({ onNavigate, onLogout }) => {
             </div>
           </header>
 
-          {/* ================= PAGE CONTENT ================= */}
           <div className="flex-1 overflow-y-auto p-8 pb-12">
             
-            {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
               <div>
                 <h1 className="text-2xl font-bold text-gray-800">Direktori Konsumen</h1>
                 <p className="text-sm text-gray-500 mt-1">Kelola dan pantau jaringan kemitraan strategis Anda.</p>
               </div>
               
-              {/* TOMBOL MEMBUKA MODAL TAMBAH */}
               <button 
                 onClick={() => setIsAddModalOpen(true)}
                 className="flex items-center gap-2 px-5 py-2.5 bg-[#5452F6] hover:bg-[#4341E3] text-white rounded-xl text-sm font-semibold transition-colors shadow-lg shadow-indigo-500/30"
@@ -191,7 +233,6 @@ const Konsumen = ({ onNavigate, onLogout }) => {
               </button>
             </div>
 
-            {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <div className="bg-[#FAEDFF] p-5 rounded-[20px] shadow-sm flex items-start gap-4 h-32">
                 <div className="w-10 h-10 rounded-lg bg-white/60 flex items-center justify-center flex-shrink-0">
@@ -233,16 +274,13 @@ const Konsumen = ({ onNavigate, onLogout }) => {
               </div>
             </div>
 
-            {/* Data Table */}
             <div className="bg-white rounded-[20px] shadow-sm border border-gray-100 overflow-hidden relative min-h-[300px]">
               {isLoading ? (
-                // Loading State
                 <div className="absolute inset-0 z-10 bg-white/80 flex flex-col items-center justify-center mt-20">
                   <Loader2 className="w-8 h-8 text-[#5452F6] animate-spin mb-4" />
                   <p className="text-sm font-bold text-gray-500">Menarik data dari database...</p>
                 </div>
               ) : konsumens.length === 0 ? (
-                // Empty State
                 <div className="flex flex-col items-center justify-center py-20 text-center mt-10">
                   <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 border border-gray-100">
                     <Users className="w-8 h-8 text-gray-300" />
@@ -288,15 +326,16 @@ const Konsumen = ({ onNavigate, onLogout }) => {
                           </td>
                           <td className="py-4 px-6 text-right">
                             <div className="flex items-center justify-end gap-2.5">
-                              {/* TOMBOL EDIT MEMBUKA MODAL */}
                               <button 
                                 onClick={() => handleEditClick(item)}
                                 className="p-2.5 text-[#5452F6] hover:bg-indigo-50 rounded-lg transition-colors border border-gray-100 shadow-inner bg-gray-50/50"
                               >
                                 <Edit2 className="w-4 h-4" />
                               </button>
+                              
+                              {/* TOMBOL DELETE MEMANGGIL FUNGSI OPEN MODAL */}
                               <button 
-                                onClick={() => alert(`Fitur hapus untuk ID ${item.id} akan dikembangkan.`)}
+                                onClick={() => openDeleteModal(item.id, item.nama_konsumen)}
                                 className="p-2.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-gray-100 shadow-inner bg-gray-50/50"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -311,7 +350,6 @@ const Konsumen = ({ onNavigate, onLogout }) => {
               )}
             </div>
 
-            {/* Pagination */}
             <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border border-gray-100 bg-white rounded-xl mt-4 gap-3">
               <p className="text-xs text-gray-500 font-medium">Menampilkan {konsumens.length} konsumen</p>
               <div className="flex items-center gap-1.5 pagination-pills">
@@ -321,7 +359,6 @@ const Konsumen = ({ onNavigate, onLogout }) => {
               </div>
             </div>
 
-            {/* Info Box di Bagian Bawah */}
             <div className="mt-8 bg-[#EEF2FF] border border-gray-200 rounded-xl p-5 flex gap-4 text-[#5452F6]">
               <Info className="w-10 h-10 flex-shrink-0 mt-0.5" strokeWidth={1.5} />
               <div>
@@ -334,7 +371,6 @@ const Konsumen = ({ onNavigate, onLogout }) => {
         </main>
       </div>
 
-      {/* === RENDER MODAL DI SINI === */}
       <TambahKonsumenModal 
         isOpen={isAddModalOpen} 
         onClose={() => setIsAddModalOpen(false)} 
@@ -346,6 +382,15 @@ const Konsumen = ({ onNavigate, onLogout }) => {
         onClose={() => setIsEditModalOpen(false)} 
         onSave={handleSaveEditKonsumen} 
         konsumenData={selectedKonsumen} 
+      />
+
+      {/* === MODAL HAPUS DIRENDER DI SINI === */}
+      <DeleteConfirmModal 
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={executeDelete}
+        itemName={itemToDelete.namaKonsumen}
+        isDeleting={isDeleting}
       />
     </>
   );

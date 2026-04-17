@@ -15,13 +15,24 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
   const [searchBarang, setSearchBarang] = useState('');
   const [selectedBarang, setSelectedBarang] = useState(null);
   
+  // State Form
   const [jumlah, setJumlah] = useState('');
   const [hargaSatuan, setHargaSatuan] = useState('');
+  const [tanggalKeluar, setTanggalKeluar] = useState('');
+  const [keterangan, setKeterangan] = useState('');
+  
+  // State Konsumen (Penerima)
+  const [selectedKonsumenId, setSelectedKonsumenId] = useState('');
+  
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // === STATE UNTUK DATA API ===
   const [daftarBarang, setDaftarBarang] = useState([]);
   const [isLoadingBarang, setIsLoadingBarang] = useState(true);
+  
+  const [daftarKonsumen, setDaftarKonsumen] = useState([]);
+  const [isLoadingKonsumen, setIsLoadingKonsumen] = useState(true);
 
   // === MOCK DATA TABEL RIWAYAT ===
   const riwayatKeluar = [
@@ -31,31 +42,27 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
     { tanggal: '10 Okt 2025', barang: 'Pulpen Pilot G2 Biru', penerima: 'Divisi Pemasaran', jumlah: '5 Lusin', hargaSatuan: 'Rp 35.000', total: 'Rp 175.000', status: 'Selesai', statusColor: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
   ];
 
-  // === AMBIL DATA MASTER BARANG DARI API ===
+  // === AMBIL DATA MASTER BARANG & KONSUMEN DARI API ===
   useEffect(() => {
-    const fetchBarang = async () => {
+    const fetchMasterData = async () => {
+      const token = localStorage.getItem('token');
+      const rawApiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+      const cleanApiUrl = rawApiUrl.replace(/\/$/, ""); 
+      
+      const headers = {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${token}`
+      };
+
+      // 1. Fetch Barang
       try {
         setIsLoadingBarang(true);
-        const token = localStorage.getItem('token');
-        const rawApiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
-        const cleanApiUrl = rawApiUrl.replace(/\/$/, ""); 
-        
-        const endpoint = cleanApiUrl.endsWith('/api') 
-          ? `${cleanApiUrl}/barang` 
-          : `${cleanApiUrl}/api/barang`;
+        const endpointBarang = cleanApiUrl.endsWith('/api') ? `${cleanApiUrl}/barang` : `${cleanApiUrl}/api/barang`;
+        const resBarang = await fetch(endpointBarang, { method: 'GET', headers });
+        const dataBarang = await resBarang.json();
 
-        const response = await fetch(endpoint, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-          const arrayData = Array.isArray(data) ? data : (data.data || []);
+        if (resBarang.ok) {
+          const arrayData = Array.isArray(dataBarang) ? dataBarang : (dataBarang.data || []);
           setDaftarBarang(arrayData);
         }
       } catch (error) {
@@ -63,9 +70,30 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
       } finally {
         setIsLoadingBarang(false);
       }
+
+      // 2. Fetch Konsumen (Untuk Dropdown Penerima)
+      try {
+        setIsLoadingKonsumen(true);
+        const endpointKonsumen = cleanApiUrl.endsWith('/api') ? `${cleanApiUrl}/konsumen` : `${cleanApiUrl}/api/konsumen`;
+        const resKonsumen = await fetch(endpointKonsumen, { method: 'GET', headers });
+        const dataKonsumen = await resKonsumen.json();
+
+        if (resKonsumen.ok) {
+          const arrayData = Array.isArray(dataKonsumen) ? dataKonsumen : (dataKonsumen.data || []);
+          setDaftarKonsumen(arrayData);
+        }
+      } catch (error) {
+        console.error("Error Fetching Konsumen:", error);
+      } finally {
+        setIsLoadingKonsumen(false);
+      }
     };
 
-    fetchBarang();
+    fetchMasterData();
+    
+    // Set default tanggal hari ini
+    const today = new Date().toISOString().split('T')[0];
+    setTanggalKeluar(today);
   }, []);
 
   // Filter pencarian barang
@@ -80,20 +108,93 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
     setSelectedBarang(item);
     setIsDropdownOpen(false);
     setSearchBarang('');
-    // Auto-fill harga satuan (menghilangkan desimal berlebih)
+    // Auto-fill harga satuan (menggunakan harga jual/harga asli barang)
     if (item.harga) {
         setHargaSatuan(Math.floor(Number(item.harga)).toString());
     }
   };
 
-  const handleKonfirmasiPengiriman = () => {
-    // Validasi sederhana jika stok tidak cukup
-    if (selectedBarang && Number(jumlah) > selectedBarang.stok) {
+  // === FUNGSI SIMPAN (POST) TRANSAKSI KELUAR ===
+  const handleKonfirmasiPengiriman = async () => {
+    if (!selectedBarang || !jumlah || !hargaSatuan || !selectedKonsumenId || !tanggalKeluar) {
+        alert("Mohon lengkapi semua form (Barang, Penerima, Jumlah, Harga, dan Tanggal).");
+        return;
+    }
+
+    if (Number(jumlah) <= 0) {
+        alert("Jumlah harus lebih dari 0.");
+        return;
+    }
+
+    // Validasi stok tidak cukup
+    if (Number(jumlah) > selectedBarang.stok) {
         alert("Peringatan: Jumlah barang keluar melebihi stok yang ada di gudang!");
         return;
     }
-    
-    setIsSuccessModalOpen(true);
+
+    // Cari nama instansi berdasarkan ID konsumen yang dipilih
+    const konsumenTerpilih = daftarKonsumen.find(k => k.id.toString() === selectedKonsumenId);
+    const namaInstansi = konsumenTerpilih ? konsumenTerpilih.nama_konsumen : "Umum";
+
+    const payload = {
+        barang_id: selectedBarang.id,
+        konsumen_id: Number(selectedKonsumenId),
+        nama_instansi: namaInstansi,
+        jumlah: Number(jumlah),
+        harga_jual: Number(hargaSatuan),
+        tanggal_keluar: tanggalKeluar,
+        keterangan: keterangan || `Pengiriman ke ${namaInstansi}`
+    };
+
+    try {
+        setIsSubmitting(true);
+        const token = localStorage.getItem('token');
+        
+        // Gunakan URL Railway langsung agar pasti terkirim
+        const apiUrl = 'https://cvamrita-jayasri-production.up.railway.app/api/transaksi-keluar';
+
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const json = await response.json();
+
+        if (response.ok && json.success) {
+            console.log("Transaksi Berhasil:", json.message);
+            
+            // Tampilkan Modal Sukses
+            setIsSuccessModalOpen(true);
+            
+            // Reset Form
+            setSelectedBarang(null);
+            setJumlah('');
+            setHargaSatuan('');
+            setSelectedKonsumenId('');
+            setKeterangan('');
+            
+        } else {
+            alert(`Gagal: ${json.message || "Terjadi kesalahan saat menyimpan transaksi"}`);
+        }
+    } catch (error) {
+        console.error("Error submitting transaksi:", error);
+        alert("Terjadi kesalahan koneksi saat menyimpan transaksi.");
+    } finally {
+        setIsSubmitting(false);
+    }
+  };
+
+  const handleBatalkanDraft = () => {
+      setSelectedBarang(null);
+      setJumlah('');
+      setHargaSatuan('');
+      setSelectedKonsumenId('');
+      setKeterangan('');
   };
 
   // === PERHITUNGAN STATUS INVENTARIS DINAMIS ===
@@ -271,12 +372,23 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Penerima</label>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Penerima (Konsumen)</label>
                     <div className="relative">
-                      <select className="w-full bg-[#F4F7FC] border border-gray-100 rounded-xl px-4 py-3 text-sm text-gray-700 appearance-none focus:outline-none focus:border-[#5452F6]">
-                        <option>Contoh: Divisi Keuangan</option>
-                        <option>Contoh: Divisi SDM</option>
-                        <option>Contoh: PT. Maju Bersama Nusantara</option>
+                      <select 
+                        value={selectedKonsumenId}
+                        onChange={(e) => setSelectedKonsumenId(e.target.value)}
+                        className="w-full bg-[#F4F7FC] border border-gray-100 rounded-xl px-4 py-3 text-sm text-gray-700 appearance-none focus:outline-none focus:border-[#5452F6]"
+                      >
+                        <option value="" disabled>Pilih Instansi / Konsumen Penerima...</option>
+                        {isLoadingKonsumen ? (
+                          <option disabled>Memuat data konsumen...</option>
+                        ) : (
+                          daftarKonsumen.map(konsumen => (
+                            <option key={konsumen.id} value={konsumen.id}>
+                              {konsumen.nama_konsumen}
+                            </option>
+                          ))
+                        )}
                       </select>
                       <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                     </div>
@@ -318,26 +430,46 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
                     </div>
                   </div>
 
-                  <div className="relative z-0">
-                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Tanggal Keluar</label>
-                    <div className="relative">
-                      <input type="text" placeholder="mm/dd/yyyy" className="w-full bg-[#F4F7FC] border border-gray-100 rounded-xl px-4 py-3 text-sm text-gray-700 focus:outline-none focus:border-[#5452F6] focus:bg-white transition-colors" />
-                      <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <div className="grid grid-cols-2 gap-6 relative z-0">
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Tanggal Keluar</label>
+                      <div className="relative">
+                        <input 
+                          type="date" 
+                          value={tanggalKeluar}
+                          onChange={(e) => setTanggalKeluar(e.target.value)}
+                          className="w-full bg-[#F4F7FC] border border-gray-100 rounded-xl px-4 py-3 text-sm text-gray-700 focus:outline-none focus:border-[#5452F6] focus:bg-white transition-colors" 
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Keterangan (Opsional)</label>
+                      <input 
+                        type="text" 
+                        value={keterangan}
+                        onChange={(e) => setKeterangan(e.target.value)}
+                        placeholder="Catatan pengiriman..." 
+                        className="w-full bg-[#F4F7FC] border border-gray-100 rounded-xl px-4 py-3 text-sm text-gray-700 focus:outline-none focus:border-[#5452F6] focus:bg-white transition-colors" 
+                      />
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between pt-4">
-                    <button className="text-gray-400 text-sm font-bold hover:text-gray-600 transition-colors">Batalkan Draft</button>
+                  <div className="flex items-center justify-between pt-4 border-t border-gray-50 mt-4">
+                    <button onClick={handleBatalkanDraft} className="text-gray-400 text-sm font-bold hover:text-gray-600 transition-colors">Batalkan Draft</button>
                     <button 
                       onClick={handleKonfirmasiPengiriman}
-                      disabled={!selectedBarang || !isStokCukup}
+                      disabled={!selectedBarang || !isStokCukup || isSubmitting}
                       className={`flex items-center gap-2 px-8 py-3 rounded-xl font-bold text-sm transition-all ${
-                        !selectedBarang || !isStokCukup 
+                        !selectedBarang || !isStokCukup || isSubmitting
                           ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
                           : 'bg-[#5452F6] text-white shadow-lg shadow-indigo-500/30 hover:bg-[#4341E3]'
                       }`}
                     >
-                      Konfirmasi Pengiriman <ArrowUpRight className="w-4 h-4" />
+                      {isSubmitting ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" /> Memproses...</>
+                      ) : (
+                        <>Konfirmasi Pengiriman <ArrowUpRight className="w-4 h-4" /></>
+                      )}
                     </button>
                   </div>
                 </div>
@@ -401,21 +533,6 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
                         : `Silakan pilih barang untuk melihat proyeksi sisa stok setelah pengiriman.`
                       }
                     </p>
-                  </div>
-                </div>
-
-                {/* Rute Tujuan Card */}
-                <div className="bg-white rounded-[20px] overflow-hidden shadow-sm border border-gray-100 group relative h-48">
-                  <div className="absolute inset-0 bg-cover bg-center transition-transform group-hover:scale-110" 
-                       style={{ backgroundImage: `url('https://api.maptiler.com/maps/basic-v2/static/110.42, -7.00, 10/600x400.png?key=get_your_own_key')` }}>
-                  </div>
-                  <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 to-gray-900/20"></div>
-                  <div className="absolute bottom-0 left-0 p-6 text-white w-full">
-                    <div className="flex items-center gap-2 text-[9px] font-bold text-white/70 uppercase tracking-widest mb-2">
-                      <MapPin className="w-3 h-3 text-[#5452F6]" /> Rute Tujuan
-                    </div>
-                    <h4 className="font-bold text-sm mb-1">Semarang Central Logistics</h4>
-                    <p className="text-[10px] text-white/70 font-medium">Estimasi Tiba: 14 Okt, 16:30</p>
                   </div>
                 </div>
 
