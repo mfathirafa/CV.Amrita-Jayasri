@@ -25,6 +25,10 @@ const Laporan = ({ onLogout, onNavigate }) => {
       const token = localStorage.getItem('token');
       const rawApiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
       const cleanApiUrl = rawApiUrl.replace(/\/$/, ""); 
+      
+      // PERBAIKAN: Pengecekan URL agar tidak dobel /api
+      const baseApi = cleanApiUrl.endsWith('/api') ? cleanApiUrl : `${cleanApiUrl}/api`;
+      
       const headers = { 'Accept': 'application/json', 'Authorization': `Bearer ${token}` };
       const params = `?start_date=${startDate}&end_date=${endDate}`;
 
@@ -33,7 +37,7 @@ const Laporan = ({ onLogout, onNavigate }) => {
 
       // Tarik data MASUK jika tab 'masuk' atau 'semua'
       if (activeTab === 'masuk' || activeTab === 'semua') {
-        const resMasuk = await fetch(`${cleanApiUrl}/api/laporan/transaksi-masuk${params}`, { headers });
+        const resMasuk = await fetch(`${baseApi}/laporan/transaksi-masuk${params}`, { headers });
         const jsonMasuk = await resMasuk.json();
         if (jsonMasuk.success) {
           masukData = jsonMasuk.data.map(item => ({ ...item, _type: 'masuk' }));
@@ -42,7 +46,7 @@ const Laporan = ({ onLogout, onNavigate }) => {
 
       // Tarik data KELUAR jika tab 'keluar' atau 'semua'
       if (activeTab === 'keluar' || activeTab === 'semua') {
-        const resKeluar = await fetch(`${cleanApiUrl}/api/laporan/transaksi-keluar${params}`, { headers });
+        const resKeluar = await fetch(`${baseApi}/laporan/transaksi-keluar${params}`, { headers });
         const jsonKeluar = await resKeluar.json();
         if (jsonKeluar.success) {
           keluarData = jsonKeluar.data.map(item => ({ ...item, _type: 'keluar' }));
@@ -54,7 +58,7 @@ const Laporan = ({ onLogout, onNavigate }) => {
       combinedData.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
       setLaporanData(combinedData);
 
-      // Hitung ringkasan dinamis (karena kita menggabungkan 2 API di frontend)
+      // Hitung ringkasan dinamis
       const total_transaksi = combinedData.length;
       const total_jumlah_barang = combinedData.reduce((acc, curr) => acc + curr.jumlah, 0);
       const total_nilai = combinedData.reduce((acc, curr) => {
