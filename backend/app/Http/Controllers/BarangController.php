@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Barang;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
+
 class BarangController extends Controller
 {
     // GET /api/barang
@@ -52,7 +53,7 @@ class BarangController extends Controller
         $fotoPublicId = null;
 
         if ($request->hasFile('foto')) {
-            $upload       = Cloudinary::upload(
+            $upload       = Cloudinary::uploadFile(
                 $request->file('foto')->getRealPath(),
                 ['folder' => 'amrita/barang']
             );
@@ -128,9 +129,8 @@ class BarangController extends Controller
             if ($barang->foto_public_id) {
                 Cloudinary::destroy($barang->foto_public_id);
             }
-
             // Upload foto baru
-            $upload       = Cloudinary::upload(
+            $upload       = Cloudinary::uploadFile(
                 $request->file('foto')->getRealPath(),
                 ['folder' => 'amrita/barang']
             );
