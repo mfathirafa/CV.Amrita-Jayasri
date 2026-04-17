@@ -15,48 +15,54 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
   const [selectedBarang, setSelectedBarang] = useState(null);
   
   const [jumlah, setJumlah] = useState('');
-  const [hargaBeli, setHargaBeli] = useState(''); // State baru untuk Harga Beli
+  const [hargaBeli, setHargaBeli] = useState('');
+  const [pemasokId, setPemasokId] = useState(''); // State baru untuk pilihan Pemasok
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
   // === STATE UNTUK DATA API ===
   const [daftarBarang, setDaftarBarang] = useState([]);
-  const [isLoadingBarang, setIsLoadingBarang] = useState(true);
+  const [daftarPemasok, setDaftarPemasok] = useState([]); // State baru untuk list Pemasok
+  const [isLoading, setIsLoading] = useState(true);
 
-  // === AMBIL DATA MASTER BARANG DARI API ===
+  // === AMBIL DATA MASTER BARANG & PEMASOK DARI API ===
   useEffect(() => {
-    const fetchBarang = async () => {
+    const fetchData = async () => {
       try {
-        setIsLoadingBarang(true);
+        setIsLoading(true);
         const token = localStorage.getItem('token');
         const rawApiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
         const cleanApiUrl = rawApiUrl.replace(/\/$/, ""); 
         
-        const endpoint = cleanApiUrl.endsWith('/api') 
-          ? `${cleanApiUrl}/barang` 
-          : `${cleanApiUrl}/api/barang`;
+        // Pengecekan agar URL tidak dobel /api/api
+        const baseApi = cleanApiUrl.endsWith('/api') ? cleanApiUrl : `${cleanApiUrl}/api`;
+        
+        const headers = {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`
+        };
 
-        const response = await fetch(endpoint, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-          const arrayData = Array.isArray(data) ? data : (data.data || []);
-          setDaftarBarang(arrayData);
+        // Fetch Data Barang
+        const resBarang = await fetch(`${baseApi}/barang`, { method: 'GET', headers });
+        const dataBarang = await resBarang.json();
+        if (resBarang.ok) {
+          setDaftarBarang(Array.isArray(dataBarang) ? dataBarang : (dataBarang.data || []));
         }
+
+        // Fetch Data Pemasok (Supplier)
+        const resPemasok = await fetch(`${baseApi}/supplier`, { method: 'GET', headers });
+        const dataPemasok = await resPemasok.json();
+        if (resPemasok.ok) {
+          setDaftarPemasok(Array.isArray(dataPemasok) ? dataPemasok : (dataPemasok.data || []));
+        }
+
       } catch (error) {
-        console.error("Error Fetching Barang:", error);
+        console.error("Error Fetching Data:", error);
       } finally {
-        setIsLoadingBarang(false);
+        setIsLoading(false);
       }
     };
 
-    fetchBarang();
+    fetchData();
   }, []);
 
   // Mock data untuk Masuk Terbaru (Widget Kanan)
@@ -66,7 +72,7 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
     { name: 'Kertas F4 70gsm', details: '100 Rim • Kemarin', price: 'Rp 4.5jt', icon: Zap, iconColor: 'text-orange-600', bgColor: 'bg-orange-100' }
   ];
 
-  // Mock data untuk Tabel Riwayat di bawah (Butuh API Transaksi terpisah)
+  // Mock data untuk Tabel Riwayat di bawah
   const riwayatMasuk = [
     { tanggal: '12 Nov 2025', barang: 'Kertas A4 80gsm', pemasok: 'PT. Alat Tulis Kencana', jumlah: '100 Rim', hargaBeli: 'Rp 45.000', total: 'Rp 4.500.000', status: 'Sukses' },
     { tanggal: '12 Nov 2025', barang: 'Pulpen Pilot G2 Biru', pemasok: 'CV. Global Logistik Sejahtera', jumlah: '50 Pack', hargaBeli: 'Rp 24.000', total: 'Rp 1.200.000', status: 'Sukses' },
@@ -94,6 +100,7 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
 
   const handleSimpanTransaksi = () => {
     // Di sini nantinya kamu akan menambahkan logika fetch POST ke API transaksi
+    // Menggunakan parameter: selectedBarang.id, pemasokId, jumlah, hargaBeli
     setIsSuccessModalOpen(true);
   };
 
@@ -227,10 +234,10 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
                               <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">PILIH BARANG</label>
                               <div className="relative">
                                   <div 
-                                    onClick={() => !isLoadingBarang && setIsDropdownOpen(!isDropdownOpen)}
-                                    className={`w-full px-4 py-3 bg-[#F4F7FC] border ${isDropdownOpen ? 'border-[#5452F6] ring-1 ring-[#5452F6]' : 'border-gray-100'} rounded-xl text-sm flex justify-between items-center ${isLoadingBarang ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'} transition-all`}
+                                    onClick={() => !isLoading && setIsDropdownOpen(!isDropdownOpen)}
+                                    className={`w-full px-4 py-3 bg-[#F4F7FC] border ${isDropdownOpen ? 'border-[#5452F6] ring-1 ring-[#5452F6]' : 'border-gray-100'} rounded-xl text-sm flex justify-between items-center ${isLoading ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'} transition-all`}
                                   >
-                                    {isLoadingBarang ? (
+                                    {isLoading ? (
                                         <div className="flex items-center text-gray-500">
                                             <Loader2 className="w-4 h-4 animate-spin mr-2" /> Memuat data...
                                         </div>
@@ -290,14 +297,22 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
                               </div>
                           </div>
 
-                          {/* Pilih Pemasok */}
+                          {/* === DROPDOWN PILIH PEMASOK DARI API === */}
                           <div>
                               <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">PILIH PEMASOK</label>
                               <div className="relative">
-                                  <select className="w-full px-4 py-3 bg-[#F4F7FC] border border-gray-100 rounded-xl text-sm font-semibold text-gray-700 focus:outline-none focus:border-[#5452F6] appearance-none cursor-pointer">
-                                      <option>PT. Alat Tulis Kencana</option>
-                                      <option>CV. Global Logistik Sejahtera</option>
-                                      <option>UD. Karya Mandiri Abadi</option>
+                                  <select 
+                                    value={pemasokId}
+                                    onChange={(e) => setPemasokId(e.target.value)}
+                                    disabled={isLoading}
+                                    className="w-full px-4 py-3 bg-[#F4F7FC] border border-gray-100 rounded-xl text-sm font-semibold text-gray-700 focus:outline-none focus:border-[#5452F6] appearance-none cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                                  >
+                                      <option value="">-- Pilih Pemasok --</option>
+                                      {daftarPemasok.map((supplier) => (
+                                          <option key={supplier.id} value={supplier.id}>
+                                              {supplier.nama_supplier}
+                                          </option>
+                                      ))}
                                   </select>
                                   <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                               </div>
@@ -339,8 +354,7 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
                       <div className="mb-8 z-0 relative">
                           <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">TANGGAL KEDATANGAN</label>
                           <div className="relative">
-                              <input type="text" placeholder="mm/dd/yyyy" className="w-full px-4 py-3 bg-[#F4F7FC] border border-gray-100 rounded-xl text-sm font-semibold text-gray-700 focus:outline-none focus:border-[#5452F6] focus:bg-white transition-colors" />
-                              <CalendarDays className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                              <input type="date" className="w-full px-4 py-3 bg-[#F4F7FC] border border-gray-100 rounded-xl text-sm font-semibold text-gray-700 focus:outline-none focus:border-[#5452F6] focus:bg-white transition-colors" />
                           </div>
                       </div>
 
