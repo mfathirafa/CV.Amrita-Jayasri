@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, Box, Truck, Users, 
   ArrowDownRight, ArrowUpRight, Activity, 
-  BarChart2, Search, Bell, User, Plus, 
-  Calendar, AlertTriangle, TrendingUp, Minus, AlertCircle, CircleUser, Loader2
+  BarChart2, Search, Bell, Plus, 
+  Calendar, AlertTriangle, TrendingUp, AlertCircle, CircleUser, Loader2
 } from 'lucide-react';
 
 import DateRangePickerModal from './DateRangePickerModal';
@@ -71,11 +71,12 @@ const Dashboard = ({ onLogout, onNavigate }) => {
   const stokKritisList = dashboardData?.stok_kritis || [];
   const chartData = dashboardData?.grafik_7_hari || [];
   
-  // Mencari nilai tertinggi untuk skala persentase tinggi grafik batang
-  const maxChartValue = Math.max(
-    ...chartData.flatMap(d => [d.masuk, d.keluar]),
-    1 // Hindari pembagian 0
-  );
+  // === LOGIKA UNTUK SKALA GRAFIK YANG RAPI ===
+  // Mencari nilai tertinggi dari data masuk/keluar, lalu membulatkannya ke kelipatan 10 ke atas
+  const allValues = chartData.flatMap(d => [d.masuk, d.keluar]);
+  const maxValueFromData = allValues.length > 0 ? Math.max(...allValues) : 0;
+  // Jika max value = 15 -> scale jadi 20. Jika 100 -> scale 100. Default minimal 10.
+  const maxChartValue = maxValueFromData > 0 ? Math.ceil(maxValueFromData / 10) * 10 : 10;
 
   // Menggabungkan transaksi masuk dan keluar menjadi satu array untuk tabel "Transaksi Terakhir"
   const txMasuk = (dashboardData?.transaksi_masuk_terbaru || []).map(t => ({ ...t, type: 'masuk', date: t.tanggal_masuk }));
@@ -254,6 +255,7 @@ const Dashboard = ({ onLogout, onNavigate }) => {
               </div>
               
               <div className="h-56 flex items-end justify-between gap-2 px-2 mt-8 border-l border-b border-gray-100 pb-2 relative">
+                {/* Y-Axis Labels */}
                 <div className="h-full flex flex-col justify-between text-[10px] text-gray-400 font-bold pr-2 absolute -left-6">
                   <span>{maxChartValue}</span>
                   <span>{Math.round(maxChartValue / 2)}</span>
@@ -266,7 +268,7 @@ const Dashboard = ({ onLogout, onNavigate }) => {
                   </div>
                 ) : (
                   chartData.map((data, index) => {
-                    // Kalkulasi tinggi bar dalam persen (maksimal 100%)
+                    // Kalkulasi tinggi bar dalam persen dari maxChartValue
                     const heightMasuk = `${(data.masuk / maxChartValue) * 100}%`;
                     const heightKeluar = `${(data.keluar / maxChartValue) * 100}%`;
 
@@ -277,8 +279,18 @@ const Dashboard = ({ onLogout, onNavigate }) => {
                           <div className="opacity-0 group-hover:opacity-100 absolute -top-8 bg-gray-800 text-white text-[10px] px-2 py-1 rounded shadow-lg pointer-events-none transition-opacity whitespace-nowrap z-10">
                             Masuk: {data.masuk} | Keluar: {data.keluar}
                           </div>
-                          <div className="w-4 md:w-6 bg-[#5452F6] rounded-t-md hover:opacity-80 transition-all duration-500" style={{ height: heightMasuk || '0%' }}></div>
-                          <div className="w-4 md:w-6 bg-[#D1D5DB] rounded-t-md hover:opacity-80 transition-all duration-500" style={{ height: heightKeluar || '0%' }}></div>
+                          
+                          {/* Bar Grafik Masuk (Biru) */}
+                          <div 
+                            className="w-4 md:w-6 bg-[#5452F6] rounded-t-md hover:opacity-80 transition-all duration-500" 
+                            style={{ height: heightMasuk || '0%' }}
+                          ></div>
+                          
+                          {/* Bar Grafik Keluar (Abu-Abu) */}
+                          <div 
+                            className="w-4 md:w-6 bg-[#D1D5DB] rounded-t-md hover:opacity-80 transition-all duration-500" 
+                            style={{ height: heightKeluar || '0%' }}
+                          ></div>
                         </div>
                         <span className="text-[10px] text-gray-400 font-bold mt-2">{data.label}</span>
                       </div>
