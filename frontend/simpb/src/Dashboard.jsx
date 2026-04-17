@@ -24,7 +24,10 @@ const Dashboard = ({ onLogout, onNavigate }) => {
         const rawApiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
         const cleanApiUrl = rawApiUrl.replace(/\/$/, ""); 
         
-        const response = await fetch(`${cleanApiUrl}/api/dashboard`, {
+        // Pengecekan URL agar tidak menumpuk /api/api
+        const baseApi = cleanApiUrl.endsWith('/api') ? cleanApiUrl : `${cleanApiUrl}/api`;
+        
+        const response = await fetch(`${baseApi}/dashboard`, {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
@@ -71,9 +74,12 @@ const Dashboard = ({ onLogout, onNavigate }) => {
   const stokKritisList = dashboardData?.stok_kritis || [];
   const chartData = dashboardData?.grafik_7_hari || [];
   
-  // === LOGIKA UNTUK SKALA GRAFIK YANG RAPI ===
-  // Mencari nilai tertinggi dari data masuk/keluar, lalu membulatkannya ke kelipatan 10 ke atas
-  const allValues = chartData.flatMap(d => [d.masuk, d.keluar]);
+  // === LOGIKA UNTUK SKALA GRAFIK YANG LEBIH TANGGUH ===
+  // Mengambil semua nilai (mencari keys yang mungkin dipakai backend)
+  const allValues = chartData.flatMap(d => [
+    Number(d.masuk || d.total_masuk || d.jumlah_masuk || 0), 
+    Number(d.keluar || d.total_keluar || d.jumlah_keluar || 0)
+  ]);
   const maxValueFromData = allValues.length > 0 ? Math.max(...allValues) : 0;
   // Jika max value = 15 -> scale jadi 20. Jika 100 -> scale 100. Default minimal 10.
   const maxChartValue = maxValueFromData > 0 ? Math.ceil(maxValueFromData / 10) * 10 : 10;
@@ -85,7 +91,7 @@ const Dashboard = ({ onLogout, onNavigate }) => {
   // Gabungkan lalu urutkan berdasarkan waktu (terbaru di atas)
   const combinedTx = [...txMasuk, ...txKeluar]
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-    .slice(0, 5); // Tampilkan 5 paling terbaru
+    .slice(0, 5);
 
   return (
     <div className="flex h-screen bg-[#F8F9FA] font-sans overflow-hidden">
@@ -268,31 +274,44 @@ const Dashboard = ({ onLogout, onNavigate }) => {
                   </div>
                 ) : (
                   chartData.map((data, index) => {
-                    // Kalkulasi tinggi bar dalam persen dari maxChartValue
-                    const heightMasuk = `${(data.masuk / maxChartValue) * 100}%`;
-                    const heightKeluar = `${(data.keluar / maxChartValue) * 100}%`;
+                    // Cek dinamis nama property barangkali backend mengirim 'total_masuk' bukan 'masuk'
+                    const valMasuk = Number(data.masuk || data.total_masuk || data.jumlah_masuk || 0);
+                    const valKeluar = Number(data.keluar || data.total_keluar || data.jumlah_keluar || 0);
+
+                    // Kalkulasi tinggi bar dalam persen
+                    const pctMasuk = maxChartValue > 0 ? (valMasuk / maxChartValue) * 100 : 0;
+                    const pctKeluar = maxChartValue > 0 ? (valKeluar / maxChartValue) * 100 : 0;
+                    
+                    // Fallback label harinya
+                    const labelHari = data.label || data.hari || data.tanggal || '-';
 
                     return (
                       <div key={index} className="flex flex-col items-center gap-2 flex-1 h-full justify-end relative group">
                         <div className="flex items-end gap-1.5 w-full h-full justify-center">
-                          {/* Tooltip sederhana saat dihover */}
+                          {/* Tooltip saat dihover */}
                           <div className="opacity-0 group-hover:opacity-100 absolute -top-8 bg-gray-800 text-white text-[10px] px-2 py-1 rounded shadow-lg pointer-events-none transition-opacity whitespace-nowrap z-10">
-                            Masuk: {data.masuk} | Keluar: {data.keluar}
+                            Masuk: {valMasuk} | Keluar: {valKeluar}
                           </div>
                           
                           {/* Bar Grafik Masuk (Biru) */}
                           <div 
                             className="w-4 md:w-6 bg-[#5452F6] rounded-t-md hover:opacity-80 transition-all duration-500" 
-                            style={{ height: heightMasuk || '0%' }}
+                            style={{ 
+                              height: `${pctMasuk}%`, 
+                              minHeight: valMasuk > 0 ? '4px' : '0px' // Kasih sedikit tinggi minimal biar terlihat kalau > 0
+                            }}
                           ></div>
                           
                           {/* Bar Grafik Keluar (Abu-Abu) */}
                           <div 
                             className="w-4 md:w-6 bg-[#D1D5DB] rounded-t-md hover:opacity-80 transition-all duration-500" 
-                            style={{ height: heightKeluar || '0%' }}
+                            style={{ 
+                              height: `${pctKeluar}%`,
+                              minHeight: valKeluar > 0 ? '4px' : '0px'
+                            }}
                           ></div>
                         </div>
-                        <span className="text-[10px] text-gray-400 font-bold mt-2">{data.label}</span>
+                        <span className="text-[10px] text-gray-400 font-bold mt-2">{labelHari}</span>
                       </div>
                     );
                   })

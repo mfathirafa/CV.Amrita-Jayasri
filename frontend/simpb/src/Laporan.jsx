@@ -8,10 +8,15 @@ import {
 } from 'lucide-react';
 
 const Laporan = ({ onLogout, onNavigate }) => {
-  // === STATE UNTUK FILTER ===
+  // === STATE UNTUK FILTER TANGGAL & TAB ===
   const [startDate, setStartDate] = useState('2026-03-01');
   const [endDate, setEndDate] = useState('2026-04-30'); 
   const [activeTab, setActiveTab] = useState('semua'); // 'semua', 'masuk', 'keluar'
+
+  // === STATE UNTUK PENCARIAN & PENGURUTAN ===
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortOrder, setSortOrder] = useState('terbaru'); // terbaru, terlama, nilai_tertinggi, nilai_terendah
+  const [isSortOpen, setIsSortOpen] = useState(false);
 
   // === STATE UNTUK DATA API ===
   const [laporanData, setLaporanData] = useState([]);
@@ -25,6 +30,9 @@ const Laporan = ({ onLogout, onNavigate }) => {
       const token = localStorage.getItem('token');
       const rawApiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
       const cleanApiUrl = rawApiUrl.replace(/\/$/, ""); 
+      
+      const baseApi = cleanApiUrl.endsWith('/api') ? cleanApiUrl : `${cleanApiUrl}/api`;
+      
       const headers = { 'Accept': 'application/json', 'Authorization': `Bearer ${token}` };
       const params = `?start_date=${startDate}&end_date=${endDate}`;
 
@@ -33,7 +41,7 @@ const Laporan = ({ onLogout, onNavigate }) => {
 
       // Tarik data MASUK jika tab 'masuk' atau 'semua'
       if (activeTab === 'masuk' || activeTab === 'semua') {
-        const resMasuk = await fetch(`${cleanApiUrl}/api/laporan/transaksi-masuk${params}`, { headers });
+        const resMasuk = await fetch(`${baseApi}/laporan/transaksi-masuk${params}`, { headers });
         const jsonMasuk = await resMasuk.json();
         if (jsonMasuk.success) {
           masukData = jsonMasuk.data.map(item => ({ ...item, _type: 'masuk' }));
@@ -42,19 +50,18 @@ const Laporan = ({ onLogout, onNavigate }) => {
 
       // Tarik data KELUAR jika tab 'keluar' atau 'semua'
       if (activeTab === 'keluar' || activeTab === 'semua') {
-        const resKeluar = await fetch(`${cleanApiUrl}/api/laporan/transaksi-keluar${params}`, { headers });
+        const resKeluar = await fetch(`${baseApi}/laporan/transaksi-keluar${params}`, { headers });
         const jsonKeluar = await resKeluar.json();
         if (jsonKeluar.success) {
           keluarData = jsonKeluar.data.map(item => ({ ...item, _type: 'keluar' }));
         }
       }
 
-      // Gabungkan dan urutkan berdasarkan tanggal terbaru
+      // Gabungkan data
       let combinedData = [...masukData, ...keluarData];
-      combinedData.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
       setLaporanData(combinedData);
 
-      // Hitung ringkasan dinamis (karena kita menggabungkan 2 API di frontend)
+      // Hitung ringkasan dari seluruh data API (bukan data yang difilter pencarian)
       const total_transaksi = combinedData.length;
       const total_jumlah_barang = combinedData.reduce((acc, curr) => acc + curr.jumlah, 0);
       const total_nilai = combinedData.reduce((acc, curr) => {
@@ -77,6 +84,31 @@ const Laporan = ({ onLogout, onNavigate }) => {
     fetchLaporan();
   }, [startDate, endDate, activeTab]); 
 
+  // === LOGIKA FILTER PENCARIAN & PENGURUTAN (LOKAL) ===
+  const processedData = laporanData
+    .filter(item => {
+      if (!searchTerm) return true;
+      const searchLower = searchTerm.toLowerCase();
+      const idPrefix = item._type === 'masuk' ? 'TRX-M-' : 'TRX-K-';
+      const fullId = `${idPrefix}${String(item.id).padStart(4, '0')}`.toLowerCase();
+      const namaBarang = item.barang?.nama_barang?.toLowerCase() || '';
+      const entitas = (item.supplier?.nama_supplier || item.nama_instansi || item.konsumen?.nama_konsumen || '').toLowerCase();
+      
+      return fullId.includes(searchLower) || namaBarang.includes(searchLower) || entitas.includes(searchLower);
+    })
+    .sort((a, b) => {
+      if (sortOrder === 'terbaru') return new Date(b.created_at) - new Date(a.created_at);
+      if (sortOrder === 'terlama') return new Date(a.created_at) - new Date(b.created_at);
+      
+      const totalA = a.jumlah * parseFloat(a._type === 'masuk' ? a.harga_beli : a.harga_jual);
+      const totalB = b.jumlah * parseFloat(b._type === 'masuk' ? b.harga_beli : b.harga_jual);
+      
+      if (sortOrder === 'tertinggi') return totalB - totalA;
+      if (sortOrder === 'terendah') return totalA - totalB;
+      
+      return 0;
+    });
+
   // === FUNGSI HELPER FORMATTING ===
   const formatRupiah = (angka) => {
     return new Intl.NumberFormat('id-ID', {
@@ -95,6 +127,17 @@ const Laporan = ({ onLogout, onNavigate }) => {
   };
 
   const displayDateRange = `${formatDate(startDate)} - ${formatDate(endDate)}`;
+
+  // Label untuk urutan aktif
+  const getSortLabel = () => {
+    switch (sortOrder) {
+      case 'terbaru': return 'Terbaru';
+      case 'terlama': return 'Terlama';
+      case 'tertinggi': return 'Nilai Tertinggi';
+      case 'terendah': return 'Nilai Terendah';
+      default: return 'Terbaru';
+    }
+  };
 
   return (
     <div className="flex h-screen bg-[#F4F7FC] font-sans overflow-hidden">
@@ -141,7 +184,13 @@ const Laporan = ({ onLogout, onNavigate }) => {
           <div className="flex items-center gap-6">
             <div className="relative w-72 hidden sm:block">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input type="text" placeholder="Cari laporan..." className="w-full pl-11 pr-4 py-2.5 bg-[#F4F7FC] border-transparent rounded-full text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] focus:ring-1 focus:ring-[#5452F6] transition-all" />
+              <input 
+                type="text" 
+                placeholder="Cari ID, Barang, atau Instansi..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-11 pr-4 py-2.5 bg-[#F4F7FC] border-transparent rounded-full text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] focus:ring-1 focus:ring-[#5452F6] transition-all" 
+              />
             </div>
             <button className="relative text-gray-500 hover:text-gray-800 transition-colors">
               <Bell className="w-5 h-5" />
@@ -254,19 +303,37 @@ const Laporan = ({ onLogout, onNavigate }) => {
                 ))}
               </div>
 
-              <button className="flex items-center gap-3 px-5 py-2.5 bg-white border border-gray-100 rounded-[14px] text-xs font-bold text-gray-600 shadow-sm">
+              <button className="flex items-center gap-3 px-5 py-2.5 bg-white border border-gray-100 rounded-[14px] text-xs font-bold text-gray-600 shadow-sm pointer-events-none">
                 <Calendar className="w-4 h-4 text-gray-400" />
                 {displayDateRange}
-                <ChevronDown className="w-4 h-4 text-gray-400 ml-2" />
               </button>
             </div>
 
             <div className="flex items-center gap-3 w-full md:w-auto justify-end">
-              <button className="flex items-center gap-3 px-5 py-2.5 bg-white border border-gray-100 rounded-[14px] text-xs font-bold text-gray-600 shadow-sm">
-                <span className="text-gray-400 font-medium">Urutkan:</span> Terbaru
-                <ArrowUpDown className="w-3.5 h-3.5 text-gray-400 ml-1" />
-              </button>
-              <button className="flex items-center justify-center p-2.5 bg-white border border-gray-100 rounded-[14px] shadow-sm text-gray-500 hover:text-[#5452F6] transition-colors">
+              {/* Dropdown Urutkan */}
+              <div className="relative">
+                <button 
+                  onClick={() => setIsSortOpen(!isSortOpen)}
+                  className="flex items-center gap-3 px-5 py-2.5 bg-white border border-gray-100 rounded-[14px] text-xs font-bold text-gray-600 shadow-sm"
+                >
+                  <span className="text-gray-400 font-medium">Urutkan:</span> {getSortLabel()}
+                  <ArrowUpDown className="w-3.5 h-3.5 text-gray-400 ml-1" />
+                </button>
+
+                {isSortOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setIsSortOpen(false)}></div>
+                    <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-lg z-50 overflow-hidden py-1 animate-in fade-in slide-in-from-top-2">
+                      <button onClick={() => { setSortOrder('terbaru'); setIsSortOpen(false); }} className={`w-full text-left px-4 py-2.5 text-xs font-bold hover:bg-gray-50 transition-colors ${sortOrder === 'terbaru' ? 'text-[#5452F6] bg-indigo-50/50' : 'text-gray-600'}`}>Terbaru</button>
+                      <button onClick={() => { setSortOrder('terlama'); setIsSortOpen(false); }} className={`w-full text-left px-4 py-2.5 text-xs font-bold hover:bg-gray-50 transition-colors ${sortOrder === 'terlama' ? 'text-[#5452F6] bg-indigo-50/50' : 'text-gray-600'}`}>Terlama</button>
+                      <button onClick={() => { setSortOrder('tertinggi'); setIsSortOpen(false); }} className={`w-full text-left px-4 py-2.5 text-xs font-bold hover:bg-gray-50 transition-colors ${sortOrder === 'tertinggi' ? 'text-[#5452F6] bg-indigo-50/50' : 'text-gray-600'}`}>Nilai Tertinggi</button>
+                      <button onClick={() => { setSortOrder('terendah'); setIsSortOpen(false); }} className={`w-full text-left px-4 py-2.5 text-xs font-bold hover:bg-gray-50 transition-colors ${sortOrder === 'terendah' ? 'text-[#5452F6] bg-indigo-50/50' : 'text-gray-600'}`}>Nilai Terendah</button>
+                    </div>
+                  </>
+                )}
+              </div>
+              
+              <button className="flex items-center justify-center p-2.5 bg-white border border-gray-100 rounded-[14px] shadow-sm text-gray-500 hover:text-[#5452F6] transition-colors cursor-not-allowed opacity-50">
                 <Filter className="w-4 h-4" />
               </button>
             </div>
@@ -287,11 +354,11 @@ const Laporan = ({ onLogout, onNavigate }) => {
                 <Loader2 className="w-8 h-8 text-[#5452F6] animate-spin mb-4" />
                 <p className="text-sm font-bold text-gray-500">Menarik data laporan...</p>
               </div>
-            ) : laporanData.length === 0 ? (
+            ) : processedData.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-center mt-10">
                 <FileText className="w-12 h-12 text-gray-300 mb-4" />
                 <h3 className="text-lg font-bold text-gray-800">Tidak Ada Transaksi</h3>
-                <p className="text-sm text-gray-500 mt-1">Belum ada data transaksi di rentang tanggal ini.</p>
+                <p className="text-sm text-gray-500 mt-1">Belum ada data transaksi yang sesuai filter.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -307,7 +374,7 @@ const Laporan = ({ onLogout, onNavigate }) => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {laporanData.map((item) => {
+                    {processedData.map((item) => {
                       const isMasuk = item._type === 'masuk';
                       const idPrefix = isMasuk ? '#TRX-M-' : '#TRX-K-';
                       const tanggalText = isMasuk ? item.tanggal_masuk : item.tanggal_keluar;
@@ -371,14 +438,12 @@ const Laporan = ({ onLogout, onNavigate }) => {
             
             <div className="p-6 bg-white border-t border-gray-100 flex justify-between items-center">
               <p className="text-xs font-medium text-gray-500">
-                Menampilkan <span className="font-bold text-gray-800">{laporanData.length > 0 ? 1 : 0}</span> sampai <span className="font-bold text-gray-800">{laporanData.length}</span> dari <span className="font-bold text-gray-800">{ringkasan.total_transaksi}</span> transaksi
+                Menampilkan <span className="font-bold text-gray-800">{processedData.length > 0 ? 1 : 0}</span> sampai <span className="font-bold text-gray-800">{processedData.length}</span> dari <span className="font-bold text-gray-800">{ringkasan.total_transaksi}</span> total data di rentang ini
               </p>
               <div className="flex items-center gap-1.5 ml-auto">
                 <button className="text-[11px] font-bold text-gray-500 hover:text-gray-800 mr-2 transition-colors">Sebelumnya</button>
                 <button className="w-7 h-7 flex items-center justify-center rounded-lg bg-[#5452F6] text-white text-[11px] font-bold">1</button>
                 <button className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-50 text-gray-600 text-[11px] font-bold transition-colors">2</button>
-                <button className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-50 text-gray-600 text-[11px] font-bold transition-colors">3</button>
-                <span className="px-1 text-gray-400 text-[11px] font-bold">...</span>
                 <button className="text-[11px] font-bold text-gray-500 hover:text-gray-800 ml-2 transition-colors">Berikutnya</button>
               </div>
             </div>

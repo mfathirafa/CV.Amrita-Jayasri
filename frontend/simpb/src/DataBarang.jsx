@@ -25,7 +25,7 @@ const DataBarang = ({ onNavigate, onLogout }) => {
   const [isDeleting, setIsDeleting] = useState(false);
 
   // --- KATEGORI ---
-  const categories = ['Semua Barang', 'Buku & Jurnal', 'Kertas & Media', 'Alat Tulis', 'Arsip & Penyimpanan', 'Tinta & Toner'];
+  const categories = ['Semua Barang', 'Buku & Jurnal', 'Kertas & Media', 'Alat Tulis', 'Arsip & Penyimpanan', 'Tinta & Toner', 'Aksesoris Meja'];
 
   // --- FUNGSI FORMAT RUPIAH ---
   const formatRupiah = (angka) => {

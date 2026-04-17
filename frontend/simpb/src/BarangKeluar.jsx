@@ -34,20 +34,13 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
   const [daftarKonsumen, setDaftarKonsumen] = useState([]);
   const [isLoadingKonsumen, setIsLoadingKonsumen] = useState(true);
 
-  // === MOCK DATA TABEL RIWAYAT ===
-  const riwayatKeluar = [
-    { tanggal: '14 Okt 2025', barang: 'Kertas HVS A4 80gr', penerima: 'Divisi Keuangan', jumlah: '15 Rim', hargaSatuan: 'Rp 45.000', total: 'Rp 675.000', status: 'Dikirim', statusColor: 'bg-orange-50 text-orange-600 border-orange-100' },
-    { tanggal: '14 Okt 2025', barang: 'Tinta Epson T664 Black', penerima: 'Divisi IT', jumlah: '4 Botol', hargaSatuan: 'Rp 85.000', total: 'Rp 340.000', status: 'Selesai', statusColor: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
-    { tanggal: '12 Okt 2025', barang: 'Buku Sinar Dunia A5', penerima: 'Divisi SDM', jumlah: '10 Pack', hargaSatuan: 'Rp 28.000', total: 'Rp 280.000', status: 'Selesai', statusColor: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
-    { tanggal: '10 Okt 2025', barang: 'Pulpen Pilot G2 Biru', penerima: 'Divisi Pemasaran', jumlah: '5 Lusin', hargaSatuan: 'Rp 35.000', total: 'Rp 175.000', status: 'Selesai', statusColor: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
-  ];
-
   // === AMBIL DATA MASTER BARANG & KONSUMEN DARI API ===
   useEffect(() => {
     const fetchMasterData = async () => {
       const token = localStorage.getItem('token');
       const rawApiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
       const cleanApiUrl = rawApiUrl.replace(/\/$/, ""); 
+      const baseApi = cleanApiUrl.endsWith('/api') ? cleanApiUrl : `${cleanApiUrl}/api`;
       
       const headers = {
         'Accept': 'application/json',
@@ -57,13 +50,10 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
       // 1. Fetch Barang
       try {
         setIsLoadingBarang(true);
-        const endpointBarang = cleanApiUrl.endsWith('/api') ? `${cleanApiUrl}/barang` : `${cleanApiUrl}/api/barang`;
-        const resBarang = await fetch(endpointBarang, { method: 'GET', headers });
+        const resBarang = await fetch(`${baseApi}/barang`, { method: 'GET', headers });
         const dataBarang = await resBarang.json();
-
         if (resBarang.ok) {
-          const arrayData = Array.isArray(dataBarang) ? dataBarang : (dataBarang.data || []);
-          setDaftarBarang(arrayData);
+          setDaftarBarang(Array.isArray(dataBarang) ? dataBarang : (dataBarang.data || []));
         }
       } catch (error) {
         console.error("Error Fetching Barang:", error);
@@ -74,13 +64,10 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
       // 2. Fetch Konsumen (Untuk Dropdown Penerima)
       try {
         setIsLoadingKonsumen(true);
-        const endpointKonsumen = cleanApiUrl.endsWith('/api') ? `${cleanApiUrl}/konsumen` : `${cleanApiUrl}/api/konsumen`;
-        const resKonsumen = await fetch(endpointKonsumen, { method: 'GET', headers });
+        const resKonsumen = await fetch(`${baseApi}/konsumen`, { method: 'GET', headers });
         const dataKonsumen = await resKonsumen.json();
-
         if (resKonsumen.ok) {
-          const arrayData = Array.isArray(dataKonsumen) ? dataKonsumen : (dataKonsumen.data || []);
-          setDaftarKonsumen(arrayData);
+          setDaftarKonsumen(Array.isArray(dataKonsumen) ? dataKonsumen : (dataKonsumen.data || []));
         }
       } catch (error) {
         console.error("Error Fetching Konsumen:", error);
@@ -91,12 +78,10 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
 
     fetchMasterData();
     
-    // Set default tanggal hari ini
     const today = new Date().toISOString().split('T')[0];
     setTanggalKeluar(today);
   }, []);
 
-  // Filter pencarian barang
   const filteredBarang = daftarBarang.filter(item => {
     const nama = item.nama_barang || '';
     const ref = item.id_referensi || '';
@@ -108,7 +93,6 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
     setSelectedBarang(item);
     setIsDropdownOpen(false);
     setSearchBarang('');
-    // Auto-fill harga satuan (menggunakan harga jual/harga asli barang)
     if (item.harga) {
         setHargaSatuan(Math.floor(Number(item.harga)).toString());
     }
@@ -121,18 +105,11 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
         return;
     }
 
-    if (Number(jumlah) <= 0) {
-        alert("Jumlah harus lebih dari 0.");
-        return;
-    }
-
-    // Validasi stok tidak cukup
     if (Number(jumlah) > selectedBarang.stok) {
         alert("Peringatan: Jumlah barang keluar melebihi stok yang ada di gudang!");
         return;
     }
 
-    // Cari nama instansi berdasarkan ID konsumen yang dipilih
     const konsumenTerpilih = daftarKonsumen.find(k => k.id.toString() === selectedKonsumenId);
     const namaInstansi = konsumenTerpilih ? konsumenTerpilih.nama_konsumen : "Umum";
 
@@ -149,11 +126,11 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
     try {
         setIsSubmitting(true);
         const token = localStorage.getItem('token');
-        
-        // Gunakan URL Railway langsung agar pasti terkirim
-        const apiUrl = 'https://cvamrita-jayasri-production.up.railway.app/api/transaksi-keluar';
+        const rawApiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+        const cleanApiUrl = rawApiUrl.replace(/\/$/, ""); 
+        const baseApi = cleanApiUrl.endsWith('/api') ? cleanApiUrl : `${cleanApiUrl}/api`;
 
-        const response = await fetch(apiUrl, {
+        const response = await fetch(`${baseApi}/transaksi-keluar`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -166,24 +143,19 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
         const json = await response.json();
 
         if (response.ok && json.success) {
-            console.log("Transaksi Berhasil:", json.message);
-            
-            // Tampilkan Modal Sukses
             setIsSuccessModalOpen(true);
-            
             // Reset Form
             setSelectedBarang(null);
             setJumlah('');
             setHargaSatuan('');
             setSelectedKonsumenId('');
             setKeterangan('');
-            
         } else {
             alert(`Gagal: ${json.message || "Terjadi kesalahan saat menyimpan transaksi"}`);
         }
     } catch (error) {
         console.error("Error submitting transaksi:", error);
-        alert("Terjadi kesalahan koneksi saat menyimpan transaksi.");
+        alert("Terjadi kesalahan koneksi.");
     } finally {
         setIsSubmitting(false);
     }
@@ -197,7 +169,6 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
       setKeterangan('');
   };
 
-  // === PERHITUNGAN STATUS INVENTARIS DINAMIS ===
   const currentStok = selectedBarang ? selectedBarang.stok : 0;
   const proyeksiStok = selectedBarang ? currentStok - (Number(jumlah) || 0) : 0;
   const persentaseKeluar = currentStok > 0 ? ((Number(jumlah) || 0) / currentStok * 100).toFixed(1) : 0;
@@ -239,12 +210,9 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
             <button onClick={() => onNavigate('barang-masuk')} className="w-full flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 hover:text-gray-800 rounded-xl font-medium text-sm transition-colors text-left">
               <ArrowDownRight className="w-5 h-5" /> Barang Masuk
             </button>
-            
-            {/* Active Menu */}
             <button onClick={() => onNavigate('barang-keluar')} className="w-full flex items-center gap-3 px-4 py-3 bg-[#F0EFFF] text-[#5452F6] rounded-xl font-bold text-sm transition-colors text-left">
               <ArrowUpRight className="w-5 h-5" /> Barang Keluar
             </button>
-            
             <button onClick={() => onNavigate('monitoring-stok')} className="w-full flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 hover:text-gray-800 rounded-xl font-medium text-sm transition-colors text-left">
               <Activity className="w-5 h-5" /> Monitoring Stok
             </button>
@@ -297,7 +265,7 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
                 <p className="text-xs text-gray-400 mb-8 font-medium">Daftarkan alat tulis kantor (ATK) yang keluar untuk distribusi divisi.</p>
 
                 <div className="space-y-6">
-                  {/* === CUSTOM DROPDOWN PILIH BARANG === */}
+                  {/* DROPDOWN PILIH BARANG */}
                   <div>
                     <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Pilih Barang (ATK)</label>
                     <div className="relative">
@@ -371,6 +339,7 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
                     </div>
                   </div>
 
+                  {/* DROPDOWN PENERIMA */}
                   <div>
                     <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Penerima (Konsumen)</label>
                     <div className="relative">
@@ -506,8 +475,8 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
                     <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden flex">
                       {selectedBarang && isStokCukup && (
                          <>
-                           <div className="h-full bg-gray-300 transition-all duration-500" style={{ width: `${100 - persentaseKeluar}%` }}></div>
-                           <div className="h-full bg-red-400 transition-all duration-500" style={{ width: `${persentaseKeluar}%` }}></div>
+                            <div className="h-full bg-gray-300 transition-all duration-500" style={{ width: `${100 - persentaseKeluar}%` }}></div>
+                            <div className="h-full bg-red-400 transition-all duration-500" style={{ width: `${persentaseKeluar}%` }}></div>
                          </>
                       )}
                     </div>
@@ -524,117 +493,17 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
                       </p>
                     </div>
                   </div>
-
-                  <div className="bg-[#EEF2FF] p-4 rounded-xl flex gap-3 border border-indigo-50">
-                    <Info className="w-4 h-4 text-[#5452F6] shrink-0 mt-0.5" />
-                    <p className="text-[10px] text-gray-500 leading-relaxed font-medium">
-                      {selectedBarang 
-                        ? `Pengiriman ini mewakili ${persentaseKeluar}% dari total stok SKU spesifik saat ini.`
-                        : `Silakan pilih barang untuk melihat proyeksi sisa stok setelah pengiriman.`
-                      }
-                    </p>
-                  </div>
                 </div>
-
-                {/* Terakhir Keluar */}
-                <div className="bg-white rounded-[20px] p-6 shadow-sm border border-gray-100">
-                  <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-xs font-bold text-gray-800 uppercase tracking-wider">Terakhir Keluar</h3>
-                    <button 
-                      onClick={() => onNavigate('laporan')} 
-                      className="text-[10px] font-bold text-[#5452F6] hover:underline"
-                    >
-                      LIHAT SEMUA
-                    </button>
-                  </div>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
-                        <div>
-                          <p className="text-xs font-bold text-gray-800 leading-none">INV-98234</p>
-                          <p className="text-[9px] text-gray-400 mt-1 font-medium">Divisi Keuangan</p>
-                        </div>
-                      </div>
-                      <span className="text-xs font-bold text-red-500">-15 rim</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-gray-300"></div>
-                        <div>
-                          <p className="text-xs font-bold text-gray-800 leading-none">INV-98231</p>
-                          <p className="text-[9px] text-gray-400 mt-1 font-medium">Divisi SDM</p>
-                        </div>
-                      </div>
-                      <span className="text-xs font-bold text-red-500">-5 pack</span>
-                    </div>
-                  </div>
-                </div>
-
               </div>
             </div>
 
-            {/* ================= TABEL RIWAYAT BARANG KELUAR ================= */}
-            <div className="mt-8 bg-white rounded-[20px] shadow-sm border border-gray-100 overflow-hidden">
-                <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-white">
-                    <h3 className="text-base font-bold text-gray-800">Riwayat Barang Keluar</h3>
-                </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-gray-50/50 border-b border-gray-100">
-                                <th className="py-4 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-wider">TANGGAL</th>
-                                <th className="py-4 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-wider">BARANG</th>
-                                <th className="py-4 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-wider">PENERIMA</th>
-                                <th className="py-4 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-wider">JUMLAH</th>
-                                <th className="py-4 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-wider">HARGA SATUAN</th>
-                                <th className="py-4 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-wider">TOTAL</th>
-                                <th className="py-4 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-wider">STATUS</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                            {riwayatKeluar.map((item, idx) => (
-                                <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
-                                    <td className="py-4 px-6 text-sm font-medium text-gray-600">{item.tanggal}</td>
-                                    <td className="py-4 px-6 text-sm font-bold text-gray-800">{item.barang}</td>
-                                    <td className="py-4 px-6 text-sm font-medium text-gray-600">{item.penerima}</td>
-                                    <td className="py-4 px-6 text-sm font-bold text-gray-800">{item.jumlah}</td>
-                                    <td className="py-4 px-6 text-sm font-medium text-gray-600">{item.hargaSatuan}</td>
-                                    <td className="py-4 px-6 text-sm font-bold text-gray-800">{item.total}</td>
-                                    <td className="py-4 px-6">
-                                        <span className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border ${item.statusColor}`}>
-                                            {item.status}
-                                        </span>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-                
-                {/* Pagination */}
-                <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t border-gray-100 bg-white gap-3">
-                    <p className="text-xs text-gray-500 font-medium">Menampilkan 4 dari 24 transaksi</p>
-                    <div className="flex items-center gap-1.5 pagination-pills">
-                        <button className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 border border-gray-100"><ChevronLeft className="w-4 h-4" /></button>
-                        <button className="w-8 h-8 flex items-center justify-center bg-[#5452F6] text-white rounded-lg text-xs font-bold">1</button>
-                        <button className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-lg text-xs font-bold border border-gray-100">2</button>
-                        <button className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-lg text-xs font-bold border border-gray-100">3</button>
-                        <button className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 border border-gray-100"><ChevronRight className="w-4 h-4" /></button>
-                    </div>
-                </div>
-            </div>
-
-            {/* Footer Teks Kecil */}
             <div className="mt-12 text-center">
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-loose">© 2026 CV. AMRITA JAYASRI • MANAJEMEN INVENTARIS BERKINERJA TINGGI</p>
             </div>
-
           </div>
         </main>
       </div>
 
-      {/* RENDER MODAL SUKSES TRANSAKSI */}
       <SuccessTransactionModal 
         isOpen={isSuccessModalOpen}
         onClose={() => setIsSuccessModalOpen(false)}
