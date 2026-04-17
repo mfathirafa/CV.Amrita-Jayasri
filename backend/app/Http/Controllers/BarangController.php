@@ -102,6 +102,8 @@ class BarangController extends Controller
     // POST /api/barang/{id} (pakai POST bukan PUT karena ada file upload)
     public function update(Request $request, $id)
     {
+        dd(Cloudinary::class);
+
         $barang = Barang::find($id);
 
         if (!$barang) {
