@@ -16,12 +16,14 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
   
   const [jumlah, setJumlah] = useState('');
   const [hargaBeli, setHargaBeli] = useState('');
-  const [pemasokId, setPemasokId] = useState(''); // State baru untuk pilihan Pemasok
+  const [pemasokId, setPemasokId] = useState(''); 
+  const [tanggalMasuk, setTanggalMasuk] = useState(''); // State untuk tanggal
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false); // State loading untuk tombol simpan
 
   // === STATE UNTUK DATA API ===
   const [daftarBarang, setDaftarBarang] = useState([]);
-  const [daftarPemasok, setDaftarPemasok] = useState([]); // State baru untuk list Pemasok
+  const [daftarPemasok, setDaftarPemasok] = useState([]); 
   const [isLoading, setIsLoading] = useState(true);
 
   // === AMBIL DATA MASTER BARANG & PEMASOK DARI API ===
@@ -33,7 +35,6 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
         const rawApiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
         const cleanApiUrl = rawApiUrl.replace(/\/$/, ""); 
         
-        // Pengecekan agar URL tidak dobel /api/api
         const baseApi = cleanApiUrl.endsWith('/api') ? cleanApiUrl : `${cleanApiUrl}/api`;
         
         const headers = {
@@ -54,6 +55,10 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
         if (resPemasok.ok) {
           setDaftarPemasok(Array.isArray(dataPemasok) ? dataPemasok : (dataPemasok.data || []));
         }
+
+        // Set tanggal default ke hari ini
+        const today = new Date().toISOString().split('T')[0];
+        setTanggalMasuk(today);
 
       } catch (error) {
         console.error("Error Fetching Data:", error);
@@ -98,10 +103,61 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
     }
   };
 
-  const handleSimpanTransaksi = () => {
-    // Di sini nantinya kamu akan menambahkan logika fetch POST ke API transaksi
-    // Menggunakan parameter: selectedBarang.id, pemasokId, jumlah, hargaBeli
-    setIsSuccessModalOpen(true);
+  // === FUNGSI EKSEKUSI API POST TRANSAKSI MASUK ===
+  const handleSimpanTransaksi = async () => {
+    // 1. Validasi Input agar tidak ada form kosong
+    if (!selectedBarang || !pemasokId || !jumlah || !hargaBeli || !tanggalMasuk) {
+        alert("Semua data (Barang, Pemasok, Jumlah, Harga Beli, dan Tanggal) harus diisi!");
+        return;
+    }
+
+    try {
+        setIsSubmitting(true);
+        const token = localStorage.getItem('token');
+        const rawApiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+        const cleanApiUrl = rawApiUrl.replace(/\/$/, ""); 
+        const baseApi = cleanApiUrl.endsWith('/api') ? cleanApiUrl : `${cleanApiUrl}/api`;
+
+        // 2. Siapkan Payload untuk API (Sesuaikan struktur object JSON-nya dengan backend kamu)
+        const payload = {
+            barang_id: selectedBarang.id,
+            supplier_id: pemasokId,
+            jumlah: parseInt(jumlah, 10),
+            harga_beli: parseFloat(hargaBeli),
+            tanggal_masuk: tanggalMasuk
+        };
+
+        // 3. Eksekusi Request POST
+        const response = await fetch(`${baseApi}/transaksi-masuk`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const json = await response.json();
+
+        // 4. Handle Respons
+        if (response.ok && json.success) {
+            setIsSuccessModalOpen(true);
+            
+            // Bersihkan form setelah sukses
+            setSelectedBarang(null);
+            setPemasokId('');
+            setJumlah('');
+            setHargaBeli('');
+        } else {
+            alert(json.message || "Gagal menyimpan transaksi masuk.");
+        }
+    } catch (error) {
+        console.error("Error Simpan Transaksi:", error);
+        alert("Terjadi kesalahan jaringan.");
+    } finally {
+        setIsSubmitting(false);
+    }
   };
 
   return (
@@ -161,7 +217,6 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
         {/* ================= MAIN CONTENT ================= */}
         <main className="flex-1 flex flex-col overflow-hidden relative">
           
-          {/* === HEADER === */}
           <header className="h-20 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between px-8 z-10 sticky top-0 shrink-0">
             <div className="flex items-center">
               <h2 className="font-bold text-[#1E232C] text-base hidden md:block">SIMPB - CV. Amrita Jayasri</h2>
@@ -176,14 +231,11 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
                   className="w-full pl-11 pr-4 py-2.5 bg-[#F4F7FC] border-transparent rounded-full text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] transition-all" 
                 />
               </div>
-              
               <button className="relative text-gray-500 hover:text-gray-800 transition-colors">
                 <Bell className="w-5 h-5" />
                 <span className="absolute -top-0.5 right-0.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
               </button>
-              
               <div className="h-6 w-px bg-gray-200"></div>
-              
               <div className="flex items-center gap-2.5 cursor-pointer">
                 <CircleUser className="w-8 h-8 text-[#5452F6]" strokeWidth={1.5} />
                 <span className="text-sm font-semibold text-[#1E232C]">Administrator</span>
@@ -191,10 +243,8 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
             </div>
           </header>
 
-          {/* ================= PAGE CONTENT ================= */}
           <div className="flex-1 overflow-y-auto p-8 pb-12 relative">
               
-            {/* Breadcrumbs & Judul */}
             <div className="flex justify-between items-start mb-8 gap-4">
               <div>
                 <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-1">Manajemen Inventaris</p>
@@ -202,7 +252,6 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
                 <p className="text-sm text-gray-500 mt-1 max-w-xl">Tambahkan kedatangan stok baru ke gudang pusat. Pastikan semua detail sesuai dengan faktur fisik untuk kepatuhan audit.</p>
               </div>
               
-              {/* Volume Harian */}
               <div className="bg-white rounded-[20px] p-5 shadow-sm border border-gray-100 flex gap-4 items-center shrink-0">
                 <div className="w-10 h-10 rounded-lg bg-[#EBF4FF] flex items-center justify-center">
                   <BarChart2 className="w-5 h-5 text-[#5452F6]" />
@@ -217,10 +266,8 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
               </div>
             </div>
 
-            {/* Grid Konten Atas */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               
-              {/* Kolom Kiri - Detail Transaksi */}
               <div className="lg:col-span-2 space-y-8">
                   <div className="bg-white rounded-[20px] p-8 shadow-sm border border-gray-100 flex flex-col relative">
                       <div className="flex justify-between items-center mb-6">
@@ -229,7 +276,7 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                          {/* === CUSTOM DROPDOWN PILIH BARANG === */}
+                          {/* PILIH BARANG */}
                           <div>
                               <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">PILIH BARANG</label>
                               <div className="relative">
@@ -297,7 +344,7 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
                               </div>
                           </div>
 
-                          {/* === DROPDOWN PILIH PEMASOK DARI API === */}
+                          {/* PILIH PEMASOK */}
                           <div>
                               <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">PILIH PEMASOK</label>
                               <div className="relative">
@@ -354,28 +401,36 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
                       <div className="mb-8 z-0 relative">
                           <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">TANGGAL KEDATANGAN</label>
                           <div className="relative">
-                              <input type="date" className="w-full px-4 py-3 bg-[#F4F7FC] border border-gray-100 rounded-xl text-sm font-semibold text-gray-700 focus:outline-none focus:border-[#5452F6] focus:bg-white transition-colors" />
+                              <input 
+                                type="date" 
+                                value={tanggalMasuk}
+                                onChange={(e) => setTanggalMasuk(e.target.value)}
+                                className="w-full px-4 py-3 bg-[#F4F7FC] border border-gray-100 rounded-xl text-sm font-semibold text-gray-700 focus:outline-none focus:border-[#5452F6] focus:bg-white transition-colors" 
+                              />
                           </div>
                       </div>
 
                       {/* Tombol Simpan */}
                       <button 
                         onClick={handleSimpanTransaksi}
-                        className="w-full py-3.5 bg-[#5452F6] hover:bg-[#4341E3] text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-indigo-500/30"
+                        disabled={isSubmitting}
+                        className="w-full py-3.5 bg-[#5452F6] hover:bg-[#4341E3] text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-indigo-500/30 flex justify-center items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                       >
-                          Simpan Transaksi
+                          {isSubmitting ? (
+                              <><Loader2 className="w-4 h-4 animate-spin" /> Menyimpan...</>
+                          ) : (
+                              "Simpan Transaksi"
+                          )}
                       </button>
                   </div>
               </div>
 
               {/* Kolom Kanan */}
               <div className="space-y-8">
-                  {/* Masuk Terbaru */}
                   <div className="bg-white rounded-[20px] p-6 shadow-sm border border-gray-100 flex flex-col">
                       <h3 className="text-sm font-bold text-gray-800 mb-6 flex items-center gap-2">
                           <ArrowDownRight className="w-4 h-4 text-[#5452F6]" /> Masuk Terbaru
                       </h3>
-                      
                       <div className="space-y-4 mb-6">
                           {masukTerbaru.map((item, index) => (
                           <div key={index} className="flex justify-between items-center gap-4 border-b border-gray-50 pb-4 last:border-0 last:pb-0">
@@ -392,23 +447,12 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
                           </div>
                           ))}
                       </div>
-
                       <button 
                         onClick={() => onNavigate('laporan')}
                         className="w-full py-2.5 bg-gray-50 hover:bg-gray-100 text-[#5452F6] text-xs font-bold rounded-xl transition-colors mt-auto border border-gray-100"
                       >
                           LIHAT SEMUA TRANSAKSI
                       </button>
-                  </div>
-
-                  {/* Info Gudang Card */}
-                  <div className="bg-white rounded-[20px] p-6 shadow-sm border border-gray-100 flex flex-col relative overflow-hidden h-48 bg-cover bg-center" style={{ backgroundImage: `url('https://images.unsplash.com/photo-1587293852726-70cdb56c2866?q=80&w=600&auto=format&fit=crop')` }}>
-                      <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 to-transparent z-0"></div>
-                      <div className="relative z-10 mt-auto text-white">
-                          <span className="text-[9px] font-bold text-white bg-[#D97706] px-2 py-0.5 rounded-md uppercase tracking-wider mb-2 inline-block shadow-sm">TIPS GUDANG</span>
-                          <h4 className="text-sm font-bold text-white leading-snug mb-1">Optimalkan alur penerimaan Anda dengan pemindaian digital.</h4>
-                          <p className="text-[10px] text-gray-200 font-medium max-w-sm">Kurangi kesalahan hingga 40% menggunakan aplikasi pemindai Amrita Mobile.</p>
-                      </div>
                   </div>
               </div>
             </div>
@@ -450,21 +494,8 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
                         </tbody>
                     </table>
                 </div>
-                
-                {/* Pagination */}
-                <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t border-gray-100 bg-white gap-3">
-                    <p className="text-xs text-gray-500 font-medium">Menampilkan 4 dari 12 transaksi</p>
-                    <div className="flex items-center gap-1.5 pagination-pills">
-                        <button className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 border border-gray-100"><ChevronLeft className="w-4 h-4" /></button>
-                        <button className="w-8 h-8 flex items-center justify-center bg-[#5452F6] text-white rounded-lg text-xs font-bold">1</button>
-                        <button className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-lg text-xs font-bold border border-gray-100">2</button>
-                        <button className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-lg text-xs font-bold border border-gray-100">3</button>
-                        <button className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 border border-gray-100"><ChevronRight className="w-4 h-4" /></button>
-                    </div>
-                </div>
             </div>
 
-            {/* Footer Teks Kecil */}
             <div className="mt-12 text-center">
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-loose">© 2026 CV. AMRITA JAYASRI • MANAJEMEN INVENTARIS BERKINERJA TINGGI</p>
             </div>
@@ -473,14 +504,13 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
         </main>
       </div>
 
-      {/* RENDER MODAL SUKSES TRANSAKSI */}
       <SuccessTransactionModal 
         isOpen={isSuccessModalOpen}
         onClose={() => setIsSuccessModalOpen(false)}
         onNavigate={onNavigate}
         transactionData={{
           id: '#TRX-' + Math.floor(10000 + Math.random() * 90000),
-          barang: selectedBarang ? selectedBarang.nama_barang : 'Belum dipilih', // Menyesuaikan properti baru
+          barang: selectedBarang ? selectedBarang.nama_barang : 'Belum dipilih',
           jumlah: jumlah || '0'
         }}
       />

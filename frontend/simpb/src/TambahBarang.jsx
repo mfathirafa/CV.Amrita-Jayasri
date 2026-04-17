@@ -11,15 +11,15 @@ import {
 import SuccessModal from './SuccessModal';
 
 const TambahBarang = ({ onNavigate, onLogout }) => {
-  // 1. STATE UNTUK FORM INPUT (Ditambah 'satuan')
+  // 1. STATE UNTUK FORM INPUT
   const [namaBarang, setNamaBarang] = useState('');
   const [kategori, setKategori] = useState('');
-  const [satuan, setSatuan] = useState(''); // <-- State Baru untuk Satuan
+  const [satuan, setSatuan] = useState(''); 
   const [harga, setHarga] = useState('');
   const [stok, setStok] = useState('');
   const [ambangBatas, setAmbangBatas] = useState('');
   
-  // STATE BARU UNTUK FILE FOTO & PREVIEW (Hanya UI visual sementara)
+  // STATE BARU UNTUK FILE FOTO & PREVIEW
   const [foto, setFoto] = useState(null);
   const [previewFoto, setPreviewFoto] = useState(null);
 
@@ -46,7 +46,7 @@ const TambahBarang = ({ onNavigate, onLogout }) => {
   };
 
   const handleSimpan = async () => {
-    // Validasi Sederhana (ditambah satuan)
+    // Validasi Sederhana
     if (!namaBarang || !kategori || !satuan || !harga || !stok || !ambangBatas) {
       setErrorMessage('Semua kolom berlabel bintang merah (*) wajib diisi!');
       return;
@@ -68,17 +68,17 @@ const TambahBarang = ({ onNavigate, onLogout }) => {
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json', // Gunakan tipe JSON
+          'Content-Type': 'application/json',
           'Accept': 'application/json',
           'Authorization': `Bearer ${token}` 
         },
         body: JSON.stringify({
           nama_barang: namaBarang,
           kategori: kategori,
-          harga: Number(harga), // Pastikan format angka
-          stok: Number(stok), // Pastikan format angka
-          stok_minimum: Number(ambangBatas), // Pastikan format angka
-          satuan: satuan // <-- Masukkan payload satuan ke sini
+          harga: Number(harga), 
+          stok: Number(stok), 
+          stok_minimum: Number(ambangBatas), 
+          satuan: satuan 
         })
       });
 
@@ -162,7 +162,7 @@ const TambahBarang = ({ onNavigate, onLogout }) => {
           </button>
         </nav>
 
-        {/* === TOMBOL LOGOUT DIPERBARUI DI SINI === */}
+        {/* === TOMBOL LOGOUT === */}
         <div className="p-4 border-t border-gray-100 mt-auto">
           <button onClick={onLogout} className="flex items-center gap-3 px-4 py-3 w-full text-[#64748B] hover:bg-gray-50 hover:text-[#334155] rounded-xl font-semibold text-sm transition-colors">
             <ArrowDownLeft className="w-5 h-5 text-[#829AB1]" strokeWidth={2.5} /> Keluar
@@ -213,7 +213,7 @@ const TambahBarang = ({ onNavigate, onLogout }) => {
             <p className="text-sm text-gray-500 mt-1">Lengkapi informasi di bawah ini untuk menambahkan atau memperbarui data barang di sistem inventaris.</p>
           </div>
 
-          {/* Area Notifikasi Error SAJA */}
+          {/* Area Notifikasi Error */}
           {errorMessage && (
             <div className="mb-6 p-4 rounded-xl flex items-center gap-3 animate-in fade-in bg-red-50 text-red-600 border border-red-100">
               <AlertCircle className="w-5 h-5" />
@@ -303,6 +303,7 @@ const TambahBarang = ({ onNavigate, onLogout }) => {
                         <option value="Alat Tulis">Alat Tulis</option>
                         <option value="Tinta & Toner">Tinta & Toner</option>
                         <option value="Arsip & Penyimpanan">Arsip & Penyimpanan</option>
+                        <option value="Aksesoris Meja">Aksesoris Meja</option>
                       </select>
                       <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                     </div>

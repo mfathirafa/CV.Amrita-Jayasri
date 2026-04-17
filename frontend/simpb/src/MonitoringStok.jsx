@@ -16,11 +16,13 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // === FUNGSI AMBIL DATA DARI BACKEND ===
+  // === FUNGSI AMBIL DATA DARI BACKEND (DENGAN POLLING REAL-TIME) ===
   useEffect(() => {
-    const fetchBarang = async () => {
+    const fetchBarang = async (isBackgroundRefresh = false) => {
       try {
-        setIsLoading(true);
+        // Jangan munculkan loading penuh jika ini cuma refresh latar belakang
+        if (!isBackgroundRefresh) setIsLoading(true);
+        
         const token = localStorage.getItem('token');
         const rawApiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
         const cleanApiUrl = rawApiUrl.replace(/\/$/, ""); 
@@ -48,11 +50,20 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
       } catch (error) {
         console.error("Error Fetching:", error);
       } finally {
-        setIsLoading(false);
+        if (!isBackgroundRefresh) setIsLoading(false);
       }
     };
 
+    // 1. Tarikan pertama kali saat halaman dimuat
     fetchBarang();
+
+    // 2. Set interval untuk menarik data ulang setiap 10 detik (10000 ms) di latar belakang
+    const intervalId = setInterval(() => {
+      fetchBarang(true); 
+    }, 10000);
+
+    // 3. Bersihkan interval saat pindah ke halaman lain agar memori tidak bocor
+    return () => clearInterval(intervalId);
   }, []);
 
   // === PERHITUNGAN STATISTIK OTOMATIS ===
@@ -218,7 +229,7 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
                 </div>
               </div>
               <div className="mt-auto">
-                <h3 className="text-3xl font-black text-gray-800 leading-none">{isLoading ? '...' : totalItems}</h3>
+                <h3 className="text-3xl font-black text-gray-800 leading-none">{isLoading && tableData.length === 0 ? '...' : totalItems}</h3>
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-2">TOTAL ITEM SKU</p>
               </div>
             </div>
@@ -234,7 +245,7 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
                 )}
               </div>
               <div className="mt-auto">
-                <h3 className="text-3xl font-black text-gray-800 leading-none">{isLoading ? '...' : stokRendahCount}</h3>
+                <h3 className="text-3xl font-black text-gray-800 leading-none">{isLoading && tableData.length === 0 ? '...' : stokRendahCount}</h3>
                 <p className="text-[10px] font-bold text-red-500 uppercase tracking-widest mt-2">STOK RENDAH (KRITIS)</p>
               </div>
             </div>
@@ -247,7 +258,7 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
                 </div>
               </div>
               <div className="mt-auto">
-                <h3 className="text-3xl font-black text-gray-800 leading-none">{isLoading ? '...' : stokHabisCount}</h3>
+                <h3 className="text-3xl font-black text-gray-800 leading-none">{isLoading && tableData.length === 0 ? '...' : stokHabisCount}</h3>
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-2">HABIS / PESAN SEGERA</p>
               </div>
             </div>
@@ -260,7 +271,7 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
                 </div>
               </div>
               <div className="mt-auto z-10">
-                <h3 className="text-3xl font-black leading-none">{isLoading ? '...' : formatRupiah(valuasiTotal)}</h3>
+                <h3 className="text-3xl font-black leading-none">{isLoading && tableData.length === 0 ? '...' : formatRupiah(valuasiTotal)}</h3>
                 <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest mt-2">VALUASI INVENTARIS</p>
               </div>
               <Coins className="absolute -right-4 -bottom-4 w-28 h-28 opacity-10" />
@@ -281,7 +292,7 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
               </div>
             </div>
 
-            {isLoading ? (
+            {isLoading && tableData.length === 0 ? (
               <div className="absolute inset-0 z-10 bg-white/80 flex flex-col items-center justify-center mt-20">
                 <Loader2 className="w-8 h-8 text-[#5452F6] animate-spin mb-4" />
                 <p className="text-sm font-bold text-gray-500">Menganalisis stok gudang...</p>
@@ -359,7 +370,7 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
             )}
             
             {/* Pagination */}
-            {!isLoading && filteredData.length > 0 && (
+            {(tableData.length > 0 || !isLoading) && filteredData.length > 0 && (
               <div className="p-6 bg-gray-50/30 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 mt-auto">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                   Menampilkan {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredData.length)} dari {filteredData.length} Item
