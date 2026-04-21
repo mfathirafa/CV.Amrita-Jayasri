@@ -43,9 +43,9 @@ class BarangController extends Controller
             'foto'         => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
-        // SESUDAH (pakai ID terakhir + 1, lebih aman):
-        $lastBarang  = Barang::withTrashed()->orderBy('id', 'desc')->first();
-        $nextNumber  = $lastBarang ? ($lastBarang->id + 1) : 1;
+        // Ganti dengan ini — lebih simple, tidak butuh SoftDeletes
+        $lastId      = \DB::table('barang')->max('id') ?? 0;
+        $nextNumber  = $lastId + 1;
         $idReferensi = 'BRG-ATK' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
 
         // Pastikan tidak duplikat
