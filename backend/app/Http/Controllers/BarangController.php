@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Barang;
-use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
+use App\Helpers\ImgBBHelper;
 
 class BarangController extends Controller
 {
@@ -47,29 +47,29 @@ class BarangController extends Controller
         $count       = Barang::count() + 1;
         $idReferensi = 'BRG-ATK' . str_pad($count, 3, '0', STR_PAD_LEFT);
 
-        // Upload foto ke Cloudinary kalau ada
-        $fotoUrl      = null;
-        $fotoPublicId = null;
+        // Upload foto ke ImgBB kalau ada
+        $fotoUrl       = null;
+        $fotoDeleteUrl = null;
 
         if ($request->hasFile('foto')) {
-            $upload       = Cloudinary::upload(
-                $request->file('foto')->getRealPath(),
-                ['folder' => 'amrita/barang']
-            );
-            $fotoUrl      = $upload->getSecurePath();
-            $fotoPublicId = $upload->getPublicId();
+            $upload = ImgBBHelper::upload($request->file('foto'));
+
+            if ($upload) {
+                $fotoUrl       = $upload['url'];
+                $fotoDeleteUrl = $upload['delete_url'];
+            }
         }
 
         $barang = Barang::create([
-            'id_referensi' => $idReferensi,
-            'nama_barang'  => $request->nama_barang,
-            'kategori'     => $request->kategori,
-            'harga'        => $request->harga,
-            'stok'         => $request->stok,
-            'stok_minimum' => $request->stok_minimum,
-            'satuan'       => $request->satuan ?? 'Unit',
-            'foto_url'     => $fotoUrl,
-            'foto_public_id' => $fotoPublicId,
+            'id_referensi'   => $idReferensi,
+            'nama_barang'    => $request->nama_barang,
+            'kategori'       => $request->kategori,
+            'harga'          => $request->harga,
+            'stok'           => $request->stok,
+            'stok_minimum'   => $request->stok_minimum,
+            'satuan'         => $request->satuan ?? 'Unit',
+            'foto_url'       => $fotoUrl,
+            'foto_delete_url'=> $fotoDeleteUrl,
         ]);
 
         return response()->json([
@@ -98,7 +98,7 @@ class BarangController extends Controller
         ], 200);
     }
 
-    // POST /api/barang/{id} (pakai POST bukan PUT karena ada file upload)
+    // POST /api/barang/{id} (pakai POST karena ada file upload)
     public function update(Request $request, $id)
     {
         $barang = Barang::find($id);
@@ -120,22 +120,16 @@ class BarangController extends Controller
             'foto'         => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
-        $fotoUrl      = $barang->foto_url;
-        $fotoPublicId = $barang->foto_public_id;
+        $fotoUrl       = $barang->foto_url;
+        $fotoDeleteUrl = $barang->foto_delete_url;
 
         if ($request->hasFile('foto')) {
-            // Hapus foto lama dari Cloudinary kalau ada
-            if ($barang->foto_public_id) {
-                Cloudinary::destroy($barang->foto_public_id);
-            }
+            $upload = ImgBBHelper::upload($request->file('foto'));
 
-            // Upload foto baru
-            $upload       = Cloudinary::upload(
-                $request->file('foto')->getRealPath(),
-                ['folder' => 'amrita/barang']
-            );
-            $fotoUrl      = $upload->getSecurePath();
-            $fotoPublicId = $upload->getPublicId();
+            if ($upload) {
+                $fotoUrl       = $upload['url'];
+                $fotoDeleteUrl = $upload['delete_url'];
+            }
         }
 
         $barang->update([
@@ -146,7 +140,7 @@ class BarangController extends Controller
             'stok_minimum'   => $request->stok_minimum,
             'satuan'         => $request->satuan ?? $barang->satuan,
             'foto_url'       => $fotoUrl,
-            'foto_public_id' => $fotoPublicId,
+            'foto_delete_url'=> $fotoDeleteUrl,
         ]);
 
         return response()->json([
@@ -176,11 +170,6 @@ class BarangController extends Controller
                 'success' => false,
                 'message' => 'Barang tidak dapat dihapus karena masih memiliki riwayat transaksi.',
             ], 409);
-        }
-
-        // Hapus foto dari Cloudinary kalau ada
-        if ($barang->foto_public_id) {
-            Cloudinary::destroy($barang->foto_public_id);
         }
 
         $barang->delete();
