@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Building2, MapPin, Phone, Info } from 'lucide-react';
+import { X, Building2, MapPin, Phone, Info, Loader2 } from 'lucide-react';
 import CancelConfirmModal from './CancelConfirmModal';
 
 const EditSupplierModal = ({ isOpen, onClose, onSave, supplierData }) => {
@@ -9,16 +9,17 @@ const EditSupplierModal = ({ isOpen, onClose, onSave, supplierData }) => {
     phone: ''
   });
 
-  // State untuk mengontrol pop-up konfirmasi batal
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // State untuk loading
 
-  // Mengisi form dengan data supplier yang dipilih setiap kali modal dibuka
+  // Mengisi form dengan data supplier dari database saat modal dibuka
   useEffect(() => {
     if (supplierData && isOpen) {
       setFormData({
-        name: supplierData.name || '',
-        address: supplierData.address || '',
-        phone: supplierData.phone || ''
+        // Sesuaikan dengan nama field dari database yang dikirim lewat props
+        name: supplierData.nama_supplier || '',
+        address: supplierData.alamat || '',
+        phone: supplierData.no_telepon || ''
       });
     }
   }, [supplierData, isOpen]);
@@ -30,16 +31,59 @@ const EditSupplierModal = ({ isOpen, onClose, onSave, supplierData }) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = () => {
-    if (onSave) {
-      // Mengirim kembali ID asli ditambah data yang baru diubah
-      onSave({ ...supplierData, ...formData });
+  // === FUNGSI SUBMIT EDIT KE API BACKEND ===
+  const handleSubmit = async () => {
+    if (!formData.name || !formData.address || !formData.phone) {
+      alert("Harap lengkapi semua kolom yang wajib diisi!");
+      return;
     }
-    onClose();
+
+    setIsLoading(true);
+
+    const payload = {
+      nama_supplier: formData.name,
+      alamat: formData.address,
+      no_telepon: formData.phone
+    };
+
+    try {
+      const token = localStorage.getItem('token');
+      const rawApiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+      const cleanApiUrl = rawApiUrl.replace(/\/$/, ""); 
+      
+      // Arahkan ke endpoint PUT /supplier/{id}
+      const endpoint = cleanApiUrl.endsWith('/api') 
+        ? `${cleanApiUrl}/supplier/${supplierData.id}` 
+        : `${cleanApiUrl}/api/supplier/${supplierData.id}`;
+
+      const response = await fetch(endpoint, {
+        method: 'PUT', // Menggunakan PUT untuk edit
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Berhasil simpan, panggil fungsi onSave() dari parent (Pemasok.jsx) untuk mereload tabel
+        if (onSave) onSave(data.data); 
+        onClose(); // Tutup Modal
+      } else {
+        alert("Gagal memperbarui: " + (data.message || "Periksa kembali data Anda."));
+      }
+    } catch (error) {
+      console.error("Error Updating:", error);
+      alert("Terjadi kesalahan jaringan saat menyimpan perubahan.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleRequestClose = () => {
-    // Selalu memunculkan pop-up konfirmasi saat batal edit
     setShowCancelConfirm(true);
   };
 
@@ -55,7 +99,8 @@ const EditSupplierModal = ({ isOpen, onClose, onSave, supplierData }) => {
           
           <button 
             onClick={handleRequestClose} 
-            className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors p-1"
+            disabled={isLoading}
+            className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors p-1 disabled:opacity-50"
           >
             <X className="w-5 h-5" />
           </button>
@@ -75,7 +120,8 @@ const EditSupplierModal = ({ isOpen, onClose, onSave, supplierData }) => {
                   name="name" 
                   value={formData.name} 
                   onChange={handleChange} 
-                  className="bg-transparent w-full text-sm outline-none font-medium text-gray-700" 
+                  disabled={isLoading}
+                  className="bg-transparent w-full text-sm outline-none font-medium text-gray-700 disabled:opacity-50" 
                 />
               </div>
             </div>
@@ -91,7 +137,8 @@ const EditSupplierModal = ({ isOpen, onClose, onSave, supplierData }) => {
                   name="address" 
                   value={formData.address} 
                   onChange={handleChange} 
-                  className="bg-transparent w-full text-sm outline-none font-medium text-gray-700" 
+                  disabled={isLoading}
+                  className="bg-transparent w-full text-sm outline-none font-medium text-gray-700 disabled:opacity-50" 
                 />
               </div>
             </div>
@@ -107,7 +154,8 @@ const EditSupplierModal = ({ isOpen, onClose, onSave, supplierData }) => {
                   name="phone" 
                   value={formData.phone} 
                   onChange={handleChange} 
-                  className="bg-transparent w-full text-sm outline-none font-medium text-gray-700" 
+                  disabled={isLoading}
+                  className="bg-transparent w-full text-sm outline-none font-medium text-gray-700 disabled:opacity-50" 
                 />
               </div>
             </div>
@@ -116,15 +164,21 @@ const EditSupplierModal = ({ isOpen, onClose, onSave, supplierData }) => {
           <div className="flex gap-4 mt-8 mb-6">
             <button 
               onClick={handleRequestClose} 
-              className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl text-sm font-bold transition-colors"
+              disabled={isLoading}
+              className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl text-sm font-bold transition-colors disabled:opacity-50"
             >
               Batal
             </button>
             <button 
               onClick={handleSubmit} 
-              className="flex-1 py-3 bg-[#5452F6] hover:bg-[#4341E3] text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-500/30 transition-all"
+              disabled={isLoading}
+              className="flex-1 py-3 bg-[#5452F6] hover:bg-[#4341E3] text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-500/30 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
             >
-              Simpan Perubahan
+              {isLoading ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Menyimpan...</>
+              ) : (
+                'Simpan Perubahan'
+              )}
             </button>
           </div>
 

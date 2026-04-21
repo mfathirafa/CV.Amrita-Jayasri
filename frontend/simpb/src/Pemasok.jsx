@@ -4,17 +4,23 @@ import {
   ArrowDownRight, ArrowUpRight, Activity, 
   BarChart2, Search, Bell, CircleUser, 
   Plus, Edit2, Trash2, ChevronLeft, ChevronRight, Info, 
-  ArrowDownLeft, Phone, Loader2 // <-- Phone dan Loader2 sudah ditambahkan di sini
+  ArrowDownLeft, Phone, Loader2
 } from 'lucide-react';
 
 import TambahSupplierModal from './TambahSupplierModal'; 
 import EditSupplierModal from './EditSupplierModal'; 
+import DeleteConfirmModal from './DeleteConfirmModal'; // <-- 1. IMPORT MODAL HAPUS
 
 const Pemasok = ({ onNavigate, onLogout }) => {
   // === STATE UNTUK KONTROL MODAL ===
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedSupplier, setSelectedSupplier] = useState(null); 
+
+  // === STATE UNTUK MODAL HAPUS ===
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState({ id: null, namaPemasok: '' });
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // === STATE UNTUK DATA API ===
   const [suppliers, setSuppliers] = useState([]);
@@ -42,7 +48,6 @@ const Pemasok = ({ onNavigate, onLogout }) => {
 
       const data = await response.json();
 
-      // Memasukkan data JSON dari Railway ke dalam state React
       if (response.ok && data.success) {
         setSuppliers(data.data || []);
       } else {
@@ -55,12 +60,10 @@ const Pemasok = ({ onNavigate, onLogout }) => {
     }
   };
 
-  // Otomatis tarik data saat halaman dibuka
   useEffect(() => {
     fetchSuppliers();
   }, []);
 
-  // Fungsi pembuat inisial otomatis untuk logo (PT, CV, dll)
   const getInitial = (name) => {
     if (!name) return '??';
     const firstWord = name.split(' ')[0].toUpperCase();
@@ -69,7 +72,7 @@ const Pemasok = ({ onNavigate, onLogout }) => {
   };
 
   const handleSaveNewSupplier = (newSupplierData) => {
-    fetchSuppliers(); // Refresh tabel setelah nambah
+    fetchSuppliers(); 
     setIsAddModalOpen(false);
   };
 
@@ -79,8 +82,50 @@ const Pemasok = ({ onNavigate, onLogout }) => {
   };
 
   const handleSaveEditSupplier = (updatedSupplierData) => {
-    fetchSuppliers(); // Refresh tabel setelah edit
+    fetchSuppliers(); 
     setIsEditModalOpen(false);
+  };
+
+  // === FUNGSI UNTUK MENGATUR MODAL HAPUS ===
+  const openDeleteModal = (id, namaPemasok) => {
+    setItemToDelete({ id, namaPemasok });
+    setIsDeleteModalOpen(true);
+  };
+
+  const executeDelete = async () => {
+    if (!itemToDelete.id) return;
+    
+    setIsDeleting(true);
+    try {
+      const token = localStorage.getItem('token');
+      const rawApiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+      const cleanApiUrl = rawApiUrl.replace(/\/$/, ""); 
+      
+      const endpoint = cleanApiUrl.endsWith('/api') 
+        ? `${cleanApiUrl}/supplier/${itemToDelete.id}` 
+        : `${cleanApiUrl}/api/supplier/${itemToDelete.id}`;
+
+      const response = await fetch(endpoint, {
+        method: 'DELETE',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        setSuppliers(prevData => prevData.filter(item => item.id !== itemToDelete.id));
+        setIsDeleteModalOpen(false); 
+      } else {
+        const errorData = await response.json();
+        alert(`Gagal menghapus pemasok: ${errorData.message || 'Server error'}`);
+      }
+    } catch (error) {
+      console.error("Error Deleting:", error);
+      alert('Terjadi kesalahan jaringan.');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -243,7 +288,6 @@ const Pemasok = ({ onNavigate, onLogout }) => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {/* === DI SINI DATA DARI DATABASE DI-LOOPING === */}
                       {suppliers.map((item) => (
                         <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
                           <td className="py-4 px-6">
@@ -276,9 +320,15 @@ const Pemasok = ({ onNavigate, onLogout }) => {
                               >
                                 <Edit2 className="w-4 h-4" />
                               </button>
-                              <button className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-gray-100 shadow-inner bg-gray-50/50">
+                              
+                              {/* === TOMBOL HAPUS DIUBAH DI SINI === */}
+                              <button 
+                                onClick={() => openDeleteModal(item.id, item.nama_supplier)}
+                                className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-gray-100 shadow-inner bg-gray-50/50"
+                              >
                                 <Trash2 className="w-4 h-4" />
                               </button>
+                              
                             </div>
                           </td>
                         </tr>
@@ -312,7 +362,6 @@ const Pemasok = ({ onNavigate, onLogout }) => {
         </main>
       </div>
 
-      {/* === RENDER KEDUA MODAL DI SINI === */}
       <TambahSupplierModal 
         isOpen={isAddModalOpen} 
         onClose={() => setIsAddModalOpen(false)}
@@ -324,6 +373,15 @@ const Pemasok = ({ onNavigate, onLogout }) => {
         onClose={() => setIsEditModalOpen(false)}
         onSave={handleSaveEditSupplier}
         supplierData={selectedSupplier} 
+      />
+
+      {/* === RENDER MODAL HAPUS DI SINI === */}
+      <DeleteConfirmModal 
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={executeDelete}
+        itemName={itemToDelete.namaPemasok}
+        isDeleting={isDeleting}
       />
     </>
   );

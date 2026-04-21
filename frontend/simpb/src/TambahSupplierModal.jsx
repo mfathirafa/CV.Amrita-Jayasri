@@ -10,7 +10,7 @@ const TambahSupplierModal = ({ isOpen, onClose, onSave }) => {
   });
 
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
-  const [isLoading, setIsLoading] = useState(false); // <-- Tambahan state loading
+  const [isLoading, setIsLoading] = useState(false); 
 
   if (!isOpen) return null;
 
@@ -56,7 +56,8 @@ const TambahSupplierModal = ({ isOpen, onClose, onSave }) => {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        alert("Supplier berhasil ditambahkan!");
+        // === POP-UP ALERT DIHILANGKAN DI SINI ===
+        // alert("Supplier berhasil ditambahkan!"); 
         
         // Reset form setelah sukses
         setFormData({ name: '', address: '', phone: '' });
