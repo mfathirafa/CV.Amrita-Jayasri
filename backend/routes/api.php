@@ -26,12 +26,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // Barang
-    Route::get('/barang',              [BarangController::class, 'index']);
-    Route::post('/barang',             [BarangController::class, 'store']);
-    Route::get('/barang/{id}',         [BarangController::class, 'show']);
-    Route::post('/barang/{id}',        [BarangController::class, 'update']); // ← POST bukan PUT (karena ada file)
-    Route::put('/barang/{id}',         [BarangController::class, 'update']); // ← tetap ada PUT untuk compatibility
-    Route::delete('/barang/{id}',      [BarangController::class, 'destroy']);
+        Route::get('/barang',          [BarangController::class, 'index']);
+        Route::post('/barang',         [BarangController::class, 'store']);
+        Route::get('/barang/{id}',     [BarangController::class, 'show']);
+        Route::put('/barang/{id}',     [BarangController::class, 'update']);
+        Route::delete('/barang/{id}',  [BarangController::class, 'destroy']);
     
     // Supplier`
         Route::get('/supplier',         [SupplierController::class, 'index']);
