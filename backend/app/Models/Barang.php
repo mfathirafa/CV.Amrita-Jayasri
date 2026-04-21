@@ -16,6 +16,8 @@ class Barang extends Model
         'stok',
         'stok_minimum',
         'satuan',
+        'foto_url',       
+        'foto_delete_url', 
     ];
 
     // Relasi ke transaksi masuk
