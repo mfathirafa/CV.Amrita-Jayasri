@@ -8,17 +8,19 @@ import BarangMasuk from './BarangMasuk';
 import BarangKeluar from './BarangKeluar'; 
 import MonitoringStok from './MonitoringStok';
 import TambahBarang from './TambahBarang';
+import EditBarang from './EditBarang'; // <-- 1. IMPORT EDIT BARANG
 import Laporan from './Laporan';
-import LogoutModal from './LogoutModal'; // <-- IMPORT MODAL LOGOUT DI SINI
+import LogoutModal from './LogoutModal'; 
 
 const App = () => {
   const [activePage, setActivePage] = useState('login');
   const [user, setUser] = useState(null);
   
-  // === STATE UNTUK MENGONTROL MODAL LOGOUT ===
+  // === STATE BARU UNTUK MENYIMPAN ID BARANG YANG AKAN DIEDIT ===
+  const [selectedItemId, setSelectedItemId] = useState(null);
+  
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
-  // Efek untuk mengecek sesi saat aplikasi pertama kali dimuat
   useEffect(() => {
     const savedToken = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
@@ -29,18 +31,15 @@ const App = () => {
     }
   }, []);
 
-  // Handler saat login berhasil
   const handleLogin = (userData) => {
     setUser(userData);
     setActivePage('dashboard');
   };
 
-  // Handler untuk MENAMPILKAN modal logout (bukan langsung logout)
   const handleShowLogoutModal = () => {
     setIsLogoutModalOpen(true);
   };
 
-  // Handler eksekusi logout SEBENARNYA (dipanggil saat tombol "Ya, Keluar" di-klik)
   const handleConfirmLogout = async () => {
     const token = localStorage.getItem('token');
 
@@ -59,8 +58,15 @@ const App = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
-    setIsLogoutModalOpen(false); // Tutup modal setelah berhasil
+    setIsLogoutModalOpen(false); 
     setActivePage('login');
+  };
+
+  // === 2. FUNGSI NAVIGASI BARU ===
+  // Fungsi ini bisa menangkap nama halaman DAN id barang (opsional)
+  const handleNavigate = (page, id = null) => {
+    setActivePage(page);
+    setSelectedItemId(id); // Simpan ID jika ada yang dikirim
   };
 
   const renderPage = () => {
@@ -68,26 +74,37 @@ const App = () => {
       case 'login':
         return <Login onLogin={handleLogin} />;
       case 'dashboard':
-        // Ganti handleLogout menjadi handleShowLogoutModal
-        return <Dashboard onNavigate={setActivePage} onLogout={handleShowLogoutModal} user={user} />;
+        // Ganti semua setActivePage menjadi handleNavigate
+        return <Dashboard onNavigate={handleNavigate} onLogout={handleShowLogoutModal} user={user} />;
       case 'data-barang':
-        return <DataBarang onNavigate={setActivePage} onLogout={handleShowLogoutModal} />;
+        return <DataBarang onNavigate={handleNavigate} onLogout={handleShowLogoutModal} />;
       case 'tambah-barang':
-        return <TambahBarang onNavigate={setActivePage} onLogout={handleShowLogoutModal} />;
+        return <TambahBarang onNavigate={handleNavigate} onLogout={handleShowLogoutModal} />;
+      
+      // === 3. TAMBAHKAN CASE UNTUK EDIT BARANG ===
+      case 'edit-barang':
+        return (
+          <EditBarang 
+            onNavigate={handleNavigate} 
+            onLogout={handleShowLogoutModal} 
+            itemId={selectedItemId} // Kirimkan ID yang disimpan ke komponen Edit
+          />
+        );
+
       case 'pemasok':
-        return <Pemasok onNavigate={setActivePage} onLogout={handleShowLogoutModal} />;
+        return <Pemasok onNavigate={handleNavigate} onLogout={handleShowLogoutModal} />;
       case 'konsumen':
-        return <Konsumen onNavigate={setActivePage} onLogout={handleShowLogoutModal} />;
+        return <Konsumen onNavigate={handleNavigate} onLogout={handleShowLogoutModal} />;
       case 'barang-masuk':
-        return <BarangMasuk onNavigate={setActivePage} onLogout={handleShowLogoutModal} />;
+        return <BarangMasuk onNavigate={handleNavigate} onLogout={handleShowLogoutModal} />;
       case 'barang-keluar':
-        return <BarangKeluar onNavigate={setActivePage} onLogout={handleShowLogoutModal} />;
+        return <BarangKeluar onNavigate={handleNavigate} onLogout={handleShowLogoutModal} />;
       case 'monitoring-stok':
-        return <MonitoringStok onNavigate={setActivePage} onLogout={handleShowLogoutModal} />;
+        return <MonitoringStok onNavigate={handleNavigate} onLogout={handleShowLogoutModal} />;
       case 'laporan':
-        return <Laporan onNavigate={setActivePage} onLogout={handleShowLogoutModal} />;
+        return <Laporan onNavigate={handleNavigate} onLogout={handleShowLogoutModal} />;
       default:
-        return <Dashboard onNavigate={setActivePage} onLogout={handleShowLogoutModal} user={user} />;
+        return <Dashboard onNavigate={handleNavigate} onLogout={handleShowLogoutModal} user={user} />;
     }
   };
 
@@ -97,7 +114,6 @@ const App = () => {
       {renderPage()}
 
       {/* 2. RENDER MODAL LOGOUT DI LUAR HALAMAN */}
-      {/* Modal ini akan otomatis berada di atas halaman apa saja yang sedang aktif */}
       <LogoutModal 
         isOpen={isLogoutModalOpen} 
         onClose={() => setIsLogoutModalOpen(false)} 
