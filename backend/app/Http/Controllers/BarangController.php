@@ -43,9 +43,16 @@ class BarangController extends Controller
             'foto'         => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
-        // Auto generate id_referensi
-        $count       = Barang::count() + 1;
-        $idReferensi = 'BRG-ATK' . str_pad($count, 3, '0', STR_PAD_LEFT);
+        // SESUDAH (pakai ID terakhir + 1, lebih aman):
+        $lastBarang  = Barang::withTrashed()->orderBy('id', 'desc')->first();
+        $nextNumber  = $lastBarang ? ($lastBarang->id + 1) : 1;
+        $idReferensi = 'BRG-ATK' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+
+        // Pastikan tidak duplikat
+        while (Barang::where('id_referensi', $idReferensi)->exists()) {
+            $nextNumber++;
+            $idReferensi = 'BRG-ATK' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+        }
 
         // Upload foto ke ImgBB kalau ada
         $fotoUrl       = null;
