@@ -17,12 +17,21 @@ class KonsumenController extends Controller
             $query->where('nama_konsumen', 'like', '%' . Sanitizer::clean($request->search) . '%');
         }
 
-        $konsumen = $query->orderBy('nama_konsumen', 'asc')->get();
+        $perPage  = min((int) $request->get('per_page', 10), 100);
+        $konsumen = $query->orderBy('nama_konsumen', 'asc')->paginate($perPage);
 
         return response()->json([
             'success' => true,
             'message' => 'Data konsumen berhasil diambil.',
-            'data'    => $konsumen,
+            'data'    => $konsumen->items(),
+            'meta'    => [
+                'current_page' => $konsumen->currentPage(),
+                'per_page'     => $konsumen->perPage(),
+                'total'        => $konsumen->total(),
+                'last_page'    => $konsumen->lastPage(),
+                'from'         => $konsumen->firstItem(),
+                'to'           => $konsumen->lastItem(),
+            ],
         ], 200);
     }
 

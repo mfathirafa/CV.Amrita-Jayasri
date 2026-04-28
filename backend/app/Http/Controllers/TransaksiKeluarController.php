@@ -7,15 +7,15 @@ use Illuminate\Support\Facades\DB;
 use App\Models\TransaksiKeluar;
 use App\Models\Barang;
 use App\Helpers\Sanitizer;
+use Illuminate\Support\Facades\Cache;
 
 class TransaksiKeluarController extends Controller
 {
     // GET /api/transaksi-keluar - List semua transaksi keluar
     public function index(Request $request)
     {
-        $query = TransaksiKeluar::with(['barang', 'user']);
+        $query = TransaksiKeluar::with(['barang:id,nama_barang,satuan', 'user:id,name', 'konsumen:id,nama_konsumen']);
 
-        // Filter berdasarkan tanggal
         if ($request->has('start_date') && $request->start_date != '') {
             $query->where('tanggal_keluar', '>=', $request->start_date);
         }
@@ -24,21 +24,29 @@ class TransaksiKeluarController extends Controller
             $query->where('tanggal_keluar', '<=', $request->end_date);
         }
 
-        // Filter berdasarkan barang
         if ($request->has('barang_id') && $request->barang_id != '') {
-            $query->where('barang_id', $request->barang_id);
+            $query->where('barang_id', (int) $request->barang_id);
         }
 
-         if ($request->has('konsumen_id') && $request->konsumen_id != '') {
-            $query->where('konsumen_id', $request->konsumen_id);
+        if ($request->has('konsumen_id') && $request->konsumen_id != '') {
+            $query->where('konsumen_id', (int) $request->konsumen_id);
         }
 
-        $transaksi = $query->orderBy('tanggal_keluar', 'desc')->get();
+        $perPage   = min((int) $request->get('per_page', 10), 100);
+        $transaksi = $query->orderBy('tanggal_keluar', 'desc')->paginate($perPage);
 
         return response()->json([
             'success' => true,
             'message' => 'Data transaksi keluar berhasil diambil.',
-            'data'    => $transaksi,
+            'data'    => $transaksi->items(),
+            'meta'    => [
+                'current_page' => $transaksi->currentPage(),
+                'per_page'     => $transaksi->perPage(),
+                'total'        => $transaksi->total(),
+                'last_page'    => $transaksi->lastPage(),
+                'from'         => $transaksi->firstItem(),
+                'to'           => $transaksi->lastItem(),
+            ],
         ], 200);
     }
 
@@ -88,6 +96,10 @@ class TransaksiKeluarController extends Controller
             $barang->save();
 
             DB::commit();
+
+            // Hapus cache dashboard supaya data terbaru
+            Cache::forget('dashboard_data');
+            Cache::forget('stok_rendah');
 
             // Load relasi untuk response
             $transaksi->load(['barang', 'user', 'konsumen']);

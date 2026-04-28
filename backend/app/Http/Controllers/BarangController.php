@@ -23,12 +23,22 @@ class BarangController extends Controller
             $query->where('kategori', Sanitizer::clean($request->kategori));
         }
 
-        $barang = $query->orderBy('nama_barang', 'asc')->get();
+        // Pagination — default 10 per halaman, maks 100
+        $perPage = min((int) $request->get('per_page', 10), 100);
+        $barang  = $query->orderBy('nama_barang', 'asc')->paginate($perPage);
 
         return response()->json([
             'success' => true,
             'message' => 'Data barang berhasil diambil.',
-            'data'    => $barang,
+            'data'    => $barang->items(),
+            'meta'    => [
+                'current_page' => $barang->currentPage(),
+                'per_page'     => $barang->perPage(),
+                'total'        => $barang->total(),
+                'last_page'    => $barang->lastPage(),
+                'from'         => $barang->firstItem(),
+                'to'           => $barang->lastItem(),
+            ],
         ], 200);
     }
 

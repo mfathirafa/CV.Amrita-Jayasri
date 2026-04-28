@@ -8,13 +8,14 @@ use App\Models\TransaksiMasuk;
 use App\Models\Barang;
 use App\Models\Supplier;
 use App\Helpers\Sanitizer;
+use Illuminate\Support\Facades\Cache;
 
 class TransaksiMasukController extends Controller
 {
     // GET /api/transaksi-masuk
     public function index(Request $request)
     {
-        $query = TransaksiMasuk::with(['barang', 'supplier', 'user']);
+        $query = TransaksiMasuk::with(['barang:id,nama_barang,satuan', 'supplier:id,nama_supplier', 'user:id,name']);
 
         if ($request->has('start_date') && $request->start_date != '') {
             $query->where('tanggal_masuk', '>=', $request->start_date);
@@ -32,12 +33,21 @@ class TransaksiMasukController extends Controller
             $query->where('supplier_id', (int) $request->supplier_id);
         }
 
-        $transaksi = $query->orderBy('tanggal_masuk', 'desc')->get();
+        $perPage   = min((int) $request->get('per_page', 10), 100);
+        $transaksi = $query->orderBy('tanggal_masuk', 'desc')->paginate($perPage);
 
         return response()->json([
             'success' => true,
             'message' => 'Data transaksi masuk berhasil diambil.',
-            'data'    => $transaksi,
+            'data'    => $transaksi->items(),
+            'meta'    => [
+                'current_page' => $transaksi->currentPage(),
+                'per_page'     => $transaksi->perPage(),
+                'total'        => $transaksi->total(),
+                'last_page'    => $transaksi->lastPage(),
+                'from'         => $transaksi->firstItem(),
+                'to'           => $transaksi->lastItem(),
+            ],
         ], 200);
     }
 
@@ -72,6 +82,10 @@ class TransaksiMasukController extends Controller
             $barang->save();
 
             DB::commit();
+
+            // Hapus cache dashboard supaya data terbaru
+            Cache::forget('dashboard_data');
+            Cache::forget('stok_rendah');
 
             $transaksi->load(['barang', 'supplier', 'user']);
 

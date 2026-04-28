@@ -13,17 +13,25 @@ class SupplierController extends Controller
     {
         $query = Supplier::query();
 
-        // Fitur search berdasarkan nama supplier
         if ($request->has('search') && $request->search != '') {
-            $query->where('nama_supplier', 'like', '%' . $request->search . '%');
+            $query->where('nama_supplier', 'like', '%' . Sanitizer::clean($request->search) . '%');
         }
 
-        $supplier = $query->orderBy('nama_supplier', 'asc')->get();
+        $perPage  = min((int) $request->get('per_page', 10), 100);
+        $supplier = $query->orderBy('nama_supplier', 'asc')->paginate($perPage);
 
         return response()->json([
             'success' => true,
             'message' => 'Data supplier berhasil diambil.',
-            'data'    => $supplier,
+            'data'    => $supplier->items(),
+            'meta'    => [
+                'current_page' => $supplier->currentPage(),
+                'per_page'     => $supplier->perPage(),
+                'total'        => $supplier->total(),
+                'last_page'    => $supplier->lastPage(),
+                'from'         => $supplier->firstItem(),
+                'to'           => $supplier->lastItem(),
+            ],
         ], 200);
     }
 
