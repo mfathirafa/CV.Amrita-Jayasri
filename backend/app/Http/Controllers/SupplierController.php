@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Supplier;
+use App\Helpers\Sanitizer;
 
 class SupplierController extends Controller
 {
@@ -36,9 +37,9 @@ class SupplierController extends Controller
         ]);
 
         $supplier = Supplier::create([
-            'nama_supplier' => $request->nama_supplier,
-            'alamat'        => $request->alamat,
-            'no_telepon'    => $request->no_telepon,
+            'nama_supplier' => Sanitizer::clean($request->nama_supplier),
+            'alamat'        => Sanitizer::clean($request->alamat),
+            'no_telepon'    => Sanitizer::clean($request->no_telepon),
         ]);
 
         return response()->json([
@@ -86,9 +87,9 @@ class SupplierController extends Controller
         ]);
 
         $supplier->update([
-            'nama_supplier' => $request->nama_supplier,
-            'alamat'        => $request->alamat,
-            'no_telepon'    => $request->no_telepon,
+            'nama_supplier' => Sanitizer::clean($request->nama_supplier),
+            'alamat'        => Sanitizer::clean($request->alamat),
+            'no_telepon'    => Sanitizer::clean($request->no_telepon),
         ]);
 
         return response()->json([

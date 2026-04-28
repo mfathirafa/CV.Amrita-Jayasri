@@ -7,15 +7,15 @@ use Illuminate\Support\Facades\DB;
 use App\Models\TransaksiMasuk;
 use App\Models\Barang;
 use App\Models\Supplier;
+use App\Helpers\Sanitizer;
 
 class TransaksiMasukController extends Controller
 {
-    // GET /api/transaksi-masuk - List semua transaksi masuk
+    // GET /api/transaksi-masuk
     public function index(Request $request)
     {
         $query = TransaksiMasuk::with(['barang', 'supplier', 'user']);
 
-        // Filter berdasarkan tanggal
         if ($request->has('start_date') && $request->start_date != '') {
             $query->where('tanggal_masuk', '>=', $request->start_date);
         }
@@ -24,9 +24,12 @@ class TransaksiMasukController extends Controller
             $query->where('tanggal_masuk', '<=', $request->end_date);
         }
 
-        // Filter berdasarkan barang
         if ($request->has('barang_id') && $request->barang_id != '') {
-            $query->where('barang_id', $request->barang_id);
+            $query->where('barang_id', (int) $request->barang_id);
+        }
+
+        if ($request->has('supplier_id') && $request->supplier_id != '') {
+            $query->where('supplier_id', (int) $request->supplier_id);
         }
 
         $transaksi = $query->orderBy('tanggal_masuk', 'desc')->get();
@@ -38,42 +41,38 @@ class TransaksiMasukController extends Controller
         ], 200);
     }
 
-    // POST /api/transaksi-masuk - Catat transaksi masuk
+    // POST /api/transaksi-masuk
     public function store(Request $request)
     {
         $request->validate([
-            'barang_id'      => 'required|exists:barang,id',
-            'supplier_id'    => 'required|exists:supplier,id',
-            'jumlah'         => 'required|integer|min:1',
-            'harga_beli'     => 'required|numeric|min:0',
-            'tanggal_masuk'  => 'required|date',
-            'keterangan'     => 'nullable|string',
+            'barang_id'     => 'required|integer|exists:barang,id',
+            'supplier_id'   => 'required|integer|exists:supplier,id',
+            'jumlah'        => 'required|integer|min:1|max:999999',
+            'harga_beli'    => 'required|numeric|min:0|max:999999999',
+            'tanggal_masuk' => 'required|date|before_or_equal:today',
+            'keterangan'    => 'nullable|string|max:500',
         ]);
 
-        // Gunakan DB Transaction supaya data konsisten
-        // Artinya: kalau salah satu langkah gagal, semua dibatalkan
         DB::beginTransaction();
 
         try {
-            // 1. Simpan transaksi masuk
             $transaksi = TransaksiMasuk::create([
                 'barang_id'     => $request->barang_id,
                 'supplier_id'   => $request->supplier_id,
-                'user_id'       => $request->user()->id, // ambil dari token login
+                'user_id'       => $request->user()->id,
                 'jumlah'        => $request->jumlah,
                 'harga_beli'    => $request->harga_beli,
                 'tanggal_masuk' => $request->tanggal_masuk,
-                'keterangan'    => $request->keterangan,
+                'keterangan'    => Sanitizer::cleanNullable($request->keterangan),
             ]);
 
-            // 2. Otomatis tambah stok barang
+            // Otomatis tambah stok barang
             $barang = Barang::find($request->barang_id);
             $barang->stok += $request->jumlah;
             $barang->save();
 
-            DB::commit(); // Simpan semua perubahan
+            DB::commit();
 
-            // Load relasi untuk response
             $transaksi->load(['barang', 'supplier', 'user']);
 
             return response()->json([
@@ -83,16 +82,15 @@ class TransaksiMasukController extends Controller
             ], 201);
 
         } catch (\Exception $e) {
-            DB::rollBack(); // Batalkan semua perubahan jika ada error
-
+            DB::rollBack();
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
+                'message' => 'Terjadi kesalahan saat menyimpan transaksi.',
             ], 500);
         }
     }
 
-    // GET /api/transaksi-masuk/{id} - Detail transaksi masuk
+    // GET /api/transaksi-masuk/{id}
     public function show($id)
     {
         $transaksi = TransaksiMasuk::with(['barang', 'supplier', 'user'])->find($id);

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Konsumen;
+use App\Helpers\Sanitizer;
 
 class KonsumenController extends Controller
 {
@@ -13,7 +14,7 @@ class KonsumenController extends Controller
         $query = Konsumen::query();
 
         if ($request->has('search') && $request->search != '') {
-            $query->where('nama_konsumen', 'like', '%' . $request->search . '%');
+            $query->where('nama_konsumen', 'like', '%' . Sanitizer::clean($request->search) . '%');
         }
 
         $konsumen = $query->orderBy('nama_konsumen', 'asc')->get();
@@ -30,14 +31,14 @@ class KonsumenController extends Controller
     {
         $request->validate([
             'nama_konsumen' => 'required|string|max:200',
-            'alamat'        => 'nullable|string',
-            'no_telepon'    => 'nullable|string|max:20',
+            'alamat'        => 'nullable|string|max:500',
+            'no_telepon'    => 'nullable|string|max:20|regex:/^[0-9\-\+\(\)\s]+$/',
         ]);
 
         $konsumen = Konsumen::create([
-            'nama_konsumen' => $request->nama_konsumen,
-            'alamat'        => $request->alamat,
-            'no_telepon'    => $request->no_telepon,
+            'nama_konsumen' => Sanitizer::clean($request->nama_konsumen),
+            'alamat'        => Sanitizer::cleanNullable($request->alamat),
+            'no_telepon'    => Sanitizer::cleanNullable($request->no_telepon),
         ]);
 
         return response()->json([
@@ -80,14 +81,14 @@ class KonsumenController extends Controller
 
         $request->validate([
             'nama_konsumen' => 'required|string|max:200',
-            'alamat'        => 'nullable|string',
-            'no_telepon'    => 'nullable|string|max:20',
+            'alamat'        => 'nullable|string|max:500',
+            'no_telepon'    => 'nullable|string|max:20|regex:/^[0-9\-\+\(\)\s]+$/',
         ]);
 
         $konsumen->update([
-            'nama_konsumen' => $request->nama_konsumen,
-            'alamat'        => $request->alamat,
-            'no_telepon'    => $request->no_telepon,
+            'nama_konsumen' => Sanitizer::clean($request->nama_konsumen),
+            'alamat'        => Sanitizer::cleanNullable($request->alamat),
+            'no_telepon'    => Sanitizer::cleanNullable($request->no_telepon),
         ]);
 
         return response()->json([
@@ -109,7 +110,6 @@ class KonsumenController extends Controller
             ], 404);
         }
 
-        // Cek apakah masih punya riwayat transaksi
         if ($konsumen->transaksiKeluar()->count() > 0) {
             return response()->json([
                 'success' => false,

@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\TransaksiKeluar;
 use App\Models\Barang;
+use App\Helpers\Sanitizer;
 
 class TransaksiKeluarController extends Controller
 {
@@ -75,11 +76,11 @@ class TransaksiKeluarController extends Controller
                 'barang_id'      => $request->barang_id,
                 'user_id'        => $request->user()->id,
                 'konsumen_id'    => $request->konsumen_id,
-                'nama_instansi'  => $request->nama_instansi,
+                'nama_instansi'  => Sanitizer::cleanNullable($request->nama_instansi),
                 'jumlah'         => $request->jumlah,
                 'harga_jual'     => $request->harga_jual,
                 'tanggal_keluar' => $request->tanggal_keluar,
-                'keterangan'     => $request->keterangan,
+                'keterangan'     => Sanitizer::cleanNullable($request->keterangan),
             ]);
 
             // 2. Otomatis kurangi stok barang

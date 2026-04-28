@@ -11,50 +11,60 @@ class AuthController extends Controller
     // LOGIN
     public function login(Request $request)
     {
-        // Validasi input
         $request->validate([
-            'email'    => 'required|email',
-            'password' => 'required',
+            'email'    => 'required|email|max:100',
+            'password' => 'required|string|min:6|max:100',
         ]);
 
-        // Cek kredensial
-        if (!Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
+        // Tambah proteksi dari karakter berbahaya
+        if (preg_match('/[<>{}]/', $request->email)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Input tidak valid.',
+            ], 422);
+        }
+
+        if (!Auth::attempt([
+            'email'    => $request->email,
+            'password' => $request->password
+        ])) {
             return response()->json([
                 'success' => false,
                 'message' => 'Email atau password tidak valid.',
             ], 401);
         }
 
-        // Ambil data user
         $user = Auth::user();
 
-        // Cek apakah user aktif
         if (!$user->is_active) {
+            Auth::logout();
             return response()->json([
                 'success' => false,
-                'message' => 'Akun Anda tidak aktif.',
+                'message' => 'Akun Anda tidak aktif. Hubungi administrator.',
             ], 403);
         }
 
-        // Hapus token lama (biar tidak numpuk)
+        // Hapus token lama
         $user->tokens()->delete();
 
-        // Buat token baru
-        $token = $user->createToken('auth_token')->plainTextToken;
+        // Buat token baru dengan expiry 24 jam
+        $token = $user->createToken('auth_token', ['*'], now()->addHours(24))->plainTextToken;
 
         return response()->json([
             'success' => true,
             'message' => 'Login berhasil.',
             'data'    => [
-                'user'  => [
+                'user'       => [
                     'id'    => $user->id,
                     'name'  => $user->name,
                     'email' => $user->email,
                 ],
-                'token' => $token,
+                'token'      => $token,
+                'expires_at' => now()->addHours(24)->toDateTimeString(),
             ],
         ], 200);
     }
+    
     public function fixPassword()
     {
         \App\Models\User::where('email', 'admin@amrita.com')

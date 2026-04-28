@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use App\Models\Barang;
+use App\Helpers\Sanitizer;
 use App\Helpers\ImgBBHelper;
 
 class BarangController extends Controller
@@ -14,11 +16,11 @@ class BarangController extends Controller
         $query = Barang::query();
 
         if ($request->has('search') && $request->search != '') {
-            $query->where('nama_barang', 'like', '%' . $request->search . '%');
+            $query->where('nama_barang', 'like', '%' . Sanitizer::clean($request->search) . '%');
         }
 
         if ($request->has('kategori') && $request->kategori != '') {
-            $query->where('kategori', $request->kategori);
+            $query->where('kategori', Sanitizer::clean($request->kategori));
         }
 
         $barang = $query->orderBy('nama_barang', 'asc')->get();
@@ -40,11 +42,18 @@ class BarangController extends Controller
             'stok'         => 'required|integer|min:0',
             'stok_minimum' => 'required|integer|min:0',
             'satuan'       => 'nullable|string|max:50',
-            'foto'         => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'foto'         => [
+                'nullable',
+                'file',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:2048',
+                'dimensions:min_width=50,min_height=50,max_width=5000,max_height=5000',
+            ],
         ]);
 
-        // Ganti dengan ini — lebih simple, tidak butuh SoftDeletes
-        $lastId      = \DB::table('barang')->max('id') ?? 0;
+        // Auto generate id_referensi
+        $lastId      = DB::table('barang')->max('id') ?? 0;
         $nextNumber  = $lastId + 1;
         $idReferensi = 'BRG-ATK' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
 
@@ -60,7 +69,6 @@ class BarangController extends Controller
 
         if ($request->hasFile('foto')) {
             $upload = ImgBBHelper::upload($request->file('foto'));
-
             if ($upload) {
                 $fotoUrl       = $upload['url'];
                 $fotoDeleteUrl = $upload['delete_url'];
@@ -69,12 +77,12 @@ class BarangController extends Controller
 
         $barang = Barang::create([
             'id_referensi'   => $idReferensi,
-            'nama_barang'    => $request->nama_barang,
-            'kategori'       => $request->kategori,
+            'nama_barang'    => Sanitizer::clean($request->nama_barang),
+            'kategori'       => Sanitizer::clean($request->kategori),
             'harga'          => $request->harga,
             'stok'           => $request->stok,
             'stok_minimum'   => $request->stok_minimum,
-            'satuan'         => $request->satuan ?? 'Unit',
+            'satuan'         => Sanitizer::clean($request->satuan ?? 'Unit'),
             'foto_url'       => $fotoUrl,
             'foto_delete_url'=> $fotoDeleteUrl,
         ]);
@@ -105,7 +113,7 @@ class BarangController extends Controller
         ], 200);
     }
 
-    // POST /api/barang/{id} (pakai POST karena ada file upload)
+    // POST /api/barang/{id} — pakai POST karena ada file upload
     public function update(Request $request, $id)
     {
         $barang = Barang::find($id);
@@ -124,7 +132,14 @@ class BarangController extends Controller
             'stok'         => 'required|integer|min:0',
             'stok_minimum' => 'required|integer|min:0',
             'satuan'       => 'nullable|string|max:50',
-            'foto'         => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'foto'         => [
+                'nullable',
+                'file',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:2048',
+                'dimensions:min_width=50,min_height=50,max_width=5000,max_height=5000',
+            ],
         ]);
 
         $fotoUrl       = $barang->foto_url;
@@ -132,7 +147,6 @@ class BarangController extends Controller
 
         if ($request->hasFile('foto')) {
             $upload = ImgBBHelper::upload($request->file('foto'));
-
             if ($upload) {
                 $fotoUrl       = $upload['url'];
                 $fotoDeleteUrl = $upload['delete_url'];
@@ -140,12 +154,12 @@ class BarangController extends Controller
         }
 
         $barang->update([
-            'nama_barang'    => $request->nama_barang,
-            'kategori'       => $request->kategori,
+            'nama_barang'    => Sanitizer::clean($request->nama_barang),
+            'kategori'       => Sanitizer::clean($request->kategori),
             'harga'          => $request->harga,
             'stok'           => $request->stok,
             'stok_minimum'   => $request->stok_minimum,
-            'satuan'         => $request->satuan ?? $barang->satuan,
+            'satuan'         => Sanitizer::clean($request->satuan ?? $barang->satuan),
             'foto_url'       => $fotoUrl,
             'foto_delete_url'=> $fotoDeleteUrl,
         ]);

@@ -4,7 +4,7 @@ return [
 
     'paths' => ['api/*','sanctum/csrf-cookies'],
 
-    'allowed_methods' => ['*'],
+    'allowed_methods' => ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 
     'allowed_origins' => [
         'http://localhost:5173',    // React Vite (development)
@@ -16,7 +16,10 @@ return [
 
     'allowed_origins_patterns' => [],
 
-    'allowed_headers' => ['*'],
+    'allowed_headers' => [    'Content-Type',
+            'Authorization',
+            'Accept',
+            'X-Requested-With',],
 
     'exposed_headers' => [],
 
