@@ -15,9 +15,10 @@ use App\Http\Controllers\LaporanController;
 // AUTH ROUTES (public)
 // ========================
 // Route::get('/fix-password', [AuthController::class, 'fixPassword']);
-// Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login']);
 // Login — maksimal 5x percobaan per menit per IP
-Route::middleware('throttle:5,1')->post('/login', [AuthController::class, 'login']);
+// Login — pakai rate limiter 'login' yang sudah didefinisikan
+Route::middleware('throttle:login')->post('/login', [AuthController::class, 'login']);
 
 // ========================
 // PROTECTED ROUTES (butuh login)
