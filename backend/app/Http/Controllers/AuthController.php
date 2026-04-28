@@ -8,7 +8,6 @@ use App\Models\User;
 
 class AuthController extends Controller
 {
-    // LOGIN
     public function login(Request $request)
     {
         $request->validate([
@@ -16,7 +15,6 @@ class AuthController extends Controller
             'password' => 'required|string|min:6|max:100',
         ]);
 
-        // Tambah proteksi dari karakter berbahaya
         if (preg_match('/[<>{}]/', $request->email)) {
             return response()->json([
                 'success' => false,
@@ -47,35 +45,25 @@ class AuthController extends Controller
         // Hapus token lama
         $user->tokens()->delete();
 
-        // Buat token baru dengan expiry 24 jam
-        $token = $user->createToken('auth_token', ['*'], now()->addHours(24))->plainTextToken;
+        // Buat token baru
+        $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'success' => true,
             'message' => 'Login berhasil.',
             'data'    => [
-                'user'       => [
+                'user' => [
                     'id'    => $user->id,
                     'name'  => $user->name,
                     'email' => $user->email,
                 ],
-                'token'      => $token,
-                'expires_at' => now()->addHours(24)->toDateTimeString(),
+                'token' => $token,
             ],
         ], 200);
     }
-    
-    public function fixPassword()
-    {
-        \App\Models\User::where('email', 'admin@amrita.com')
-            ->update(['password' => \Illuminate\Support\Facades\Hash::make('password123')]);
-        
-        return response()->json(['message' => 'Password fixed!']);
-    }
-    // LOGOUT
+
     public function logout(Request $request)
     {
-        // Hapus token yang sedang dipakai
         $request->user()->currentAccessToken()->delete();
 
         return response()->json([
