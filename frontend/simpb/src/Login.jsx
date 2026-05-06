@@ -23,7 +23,8 @@ const Login = ({ onLogin }) => {
     setIsLoading(true);
     setError('');
 
-    const API_URL = import.meta.env.VITE_API_URL || 'https://cvamrita-jayasri-production.up.railway.app/api';
+    // === BACKEND URL SUDAH DIGANTI KE IP BARU ===
+    const API_URL = import.meta.env.VITE_API_URL || 'http://103.253.213.251/api';
 
     try {
       const response = await fetch(`${API_URL}/login`, {

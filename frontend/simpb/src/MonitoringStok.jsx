@@ -5,7 +5,8 @@ import {
   BarChart2, Search, Bell, CircleUser, ArrowDownLeft,
   Package, AlertTriangle, ShoppingCart, Coins,
   FileText, Zap, ChevronLeft, ChevronRight,
-  Filter, Download, PenTool, Printer, Edit2, Loader2
+  Filter, Download, PenTool, Printer, Edit2, Loader2,
+  TrendingUp, TrendingDown, Minus // <-- IMPORT ICON BARU DI SINI
 } from 'lucide-react';
 
 const MonitoringStok = ({ onLogout, onNavigate }) => {
@@ -20,11 +21,10 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
   useEffect(() => {
     const fetchBarang = async (isBackgroundRefresh = false) => {
       try {
-        // Jangan munculkan loading penuh jika ini cuma refresh latar belakang
         if (!isBackgroundRefresh) setIsLoading(true);
         
         const token = localStorage.getItem('token');
-        const rawApiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+        const rawApiUrl = import.meta.env.VITE_API_URL || 'http://103.253.213.251/api';
         const cleanApiUrl = rawApiUrl.replace(/\/$/, ""); 
         
         const endpoint = cleanApiUrl.endsWith('/api') 
@@ -54,25 +54,19 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
       }
     };
 
-    // 1. Tarikan pertama kali saat halaman dimuat
     fetchBarang();
 
-    // 2. Set interval untuk menarik data ulang setiap 10 detik (10000 ms) di latar belakang
     const intervalId = setInterval(() => {
       fetchBarang(true); 
     }, 10000);
 
-    // 3. Bersihkan interval saat pindah ke halaman lain agar memori tidak bocor
     return () => clearInterval(intervalId);
   }, []);
 
   // === PERHITUNGAN STATISTIK OTOMATIS ===
   const totalItems = tableData.length;
-  // Hitung stok rendah (stok di bawah atau sama dengan batas minimum, tapi belum habis)
   const stokRendahCount = tableData.filter(item => Number(item.stok) <= Number(item.stok_minimum) && Number(item.stok) > 0).length;
-  // Hitung stok habis
   const stokHabisCount = tableData.filter(item => Number(item.stok) <= 0).length;
-  // Hitung total valuasi
   const valuasiTotal = tableData.reduce((total, item) => total + (parseFloat(item.harga) * Number(item.stok)), 0);
 
   // Format Rupiah
@@ -102,17 +96,25 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
     return { icon: Box, color: 'text-indigo-500' };
   };
 
+  // === FUNGSI TREN YANG SUDAH DIREVISI MENJADI PANAH ===
   const renderTrendIcon = (trend) => {
-    const bars = [3, 2, 4, 1, 3, 2, 4];
+    if (trend === 'up') {
+      return (
+        <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center mx-auto" title="Stok Aman">
+          <TrendingUp className="w-4 h-4 text-emerald-600" />
+        </div>
+      );
+    }
+    if (trend === 'down') {
+      return (
+        <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center mx-auto" title="Stok Menurun">
+          <TrendingDown className="w-4 h-4 text-red-600" />
+        </div>
+      );
+    }
     return (
-      <div className="flex gap-0.5 items-end h-5 w-12 px-1">
-        {bars.map((height, index) => {
-          let color = "bg-gray-200";
-          if (trend === 'down' && index > bars.length - 4) color = "bg-red-400";
-          if (trend === 'up' && index > bars.length - 4) color = "bg-emerald-400";
-          if (trend === 'flat' && index > bars.length - 4) color = "bg-orange-400";
-          return <div key={index} className={`w-1 rounded-full ${color}`} style={{ height: `${height * 5}px` }}></div>
-        })}
+      <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center mx-auto" title="Stok Habis / Statis">
+        <Minus className="w-4 h-4 text-orange-600" />
       </div>
     );
   };
@@ -314,7 +316,7 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
                       <th className="py-5 px-6">KATEGORI</th>
                       <th className="py-5 px-6 text-center">STOK</th>
                       <th className="py-5 px-6 text-center">MIN.</th>
-                      <th className="py-5 px-6">TREN</th>
+                      <th className="py-5 px-6 text-center">TREN</th>
                       <th className="py-5 px-6 text-center">STATUS</th>
                       <th className="py-5 px-6 text-right">AKSI</th>
                     </tr>
@@ -347,7 +349,7 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
                             {item.stok} <span className="text-[10px] uppercase font-bold text-gray-400 ml-1">{item.satuan}</span>
                           </td>
                           <td className="py-4 px-6 text-center text-xs font-bold text-gray-300">{item.stok_minimum}</td>
-                          <td className="py-4 px-6">{renderTrendIcon(status.trend)}</td>
+                          <td className="py-4 px-6 text-center">{renderTrendIcon(status.trend)}</td>
                           <td className="py-4 px-6 text-center">
                             <span className={`text-[9px] font-black px-3 py-1.5 rounded-lg uppercase tracking-widest ${status.color}`}>
                               {status.label}
