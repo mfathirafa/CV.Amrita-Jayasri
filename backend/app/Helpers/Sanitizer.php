@@ -13,4 +13,14 @@ class Sanitizer
 
         return $input;
     }
+
+    public static function cleanNullable(?string $input): ?string
+    {
+        if ($input === null) {
+            return null;
+        }
+
+        // Gunakan clean() untuk string yang tidak null
+        return self::clean($input);
+    }
 }
