@@ -35,7 +35,7 @@ const Laporan = ({ onLogout, onNavigate }) => {
     try {
       setIsLoading(true);
       const token = localStorage.getItem('token');
-      const rawApiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+      const rawApiUrl = import.meta.env.VITE_API_URL || 'http://103.253.213.251/api';
       const cleanApiUrl = rawApiUrl.replace(/\/$/, ""); 
       
       const baseApi = cleanApiUrl.endsWith('/api') ? cleanApiUrl : `${cleanApiUrl}/api`;
