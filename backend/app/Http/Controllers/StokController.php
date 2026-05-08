@@ -13,8 +13,14 @@ class StokController extends Controller
     public function index(Request $request)
     {
         $query = Barang::select(
-            'id', 'id_referensi', 'nama_barang',
-            'kategori', 'stok', 'stok_minimum', 'harga', 'satuan'
+            'id',
+            'id_referensi',
+            'nama_barang',
+            'kategori',
+            'stok',
+            'stok_minimum', // tetap diambil untuk logika status, tapi tidak ditampilkan
+            'harga',
+            'satuan'
         );
 
         if ($request->has('kategori') && $request->kategori != '') {
@@ -28,20 +34,45 @@ class StokController extends Controller
         $perPage = min((int) $request->get('per_page', 10), 100);
         $barang  = $query->orderBy('nama_barang', 'asc')->paginate($perPage);
 
+        // Hitung total nilai inventaris semua barang (tidak terpengaruh pagination)
+        $totalNilaiInventaris = Barang::selectRaw('SUM(harga * stok) as total')->value('total') ?? 0;
+        $totalJenisBarang     = Barang::count();
+        $totalUnitBarang      = Barang::sum('stok');
+
         $items = collect($barang->items())->transform(function ($item) {
-            $item->status_stok = $item->stok <= $item->stok_minimum ? 'rendah' : 'aman';
-            return $item;
+            $hargaTotal = $item->harga * $item->stok;
+            $statusStok = $item->stok <= $item->stok_minimum ? 'rendah' : 'aman';
+
+            return [
+                'id'           => $item->id,
+                'id_referensi' => $item->id_referensi,
+                'nama_barang'  => $item->nama_barang,
+                'kategori'     => $item->kategori,
+                'stok'         => $item->stok,
+                'satuan'       => $item->satuan,
+                'harga_satuan' => (float) $item->harga,
+                'harga_total'  => (float) $hargaTotal,
+                'status_stok'  => $statusStok,
+                // tren & stok_minimum tidak ditampilkan
+            ];
         });
 
         return response()->json([
             'success' => true,
             'message' => 'Data stok barang berhasil diambil.',
-            'data'    => $items,
-            'meta'    => [
+            'ringkasan' => [
+                'total_jenis_barang'   => $totalJenisBarang,
+                'total_unit_barang'    => (int) $totalUnitBarang,
+                'total_nilai_inventaris' => (float) $totalNilaiInventaris,
+            ],
+            'data' => $items,
+            'meta' => [
                 'current_page' => $barang->currentPage(),
                 'per_page'     => $barang->perPage(),
                 'total'        => $barang->total(),
                 'last_page'    => $barang->lastPage(),
+                'from'         => $barang->firstItem(),
+                'to'           => $barang->lastItem(),
             ],
         ], 200);
     }
@@ -49,16 +80,34 @@ class StokController extends Controller
     // GET /api/stok/rendah
     public function stokRendah()
     {
-        // Cache 5 menit
         $barang = Cache::remember('stok_rendah', 300, function () {
-            return Barang::select('id', 'id_referensi', 'nama_barang', 'kategori', 'stok', 'stok_minimum', 'satuan', 'harga')
+            return Barang::select(
+                    'id',
+                    'id_referensi',
+                    'nama_barang',
+                    'kategori',
+                    'stok',
+                    'stok_minimum',
+                    'harga',
+                    'satuan'
+                )
                 ->whereColumn('stok', '<=', 'stok_minimum')
                 ->orderBy('stok', 'asc')
                 ->get()
                 ->transform(function ($item) {
-                    $item->kekurangan  = $item->stok_minimum - $item->stok;
-                    $item->status_stok = 'rendah';
-                    return $item;
+                    return [
+                        'id'           => $item->id,
+                        'id_referensi' => $item->id_referensi,
+                        'nama_barang'  => $item->nama_barang,
+                        'kategori'     => $item->kategori,
+                        'stok'         => $item->stok,
+                        'stok_minimum' => $item->stok_minimum,
+                        'satuan'       => $item->satuan,
+                        'harga_satuan' => (float) $item->harga,
+                        'harga_total'  => (float) ($item->harga * $item->stok),
+                        'kekurangan'   => $item->stok_minimum - $item->stok,
+                        'status_stok'  => 'rendah',
+                    ];
                 });
         });
 
@@ -73,7 +122,6 @@ class StokController extends Controller
     // GET /api/notifikasi
     public function notifikasi()
     {
-        // Cache 3 menit
         $result = Cache::remember('notifikasi_stok', 180, function () {
             $jumlahStokRendah = Barang::whereColumn('stok', '<=', 'stok_minimum')->count();
 
