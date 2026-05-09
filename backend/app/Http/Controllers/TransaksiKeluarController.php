@@ -6,15 +6,19 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\TransaksiKeluar;
 use App\Models\Barang;
+use App\Models\Konsumen;
 use App\Helpers\Sanitizer;
-use Illuminate\Support\Facades\Cache;
 
 class TransaksiKeluarController extends Controller
 {
-    // GET /api/transaksi-keluar - List semua transaksi keluar
+    // GET /api/transaksi-keluar
     public function index(Request $request)
     {
-        $query = TransaksiKeluar::with(['barang:id,nama_barang,satuan', 'user:id,name', 'konsumen:id,nama_konsumen']);
+        $query = TransaksiKeluar::with([
+            'barang:id,nama_barang,satuan',
+            'user:id,name',
+            'konsumen:id,nama_konsumen'
+        ]);
 
         if ($request->has('start_date') && $request->start_date != '') {
             $query->where('tanggal_keluar', '>=', $request->start_date);
@@ -44,28 +48,53 @@ class TransaksiKeluarController extends Controller
                 'per_page'     => $transaksi->perPage(),
                 'total'        => $transaksi->total(),
                 'last_page'    => $transaksi->lastPage(),
-                'from'         => $transaksi->firstItem(),
-                'to'           => $transaksi->lastItem(),
             ],
         ], 200);
     }
 
-    // POST /api/transaksi-keluar - Catat transaksi keluar
+    // POST /api/transaksi-keluar
     public function store(Request $request)
     {
         $request->validate([
-            'barang_id'      => 'required|exists:barang,id',
-            'konsumen_id'    => 'required|exists:konsumen,id',
-            'nama_instansi'  => 'required|string|max:200',
-            'jumlah'         => 'required|integer|min:1',
-            'harga_jual'     => 'required|numeric|min:0',
-            'tanggal_keluar' => 'required|date',
-            'keterangan'     => 'nullable|string',
+            'barang_id'        => 'required|integer|exists:barang,id',
+            'konsumen_id'      => 'nullable|integer|exists:konsumen,id',
+            'nama_konsumen'    => 'nullable|string|max:200',  // ← baru: input manual
+            'alamat_konsumen'  => 'nullable|string|max:500',  // ← baru: opsional
+            'telepon_konsumen' => 'nullable|string|max:20',   // ← baru: opsional
+            'nama_instansi'    => 'nullable|string|max:200',
+            'jumlah'           => 'required|integer|min:1|max:999999',
+            'harga_jual'       => 'required|numeric|min:0|max:999999999',
+            'tanggal_keluar'   => 'required|date|before_or_equal:today',
+            'keterangan'       => 'nullable|string|max:500',
         ]);
 
-        // ============================================
-        // VALIDASI STOK MENCUKUPI (sesuai SRS FR-013)
-        // ============================================
+        // =============================================
+        // LOGIKA KONSUMEN — pilih existing atau buat baru
+        // =============================================
+        $konsumenId = $request->konsumen_id;
+
+        if (!$konsumenId && $request->nama_konsumen) {
+            // Cek apakah konsumen dengan nama ini sudah ada
+            $konsumen = Konsumen::whereRaw(
+                'LOWER(nama_konsumen) = ?',
+                [strtolower(Sanitizer::clean($request->nama_konsumen))]
+            )->first();
+
+            if ($konsumen) {
+                // Pakai konsumen yang sudah ada
+                $konsumenId = $konsumen->id;
+            } else {
+                // Buat konsumen baru otomatis
+                $konsumen   = Konsumen::create([
+                    'nama_konsumen' => Sanitizer::clean($request->nama_konsumen),
+                    'alamat'        => Sanitizer::cleanNullable($request->alamat_konsumen),
+                    'no_telepon'    => Sanitizer::cleanNullable($request->telepon_konsumen),
+                ]);
+                $konsumenId = $konsumen->id;
+            }
+        }
+
+        // Validasi stok mencukupi
         $barang = Barang::find($request->barang_id);
 
         if ($barang->stok < $request->jumlah) {
@@ -75,34 +104,32 @@ class TransaksiKeluarController extends Controller
             ], 422);
         }
 
-        // Gunakan DB Transaction supaya data konsisten
         DB::beginTransaction();
 
         try {
-            // 1. Simpan transaksi keluar
             $transaksi = TransaksiKeluar::create([
                 'barang_id'      => $request->barang_id,
                 'user_id'        => $request->user()->id,
-                'konsumen_id'    => $request->konsumen_id,
-                'nama_instansi'  => Sanitizer::cleanNullable($request->nama_instansi),
+                'konsumen_id'    => $konsumenId,
+                'nama_instansi'  => Sanitizer::cleanNullable($request->nama_instansi ?? $request->nama_konsumen),
                 'jumlah'         => $request->jumlah,
                 'harga_jual'     => $request->harga_jual,
                 'tanggal_keluar' => $request->tanggal_keluar,
                 'keterangan'     => Sanitizer::cleanNullable($request->keterangan),
             ]);
 
-            // 2. Otomatis kurangi stok barang
+            // Otomatis kurangi stok barang
             $barang->stok -= $request->jumlah;
             $barang->save();
 
             DB::commit();
 
-            // Hapus cache dashboard supaya data terbaru
-            Cache::forget('dashboard_data');
-            Cache::forget('stok_rendah');
+            // Hapus cache
+            \Illuminate\Support\Facades\Cache::forget('dashboard_data');
+            \Illuminate\Support\Facades\Cache::forget('stok_rendah');
+            \Illuminate\Support\Facades\Cache::forget('notifikasi_stok');
 
-            // Load relasi untuk response
-            $transaksi->load(['barang', 'user', 'konsumen']);
+            $transaksi->load(['barang:id,nama_barang,satuan', 'user:id,name', 'konsumen:id,nama_konsumen']);
 
             return response()->json([
                 'success' => true,
@@ -112,18 +139,21 @@ class TransaksiKeluarController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
+                'message' => 'Terjadi kesalahan saat menyimpan transaksi.',
             ], 500);
         }
     }
 
-    // GET /api/transaksi-keluar/{id} - Detail transaksi keluar
+    // GET /api/transaksi-keluar/{id}
     public function show($id)
     {
-        $transaksi = TransaksiKeluar::with(['barang', 'user', 'konsumen'])->find($id);
+        $transaksi = TransaksiKeluar::with([
+            'barang:id,nama_barang,satuan',
+            'user:id,name',
+            'konsumen:id,nama_konsumen'
+        ])->find($id);
 
         if (!$transaksi) {
             return response()->json([

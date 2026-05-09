@@ -8,14 +8,17 @@ use App\Models\TransaksiMasuk;
 use App\Models\Barang;
 use App\Models\Supplier;
 use App\Helpers\Sanitizer;
-use Illuminate\Support\Facades\Cache;
 
 class TransaksiMasukController extends Controller
 {
     // GET /api/transaksi-masuk
     public function index(Request $request)
     {
-        $query = TransaksiMasuk::with(['barang:id,nama_barang,satuan', 'supplier:id,nama_supplier', 'user:id,name']);
+        $query = TransaksiMasuk::with([
+            'barang:id,nama_barang,satuan',
+            'supplier:id,nama_supplier',
+            'user:id,name'
+        ]);
 
         if ($request->has('start_date') && $request->start_date != '') {
             $query->where('tanggal_masuk', '>=', $request->start_date);
@@ -45,8 +48,6 @@ class TransaksiMasukController extends Controller
                 'per_page'     => $transaksi->perPage(),
                 'total'        => $transaksi->total(),
                 'last_page'    => $transaksi->lastPage(),
-                'from'         => $transaksi->firstItem(),
-                'to'           => $transaksi->lastItem(),
             ],
         ], 200);
     }
@@ -55,20 +56,57 @@ class TransaksiMasukController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'barang_id'     => 'required|integer|exists:barang,id',
-            'supplier_id'   => 'required|integer|exists:supplier,id',
-            'jumlah'        => 'required|integer|min:1|max:999999',
-            'harga_beli'    => 'required|numeric|min:0|max:999999999',
-            'tanggal_masuk' => 'required|date|before_or_equal:today',
-            'keterangan'    => 'nullable|string|max:500',
+            'barang_id'      => 'required|integer|exists:barang,id',
+            'supplier_id'    => 'nullable|integer|exists:supplier,id',
+            'nama_supplier'  => 'nullable|string|max:200',  // ← baru: input manual
+            'alamat_supplier'=> 'nullable|string|max:500',  // ← baru: opsional
+            'telepon_supplier'=> 'nullable|string|max:20',  // ← baru: opsional
+            'jumlah'         => 'required|integer|min:1|max:999999',
+            'harga_beli'     => 'required|numeric|min:0|max:999999999',
+            'tanggal_masuk'  => 'required|date|before_or_equal:today',
+            'keterangan'     => 'nullable|string|max:500',
         ]);
+
+        // =============================================
+        // LOGIKA SUPPLIER — pilih existing atau buat baru
+        // =============================================
+        $supplierId = $request->supplier_id;
+
+        if (!$supplierId && $request->nama_supplier) {
+            // Cek apakah supplier dengan nama ini sudah ada
+            $supplier = Supplier::whereRaw(
+                'LOWER(nama_supplier) = ?',
+                [strtolower(Sanitizer::clean($request->nama_supplier))]
+            )->first();
+
+            if ($supplier) {
+                // Pakai supplier yang sudah ada
+                $supplierId = $supplier->id;
+            } else {
+                // Buat supplier baru otomatis
+                $supplier   = Supplier::create([
+                    'nama_supplier' => Sanitizer::clean($request->nama_supplier),
+                    'alamat'        => Sanitizer::cleanNullable($request->alamat_supplier),
+                    'no_telepon'    => Sanitizer::cleanNullable($request->telepon_supplier),
+                ]);
+                $supplierId = $supplier->id;
+            }
+        }
+
+        // Wajib ada supplier (dari ID atau nama)
+        if (!$supplierId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Supplier harus diisi. Pilih supplier yang ada atau ketik nama supplier baru.',
+            ], 422);
+        }
 
         DB::beginTransaction();
 
         try {
             $transaksi = TransaksiMasuk::create([
                 'barang_id'     => $request->barang_id,
-                'supplier_id'   => $request->supplier_id,
+                'supplier_id'   => $supplierId,
                 'user_id'       => $request->user()->id,
                 'jumlah'        => $request->jumlah,
                 'harga_beli'    => $request->harga_beli,
@@ -83,11 +121,12 @@ class TransaksiMasukController extends Controller
 
             DB::commit();
 
-            // Hapus cache dashboard supaya data terbaru
-            Cache::forget('dashboard_data');
-            Cache::forget('stok_rendah');
+            // Hapus cache
+            \Illuminate\Support\Facades\Cache::forget('dashboard_data');
+            \Illuminate\Support\Facades\Cache::forget('stok_rendah');
+            \Illuminate\Support\Facades\Cache::forget('notifikasi_stok');
 
-            $transaksi->load(['barang', 'supplier', 'user']);
+            $transaksi->load(['barang:id,nama_barang,satuan', 'supplier:id,nama_supplier', 'user:id,name']);
 
             return response()->json([
                 'success' => true,
@@ -107,7 +146,11 @@ class TransaksiMasukController extends Controller
     // GET /api/transaksi-masuk/{id}
     public function show($id)
     {
-        $transaksi = TransaksiMasuk::with(['barang', 'supplier', 'user'])->find($id);
+        $transaksi = TransaksiMasuk::with([
+            'barang:id,nama_barang,satuan',
+            'supplier:id,nama_supplier',
+            'user:id,name'
+        ])->find($id);
 
         if (!$transaksi) {
             return response()->json([
