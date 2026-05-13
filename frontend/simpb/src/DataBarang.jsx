@@ -72,29 +72,30 @@ const DataBarang = ({ onNavigate, onLogout }) => {
     return { label: 'AMAN', color: 'bg-emerald-100 text-emerald-700' };
   };
 
-  // --- FUNGSI URL GAMBAR BACKEND ---
+  // --- FUNGSI URL GAMBAR BACKEND (Ganti ke Railway) ---
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
     if (imagePath.startsWith('http')) return imagePath; 
     
-    const rawApiUrl = import.meta.env.VITE_API_URL || 'http://103.253.213.251/api';
+    const rawApiUrl = import.meta.env.VITE_API_URL || 'https://cvamrita-jayasri-production.up.railway.app/api';
     const baseUrl = rawApiUrl.replace(/\/api\/?$/, ""); 
     
     return `${baseUrl}/storage/${imagePath}`; 
   };
 
-  // --- FUNGSI AMBIL DATA DARI BACKEND ---
+  // --- FUNGSI AMBIL DATA DARI BACKEND (Ganti ke Railway) ---
   useEffect(() => {
     const fetchBarang = async () => {
       try {
         setIsLoading(true);
         const token = localStorage.getItem('token');
-        const rawApiUrl = import.meta.env.VITE_API_URL || 'http://103.253.213.251/api';
+        const rawApiUrl = import.meta.env.VITE_API_URL || 'https://cvamrita-jayasri-production.up.railway.app/api';
         const cleanApiUrl = rawApiUrl.replace(/\/$/, ""); 
         
+        // Tambahkan per_page=100 agar semua data tertarik ke client (untuk pagination frontend)
         const endpoint = cleanApiUrl.endsWith('/api') 
-          ? `${cleanApiUrl}/barang` 
-          : `${cleanApiUrl}/api/barang`;
+          ? `${cleanApiUrl}/barang?per_page=100` 
+          : `${cleanApiUrl}/api/barang?per_page=100`;
 
         const response = await fetch(endpoint, {
           method: 'GET',
@@ -134,14 +135,14 @@ const DataBarang = ({ onNavigate, onLogout }) => {
     setIsDeleteModalOpen(true);
   };
 
-  // --- FUNGSI EKSEKUSI HAPUS KE BACKEND ---
+  // --- FUNGSI EKSEKUSI HAPUS KE BACKEND (Ganti ke Railway) ---
   const executeDelete = async () => {
     if (!itemToDelete.id) return;
     
     setIsDeleting(true);
     try {
       const token = localStorage.getItem('token');
-      const rawApiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+      const rawApiUrl = import.meta.env.VITE_API_URL || 'https://cvamrita-jayasri-production.up.railway.app/api';
       const cleanApiUrl = rawApiUrl.replace(/\/$/, ""); 
       
       const endpoint = cleanApiUrl.endsWith('/api') 
@@ -171,18 +172,24 @@ const DataBarang = ({ onNavigate, onLogout }) => {
     }
   };
 
-  // --- LOGIKA FILTER PENCARIAN & KATEGORI ---
+  // ========================================================
+  // INI BAGIAN FILTER YANG SUDAH KEBAL (CASE-INSENSITIVE)
+  // ========================================================
   const filteredData = tableData.filter((item) => {
-    const matchCategory = activeCategory === 'Semua Barang' || String(item.kategori || '').trim() === activeCategory;
-    const searchLower = searchQuery.toLowerCase();
+    const dbCategory = String(item.kategori || '').replace(/&amp;/g, '&').trim().toLowerCase();
+    const selectedCategory = activeCategory.trim().toLowerCase();
     
+    const matchCategory = activeCategory === 'Semua Barang' || dbCategory === selectedCategory;
+    
+    const searchLower = searchQuery.toLowerCase().trim();
     const namaBarangLower = String(item.nama_barang || '').toLowerCase();
     const idRefLower = String(item.id_referensi || `BRG-${item.id}`).toLowerCase();
     
-    const matchSearch = namaBarangLower.includes(searchLower) || idRefLower.includes(searchLower);
+    const matchSearch = searchLower === '' || namaBarangLower.includes(searchLower) || idRefLower.includes(searchLower);
     
     return matchCategory && matchSearch;
   });
+  // ========================================================
 
   // --- LOGIKA PAGINATION ---
   const totalPages = Math.ceil(filteredData.length / itemsPerPage) || 1;
@@ -414,9 +421,10 @@ const DataBarang = ({ onNavigate, onLogout }) => {
                             <td className="py-3 md:py-4 px-4 md:px-6">
                               <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0 overflow-hidden relative">
-                                  {item.gambar ? (
+                                  {/* --- FOTO LANGSUNG MENGGUNAKAN API RAILWAY --- */}
+                                  {item.foto_url || item.gambar ? (
                                     <img 
-                                      src={getImageUrl(item.gambar)} 
+                                      src={getImageUrl(item.foto_url || item.gambar)} 
                                       alt={item.nama_barang} 
                                       className="w-full h-full object-cover relative z-10"
                                       onError={(e) => {
@@ -424,6 +432,7 @@ const DataBarang = ({ onNavigate, onLogout }) => {
                                       }}
                                     />
                                   ) : null}
+                                  {/* --------------------------------------------- */}
                                   
                                   <div className="absolute inset-0 flex items-center justify-center z-0">
                                     {item.kategori?.includes('Buku') ? <FileText className="w-4 h-4 md:w-5 md:h-5 text-gray-500" /> : <Box className="w-4 h-4 md:w-5 md:h-5 text-gray-500" />}
@@ -435,7 +444,10 @@ const DataBarang = ({ onNavigate, onLogout }) => {
                                 </div>
                               </div>
                             </td>
-                            <td className="py-3 md:py-4 px-4 md:px-6 text-xs md:text-sm text-gray-600 font-medium">{item.kategori}</td>
+                            {/* --- PERBAIKAN TEKS KATEGORI DI SINI --- */}
+                            <td className="py-3 md:py-4 px-4 md:px-6 text-xs md:text-sm text-gray-600 font-medium">
+                              {String(item.kategori || '').replace(/&amp;/g, '&').replace(/&amp;/g, '&')}
+                            </td>
                             <td className="py-3 md:py-4 px-4 md:px-6 text-xs md:text-sm font-bold text-gray-800">{formatRupiah(item.harga)}</td>
                             <td className="py-3 md:py-4 px-4 md:px-6 text-xs md:text-sm font-bold text-center text-gray-800">
                               {item.stok} <span className="text-[9px] md:text-[10px] text-gray-400 uppercase font-medium">{item.satuan}</span>
