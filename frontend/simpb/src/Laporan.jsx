@@ -1,3 +1,5 @@
+import * as XLSX from 'xlsx';
+
 import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, Box, Truck, Users, 
@@ -30,12 +32,6 @@ const Laporan = ({ onLogout, onNavigate }) => {
   // === MODAL EKSPOR STATES ===
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [initialExportFormat, setInitialExportFormat] = useState('excel');
-
-  // === FUNGSI EKSEKUSI EKSPOR DARI MODAL ===
-  const handleExecuteExport = (config) => {
-    console.log("Memproses Ekspor dengan konfigurasi:", config);
-    alert(`Mengekspor data dalam format ${config.format.toUpperCase()} untuk rentang: ${config.range}`);
-  };
 
   // --- FUNGSI FORMATTING ---
   const formatRupiah = (angka) => {
@@ -132,6 +128,80 @@ const Laporan = ({ onLogout, onNavigate }) => {
       if (sortOrder === 'terendah') return totalA - totalB;
       return 0;
     });
+
+  // === FUNGSI EKSEKUSI EKSPOR EXCEL ===
+  const handleExecuteExport = (config) => {
+    try {
+      let dataToExport = laporanData;
+
+      // Filter berdasarkan pilihan rentang waktu di modal
+      if (config.range === 'bulan_ini') {
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+        dataToExport = laporanData.filter(item => {
+          const itemDate = new Date(item._type === 'masuk' ? item.tanggal_masuk : item.tanggal_keluar);
+          return itemDate.getMonth() === currentMonth && itemDate.getFullYear() === currentYear;
+        });
+      } else if (config.range === 'custom' && config.startDate && config.endDate) {
+        const start = new Date(config.startDate);
+        const end = new Date(config.endDate);
+        // Set jam ke akhir hari untuk endDate
+        end.setHours(23, 59, 59, 999);
+        
+        dataToExport = laporanData.filter(item => {
+          const itemDate = new Date(item._type === 'masuk' ? item.tanggal_masuk : item.tanggal_keluar);
+          return itemDate >= start && itemDate <= end;
+        });
+      }
+
+      if (dataToExport.length === 0) {
+        alert("Tidak ada data transaksi pada rentang waktu tersebut untuk diekspor.");
+        return;
+      }
+
+      // Memformat data menjadi baris Excel
+      const excelData = dataToExport.map((item, index) => {
+        const isMasuk = item._type === 'masuk';
+        return {
+          "No": index + 1,
+          "ID Transaksi": `#${isMasuk ? 'M' : 'K'}-${String(item.id).padStart(4, '0')}`,
+          "Tanggal": formatDate(isMasuk ? item.tanggal_masuk : item.tanggal_keluar),
+          "Waktu": formatTime(item.created_at),
+          "Tipe Transaksi": isMasuk ? 'Barang Masuk' : 'Barang Keluar',
+          "Nama Produk": item.barang?.nama_barang || '-',
+          "SKU Produk": item.barang?.id_referensi || '-',
+          "Kuantitas": item.jumlah,
+          "Entitas (Supplier/Konsumen)": isMasuk ? (item.supplier?.nama_supplier || '-') : (item.nama_instansi || 'Umum'),
+          "Total Nilai (Rp)": item.jumlah * parseFloat(isMasuk ? item.harga_beli : item.harga_jual || 0)
+        };
+      });
+
+      // Proses konversi dan pembuatan file .xlsx
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      const workbook = XLSX.utils.book_new();
+      
+      const columnWidths = [
+        { wch: 5 }, { wch: 15 }, { wch: 15 }, { wch: 10 }, 
+        { wch: 15 }, { wch: 30 }, { wch: 15 }, { wch: 10 }, 
+        { wch: 25 }, { wch: 20 }
+      ];
+      worksheet['!cols'] = columnWidths;
+
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Data Transaksi");
+
+      let namaPeriode = config.range;
+      if (config.range === 'custom') {
+        namaPeriode = `${config.startDate}_sampai_${config.endDate}`;
+      }
+      
+      XLSX.writeFile(workbook, `Laporan_Transaksi_${namaPeriode}.xlsx`);
+
+    } catch (error) {
+      console.error("Error pembuatan Excel:", error);
+      alert("Terjadi kesalahan saat memproses file Excel.");
+    }
+  };
 
   // === FUNGSI EKSPOR PDF ===
   const exportToPDF = () => {

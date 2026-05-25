@@ -6,8 +6,12 @@ import {
   Package, AlertTriangle, ShoppingCart, Coins,
   FileText, PenTool, Printer, ChevronLeft, ChevronRight,
   Filter, Download, Edit2, Loader2,
-  Menu, X // <-- Tambahan icon Menu & X untuk mobile
+  Menu, X 
 } from 'lucide-react';
+
+// === IMPORT LIBRARY PDF ===
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const MonitoringStok = ({ onLogout, onNavigate }) => {
   // === STATE UNTUK MENU HP ===
@@ -22,6 +26,11 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // === STATES TAMBAHAN UNTUK FILTER ===
+  const [activeFilter, setActiveFilter] = useState('semua');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -87,7 +96,6 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
     Number(item.stok) <= 0
   ).length;
 
-  // Format Rupiah untuk Kartu (Disingkat Jt / M)
   const formatRupiahCard = (angka) => {
     if (angka >= 1000000000) {
       return `Rp ${(angka / 1000000000).toFixed(1)}M`;
@@ -97,7 +105,6 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
   };
 
-  // Format Rupiah untuk Tabel (Utuh)
   const formatRupiahTable = (angka) => {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka || 0);
   };
@@ -123,16 +130,87 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
 
   // === FILTER & PAGINATION ===
   const filteredData = tableData.filter((item) => {
+    // Filter Pencarian
     const search = searchQuery.toLowerCase();
-    return (item.nama_barang || '').toLowerCase().includes(search) || 
-           (item.id_referensi || '').toLowerCase().includes(search);
+    const matchesSearch = (item.nama_barang || '').toLowerCase().includes(search) || 
+                          (item.id_referensi || '').toLowerCase().includes(search);
+    
+    if (!matchesSearch) return false;
+
+    // Filter Status (Dropdown)
+    if (activeFilter === 'semua') return true;
+    
+    const statusLabel = getStatus(item).label;
+    if (activeFilter === 'habis' && statusLabel === 'PESAN SEGERA') return true;
+    if (activeFilter === 'kritis' && statusLabel === 'STOK RENDAH') return true;
+    if (activeFilter === 'optimal' && statusLabel === 'OPTIMAL') return true;
+    
+    return false;
   });
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage) || 1;
   const startIndex = (currentPage - 1) * itemsPerPage;
   const currentData = filteredData.slice(startIndex, startIndex + itemsPerPage);
 
-  // === FUNGSI NAVIGASI HP ===
+  // === FUNGSI EKSPOR PDF ===
+  const handleExportPDF = () => {
+    if (filteredData.length === 0) {
+      alert("Tidak ada data untuk diekspor!");
+      return;
+    }
+
+    try {
+      const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+      
+      // Header
+      doc.setFontSize(16);
+      doc.setTextColor(30, 35, 44); 
+      doc.text('Laporan Monitoring Stok - CV. Amrita Jayasri', 14, 15);
+      
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`, 14, 22);
+      
+      const filterLabel = activeFilter === 'semua' ? 'Semua Status' : activeFilter === 'habis' ? 'Stok Habis' : activeFilter === 'kritis' ? 'Stok Kritis' : 'Optimal';
+      doc.text(`Filter Aktif: ${filterLabel}`, 14, 28);
+
+      // Persiapan Data Tabel
+      const tableColumn = ["ID Barang", "Nama Barang", "Kategori", "Harga Satuan", "Total Harga", "Sisa Stok", "Status"];
+      const tableRows = filteredData.map(item => {
+        return [
+          item.id_referensi || `BRG-${item.id}`,
+          item.nama_barang || '-',
+          item.kategori || '-',
+          formatRupiahTable(item.harga_satuan),
+          formatRupiahTable(item.harga_total),
+          `${item.stok} ${item.satuan}`,
+          getStatus(item).label
+        ];
+      });
+
+      // Render Tabel
+      autoTable(doc, {
+        head: [tableColumn],
+        body: tableRows,
+        startY: 35,
+        theme: 'grid',
+        headStyles: { fillColor: [84, 82, 246] },
+        styles: { fontSize: 8, cellPadding: 3, valign: 'middle' },
+        columnStyles: { 
+          3: { halign: 'right' }, 
+          4: { halign: 'right' },
+          5: { halign: 'center' },
+          6: { halign: 'center' }
+        }
+      });
+
+      doc.save(`Laporan_Stok_${new Date().getTime()}.pdf`);
+    } catch (error) {
+      console.error("Gagal membuat PDF:", error);
+      alert("Terjadi kesalahan saat membuat file PDF.");
+    }
+  };
+
   const handleNavigation = (path) => {
     setIsMobileMenuOpen(false);
     onNavigate(path);
@@ -163,7 +241,6 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
               <p className="text-gray-400 font-medium text-[10px] mt-0.5">Sistem Inventaris ATK</p>
             </div>
           </div>
-          {/* Tombol Tutup Sidebar di HP */}
           <button className="md:hidden text-gray-400 hover:text-gray-600" onClick={() => setIsMobileMenuOpen(false)}>
             <X className="w-6 h-6" />
           </button>
@@ -222,7 +299,7 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
               <input 
                 type="text" 
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
                 placeholder="Cari nama barang atau ID..." 
                 className="w-full pl-11 pr-4 py-2.5 bg-[#F4F7FC] border-transparent rounded-full text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] focus:ring-1 focus:ring-[#5452F6] transition-all" 
               />
@@ -318,17 +395,45 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
                   <input 
                     type="text" 
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
                     placeholder="Cari..." 
                     className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-[#5452F6]" 
                   />
                 </div>
                 
-                <button className="flex items-center justify-center gap-2 px-3 md:px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-600 hover:bg-gray-50 transition-colors w-full sm:w-auto">
-                  <Filter className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Filter</span>
-                </button>
-                <button className="flex items-center justify-center gap-2 px-3 md:px-4 py-2 bg-[#5452F6] text-white rounded-xl text-xs font-bold hover:bg-[#4341E3] shadow-md shadow-indigo-100 transition-colors w-full sm:w-auto">
-                  <Download className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Ekspor</span>
+                {/* TOMBOL FILTER */}
+                <div className="relative">
+                  <button 
+                    onClick={() => setIsFilterOpen(!isFilterOpen)}
+                    className={`flex items-center justify-center gap-2 px-3 md:px-4 py-2 border rounded-xl text-xs font-bold transition-colors w-full sm:w-auto ${activeFilter !== 'semua' ? 'bg-indigo-50 border-indigo-200 text-[#5452F6]' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                  >
+                    <Filter className="w-3.5 h-3.5" /> 
+                    <span className="hidden sm:inline">
+                      {activeFilter === 'semua' ? 'Filter' : 
+                       activeFilter === 'habis' ? 'Stok Habis' : 
+                       activeFilter === 'kritis' ? 'Stok Kritis' : 'Optimal'}
+                    </span>
+                  </button>
+                  
+                  {isFilterOpen && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setIsFilterOpen(false)}></div>
+                      <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-100 rounded-xl shadow-lg z-50 py-1 overflow-hidden animate-in fade-in slide-in-from-top-2">
+                        <button onClick={() => { setActiveFilter('semua'); setCurrentPage(1); setIsFilterOpen(false); }} className={`w-full text-left px-4 py-2.5 text-xs font-bold transition-colors ${activeFilter === 'semua' ? 'text-[#5452F6] bg-indigo-50/50' : 'text-gray-600 hover:bg-gray-50'}`}>Semua Status</button>
+                        <button onClick={() => { setActiveFilter('habis'); setCurrentPage(1); setIsFilterOpen(false); }} className={`w-full text-left px-4 py-2.5 text-xs font-bold transition-colors ${activeFilter === 'habis' ? 'text-orange-600 bg-orange-50/50' : 'text-gray-600 hover:bg-gray-50'}`}>Stok Habis</button>
+                        <button onClick={() => { setActiveFilter('kritis'); setCurrentPage(1); setIsFilterOpen(false); }} className={`w-full text-left px-4 py-2.5 text-xs font-bold transition-colors ${activeFilter === 'kritis' ? 'text-red-600 bg-red-50/50' : 'text-gray-600 hover:bg-gray-50'}`}>Stok Kritis</button>
+                        <button onClick={() => { setActiveFilter('optimal'); setCurrentPage(1); setIsFilterOpen(false); }} className={`w-full text-left px-4 py-2.5 text-xs font-bold transition-colors ${activeFilter === 'optimal' ? 'text-emerald-600 bg-emerald-50/50' : 'text-gray-600 hover:bg-gray-50'}`}>Optimal</button>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* TOMBOL EKSPOR PDF */}
+                <button 
+                  onClick={handleExportPDF}
+                  className="flex items-center justify-center gap-2 px-3 md:px-4 py-2 bg-[#5452F6] text-white rounded-xl text-xs font-bold hover:bg-[#4341E3] shadow-md shadow-indigo-100 transition-colors w-full sm:w-auto"
+                >
+                  <Download className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Ekspor PDF</span>
                 </button>
               </div>
             </div>
@@ -344,7 +449,7 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
                   <Box className="w-6 h-6 md:w-8 md:h-8 text-gray-300" />
                 </div>
                 <h3 className="text-base md:text-lg font-bold text-gray-800">Data Tidak Ditemukan</h3>
-                <p className="text-xs md:text-sm text-gray-500 mt-1">Belum ada barang di database atau tidak cocok dengan pencarian.</p>
+                <p className="text-xs md:text-sm text-gray-500 mt-1">Belum ada barang di database atau tidak cocok dengan pencarian dan filter.</p>
               </div>
             ) : (
               <div className="overflow-x-auto w-full">
