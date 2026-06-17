@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  LayoutDashboard, Box, Truck, Users, 
-  ArrowDownRight, ArrowUpRight, Activity, 
-  BarChart2, Search, Bell, Plus, 
-  Calendar, AlertTriangle, TrendingUp, Minus, AlertCircle, CircleUser,
-  ChevronDown, MapPin, Info, ArrowDownLeft, Loader2, ChevronLeft, ChevronRight,
-  Menu, X // <-- Tambahan icon Menu & X untuk mobile
+  LayoutDashboard, Box, Truck, Users, ArrowDownRight, 
+  ArrowUpRight, Activity, BarChart2, ArrowDownLeft, 
+  Search, Bell, CircleUser, ChevronDown, CalendarDays,
+  Package, PenTool, Zap, CheckCircle2, ChevronLeft, ChevronRight, Loader2, Plus,
+  Menu, X 
 } from 'lucide-react';
 
 import SuccessTransactionModal from './SuccessTransactionModal';
+import logoAmrita from './assets/Logo Amrita.png';
 
 const BarangKeluar = ({ onLogout, onNavigate }) => {
   // === STATE UNTUK MENU HP ===
@@ -210,6 +210,21 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
   const persentaseKeluar = currentStok > 0 ? ((Number(jumlah) || 0) / currentStok * 100).toFixed(1) : 0;
   const isStokCukup = proyeksiStok >= 0;
 
+  // Mock data untuk Masuk Terbaru (Widget Kanan)
+  const masukTerbaru = [
+    { name: 'Printer Laser Jet Pro', details: '5 Unit • Hari Ini, 09:42', price: 'Rp 12.5jt', icon: Package, iconColor: 'text-purple-600', bgColor: 'bg-purple-100' },
+    { name: 'Box Pulpen Biru', details: '50 Pack • Kemarin', price: 'Rp 1.2jt', icon: PenTool, iconColor: 'text-blue-600', bgColor: 'bg-blue-100' },
+    { name: 'Kertas F4 70gsm', details: '100 Rim • Kemarin', price: 'Rp 4.5jt', icon: Zap, iconColor: 'text-orange-600', bgColor: 'bg-orange-100' }
+  ];
+
+  // Mock data untuk Tabel Riwayat di bawah
+  const riwayatMasuk = [
+    { tanggal: '12 Nov 2025', barang: 'Kertas A4 80gsm', pemasok: 'PT. Alat Tulis Kencana', jumlah: '100 Rim', hargaBeli: 'Rp 45.000', total: 'Rp 4.500.000', status: 'Sukses' },
+    { tanggal: '12 Nov 2025', barang: 'Pulpen Pilot G2 Biru', pemasok: 'CV. Global Logistik Sejahtera', jumlah: '50 Pack', hargaBeli: 'Rp 24.000', total: 'Rp 1.200.000', status: 'Sukses' },
+    { tanggal: '10 Nov 2025', barang: 'Tinta Epson T664 Black', pemasok: 'PT. Sinar Jaya Elektronik', jumlah: '20 Botol', hargaBeli: 'Rp 75.000', total: 'Rp 1.500.000', status: 'Sukses' },
+    { tanggal: '09 Nov 2025', barang: 'Bantex Binder A4 Biru', pemasok: 'UD. Karya Mandiri Abadi', jumlah: '30 Unit', hargaBeli: 'Rp 35.000', total: 'Rp 1.050.000', status: 'Sukses' },
+  ];
+
   return (
     <>
       <div className="flex h-screen bg-[#F8F9FA] font-sans overflow-hidden">
@@ -226,8 +241,9 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
         <aside className={`fixed inset-y-0 left-0 z-50 w-[260px] bg-white border-r border-gray-100 flex flex-col shrink-0 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
           <div className="p-6 flex justify-between items-center">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-[#5452F6] rounded-xl flex items-center justify-center shrink-0 shadow-sm shadow-indigo-100">
-                <Box className="w-6 h-6 text-white" strokeWidth={2} />
+              {/* LOGO BARU */}
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 overflow-hidden bg-gray-50">
+                <img src={logoAmrita} alt="Logo" className="w-full h-full object-contain" />
               </div>
               <div>
                 <h1 className="text-[#5452F6] font-bold text-[13px] leading-tight tracking-wide uppercase">
@@ -589,6 +605,7 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
             <div className="mt-8 md:mt-12 text-center">
               <p className="text-[8px] md:text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-loose">© 2026 CV. AMRITA JAYASRI • MANAJEMEN INVENTARIS BERKINERJA TINGGI</p>
             </div>
+
           </div>
         </main>
       </div>

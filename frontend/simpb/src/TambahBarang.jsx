@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 
 import SuccessModal from './SuccessModal';
+import logoAmrita from './assets/Logo Amrita.png';
 
 const TambahBarang = ({ onNavigate, onLogout }) => {
   // 1. STATE UNTUK FORM INPUT
@@ -140,8 +141,8 @@ const TambahBarang = ({ onNavigate, onLogout }) => {
       <aside className={`fixed inset-y-0 left-0 z-50 w-[260px] bg-white border-r border-gray-100 flex flex-col shrink-0 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-6 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-[#5452F6] rounded-xl flex items-center justify-center shrink-0 shadow-sm shadow-indigo-100">
-              <Box className="w-6 h-6 text-white" strokeWidth={2} />
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 overflow-hidden bg-gray-50">
+              <img src={logoAmrita} alt="Logo" className="w-full h-full object-contain" />
             </div>
             <div>
               <h1 className="text-[#5452F6] font-bold text-[13px] leading-tight tracking-wide uppercase">
@@ -209,7 +210,7 @@ const TambahBarang = ({ onNavigate, onLogout }) => {
               <input 
                 type="text" 
                 placeholder="Cari stok alat tulis..." 
-                className="w-full pl-11 pr-4 py-2.5 bg-[#F4F7FC] border-transparent rounded-full text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] transition-all" 
+                className="w-full pl-11 pr-4 py-2.5 bg-[#F4F7FC] border-transparent rounded-full text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] focus:ring-1 focus:ring-[#5452F6] transition-all" 
               />
             </div>
             

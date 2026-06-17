@@ -1,15 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'; 
 import { 
-  Search, Bell, Plus, Edit2, Trash2, 
-  LayoutDashboard, Box, Users, Truck, ArrowDownRight, 
-  ArrowUpRight, Activity, BarChart2, ArrowDownLeft, 
-  History, Bookmark, Star, ChevronLeft, ChevronRight, CircleUser, Info,
-  Loader2, Phone, Menu, X // <-- Tambahan icon Menu & X
+  LayoutDashboard, Box, Truck, Users, 
+  ArrowDownRight, ArrowUpRight, Activity, 
+  BarChart2, Search, Bell, CircleUser, 
+  Plus, Edit2, Trash2, ChevronLeft, ChevronRight, Info, 
+  ArrowDownLeft, Phone, Loader2, Menu, X, Bookmark, Star 
 } from 'lucide-react';
 
 import TambahKonsumenModal from './TambahKonsumenModal';
 import EditKonsumenModal from './EditKonsumenModal';
 import DeleteConfirmModal from './DeleteConfirmModal';
+import logoAmrita from './assets/Logo Amrita.png';
 
 const Konsumen = ({ onNavigate, onLogout }) => {
   // === STATE UNTUK MENU HP ===
@@ -157,8 +158,9 @@ const Konsumen = ({ onNavigate, onLogout }) => {
         <aside className={`fixed inset-y-0 left-0 z-50 w-[260px] bg-white border-r border-gray-100 flex flex-col shrink-0 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
           <div className="p-6 flex justify-between items-center">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-[#5452F6] rounded-xl flex items-center justify-center shrink-0 shadow-sm shadow-indigo-100">
-                <Box className="w-6 h-6 text-white" strokeWidth={2} />
+              {/* LOGO DIPASANG DI SINI */}
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 overflow-hidden bg-gray-50">
+                <img src={logoAmrita} alt="Logo" className="w-full h-full object-contain" />
               </div>
               <div>
                 <h1 className="text-[#5452F6] font-bold text-[13px] leading-tight tracking-wide">
@@ -167,7 +169,6 @@ const Konsumen = ({ onNavigate, onLogout }) => {
                 <p className="text-gray-400 font-medium text-[10px] mt-0.5">Sistem Inventaris ATK</p>
               </div>
             </div>
-            {/* Tombol Tutup Sidebar di HP */}
             <button className="md:hidden text-gray-400 hover:text-gray-600" onClick={() => setIsMobileMenuOpen(false)}>
               <X className="w-6 h-6" />
             </button>
@@ -258,6 +259,7 @@ const Konsumen = ({ onNavigate, onLogout }) => {
               </button>
             </div>
 
+            {/* Statistik */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
               <div className="bg-[#FAEDFF] p-4 md:p-5 rounded-[20px] shadow-sm flex items-start gap-4 h-28 md:h-32">
                 <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-white/60 flex items-center justify-center flex-shrink-0">
@@ -266,39 +268,31 @@ const Konsumen = ({ onNavigate, onLogout }) => {
                 <div>
                   <h3 className="text-xl md:text-2xl font-bold text-gray-800">{isLoading ? '...' : konsumens.length}</h3>
                   <p className="text-[9px] md:text-[11px] font-bold text-gray-400 uppercase tracking-wider mt-1">TOTAL KONSUMEN</p>
-                  <span className="text-[9px] md:text-[10px] font-bold text-[#5452F6] bg-[#EBF4FF] px-2 md:px-2.5 py-1 rounded-full mt-2 md:mt-2.5 inline-block">+4 bulan ini</span>
                 </div>
               </div>
 
               <div className="bg-[#EEF2FF] p-4 md:p-5 rounded-[20px] shadow-sm flex items-start gap-4 h-28 md:h-32 relative overflow-hidden">
-                  <div className="absolute -right-4 -bottom-4 opacity-20">
-                      <History className="w-20 h-20 md:w-24 md:h-24 text-[#5452F6] rotate-[20deg]" />
-                  </div>
                 <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-white/60 flex items-center justify-center flex-shrink-0 relative z-10">
                   <Bookmark className="w-4 h-4 md:w-5 md:h-5 text-[#5452F6]" />
                 </div>
                 <div className="relative z-10">
                   <h3 className="text-xl md:text-2xl font-bold text-gray-800">{isLoading ? '...' : konsumens.length}</h3>
                   <p className="text-[9px] md:text-[11px] font-bold text-gray-400 uppercase tracking-wider mt-1">KONTRAK AKTIF</p>
-                  <p className="text-[9px] md:text-[10px] text-gray-500 mt-1.5 md:mt-2">di 5 wilayah</p>
                 </div>
               </div>
 
               <div className="bg-[#ECFDF5] p-4 md:p-5 rounded-[20px] shadow-sm flex items-start gap-4 h-28 md:h-32 relative overflow-hidden">
-                  <div className="absolute -right-4 -bottom-4 opacity-20">
-                      <Star className="w-20 h-20 md:w-24 md:h-24 text-[#10B981] rotate-[-20deg]" />
-                  </div>
                 <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-white/60 flex items-center justify-center flex-shrink-0 relative z-10">
-                  <ArrowUpRight className="w-4 h-4 md:w-5 md:h-5 text-[#10B981]" />
+                  <Star className="w-4 h-4 md:w-5 md:h-5 text-[#10B981]" />
                 </div>
                 <div className="relative z-10">
                   <h3 className="text-xl md:text-2xl font-bold text-gray-800">98%</h3>
                   <p className="text-[9px] md:text-[11px] font-bold text-gray-400 uppercase tracking-wider mt-1">RATING KUALITAS</p>
-                  <p className="text-[9px] md:text-[10px] text-[#D97706] font-bold mt-1.5 md:mt-2">Puncak reliabilitas</p>
                 </div>
               </div>
             </div>
 
+            {/* Tabel Konsumen */}
             <div className="bg-white rounded-[20px] shadow-sm border border-gray-100 overflow-hidden relative min-h-[300px]">
               {isLoading ? (
                 <div className="absolute inset-0 z-10 bg-white/80 flex flex-col items-center justify-center">
@@ -311,7 +305,6 @@ const Konsumen = ({ onNavigate, onLogout }) => {
                     <Users className="w-6 h-6 md:w-8 md:h-8 text-gray-300" />
                   </div>
                   <h3 className="text-base md:text-lg font-bold text-gray-800">Belum Ada Konsumen</h3>
-                  <p className="text-xs md:text-sm text-gray-500 mt-1">Silakan klik tombol "Tambah Konsumen" untuk mulai mencatat.</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto w-full">
@@ -329,7 +322,7 @@ const Konsumen = ({ onNavigate, onLogout }) => {
                         <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
                           <td className="py-3 md:py-4 px-4 md:px-6">
                             <div className="flex items-center gap-3 md:gap-3.5">
-                              <div className="w-8 h-8 md:w-11 md:h-11 bg-purple-50 text-purple-600 font-bold text-xs md:text-sm rounded-full flex items-center justify-center flex-shrink-0 uppercase border border-purple-100 shadow-sm">
+                              <div className="w-8 h-8 md:w-11 md:h-11 bg-purple-50 text-purple-600 font-bold text-xs md:text-sm rounded-full flex items-center justify-center shrink-0 uppercase border border-purple-100 shadow-sm">
                                 {getInitial(item.nama_konsumen)}
                               </div>
                               <div>
@@ -373,21 +366,12 @@ const Konsumen = ({ onNavigate, onLogout }) => {
                 </div>
               )}
             </div>
-
-            <div className="flex flex-col sm:flex-row items-center justify-between px-4 md:px-6 py-3 md:py-4 border border-gray-100 bg-white rounded-xl mt-4 gap-3">
-              <p className="text-[10px] md:text-xs text-gray-500 font-medium">Menampilkan {konsumens.length} konsumen</p>
-              <div className="flex items-center gap-1 md:gap-1.5 pagination-pills">
-                <button className="w-7 h-7 md:w-8 md:h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 border border-gray-100"><ChevronLeft className="w-3.5 h-3.5 md:w-4 md:h-4" /></button>
-                <button className="w-7 h-7 md:w-8 md:h-8 flex items-center justify-center bg-[#5452F6] text-white rounded-lg text-xs font-bold">1</button>
-                <button className="w-7 h-7 md:w-8 md:h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 border border-gray-100"><ChevronRight className="w-3.5 h-3.5 md:w-4 md:h-4" /></button>
-              </div>
-            </div>
-
+            
             <div className="mt-6 md:mt-8 bg-[#EEF2FF] border border-gray-200 rounded-xl p-4 md:p-5 flex flex-col sm:flex-row gap-3 md:gap-4 text-[#5452F6]">
               <Info className="w-8 h-8 md:w-10 md:h-10 shrink-0 mx-auto sm:mx-0 mt-0.5" strokeWidth={1.5} />
               <div className="text-center sm:text-left">
                 <p className="text-xs md:text-sm font-bold text-gray-800">Audit Trail Aktif</p>
-                <p className="text-[10px] md:text-[11px] font-medium leading-relaxed mt-1 text-gray-600">Semua perubahan pada data konsumen dicatat untuk kepatuhan. Pastikan 'Nomor Telepon' mengikuti format internasional untuk fitur notifikasi SMS otomatis.</p>
+                <p className="text-[10px] md:text-[11px] font-medium leading-relaxed mt-1 text-gray-600">Semua perubahan pada data konsumen dicatat untuk kepatuhan.</p>
               </div>
             </div>
 
@@ -408,7 +392,6 @@ const Konsumen = ({ onNavigate, onLogout }) => {
         konsumenData={selectedKonsumen} 
       />
 
-      {/* === MODAL HAPUS DIRENDER DI SINI === */}
       <DeleteConfirmModal 
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}

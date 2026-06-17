@@ -13,6 +13,9 @@ import {
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
+// === IMPORT LOGO ===
+import logoAmrita from './assets/Logo Amrita.png';
+
 const MonitoringStok = ({ onLogout, onNavigate }) => {
   // === STATE UNTUK MENU HP ===
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -41,12 +44,12 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
         if (!isBackgroundRefresh) setIsLoading(true);
         
         const token = localStorage.getItem('token');
-        const rawApiUrl = import.meta.env.VITE_API_URL || 'http://103.253.213.251/api';
+        const rawApiUrl = import.meta.env.VITE_API_URL || 'https://cvamrita-jayasri-production.up.railway.app/api';
         const cleanApiUrl = rawApiUrl.replace(/\/$/, ""); 
         
         const endpoint = cleanApiUrl.endsWith('/api') 
-          ? `${cleanApiUrl}/stok` 
-          : `${cleanApiUrl}/api/stok`;
+          ? `${cleanApiUrl}/stok?per_page=100` 
+          : `${cleanApiUrl}/api/stok?per_page=100`;
 
         const response = await fetch(endpoint, {
           method: 'GET',
@@ -58,8 +61,19 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
 
         const data = await response.json();
 
-        if (response.ok && data.success) {
-          setTableData(data.data || []);
+        if (response.ok || data.success) {
+          let arrayData = [];
+          
+          if (Array.isArray(data)) {
+            arrayData = data; 
+          } else if (Array.isArray(data.data)) {
+            arrayData = data.data; 
+          } else if (data.data && Array.isArray(data.data.data)) {
+            arrayData = data.data.data; 
+          }
+          
+          setTableData(arrayData);
+          
           if (data.ringkasan) {
             setSummaryStats(data.ringkasan);
           }
@@ -84,10 +98,17 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
 
   // === MENGHITUNG STATISTIK KARTU ===
   const totalItems = summaryStats.total_jenis_barang > 0 ? summaryStats.total_jenis_barang : tableData.length;
-  const valuasiTotal = summaryStats.total_nilai_inventaris || 0;
+  
+  // PERBAIKAN: Hitung valuasi total pakai harga_satuan
+  const calculatedTotalValuasi = tableData.reduce((acc, item) => {
+    const hargaSatuan = parseFloat(item.harga_satuan || 0);
+    return acc + (Number(item.stok) * hargaSatuan);
+  }, 0);
+  
+  const valuasiTotal = summaryStats.total_nilai_inventaris > 0 ? summaryStats.total_nilai_inventaris : calculatedTotalValuasi;
   
   const stokRendahCount = tableData.filter(item => 
-    (item.status_stok && item.status_stok.toLowerCase() === 'kritis') || 
+    (item.status_stok && (item.status_stok.toLowerCase() === 'kritis' || item.status_stok.toLowerCase() === 'rendah')) || 
     (item.stok_minimum && Number(item.stok) <= Number(item.stok_minimum) && Number(item.stok) > 0)
   ).length;
   
@@ -116,7 +137,7 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
     const minimum = Number(item.stok_minimum || 0);
 
     if (statusApi === 'habis' || current <= 0) return { label: 'PESAN SEGERA', color: 'bg-orange-100 text-orange-700' };
-    if (statusApi === 'kritis' || (minimum > 0 && current <= minimum)) return { label: 'STOK RENDAH', color: 'bg-red-100 text-red-600' };
+    if (statusApi === 'kritis' || statusApi === 'rendah' || (minimum > 0 && current <= minimum)) return { label: 'STOK RENDAH', color: 'bg-red-100 text-red-600' };
     return { label: 'OPTIMAL', color: 'bg-emerald-100 text-emerald-600' };
   };
 
@@ -177,12 +198,16 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
       // Persiapan Data Tabel
       const tableColumn = ["ID Barang", "Nama Barang", "Kategori", "Harga Satuan", "Total Harga", "Sisa Stok", "Status"];
       const tableRows = filteredData.map(item => {
+        // PERBAIKAN: Gunakan harga_satuan dan harga_total untuk Export PDF
+        const hargaSatuan = parseFloat(item.harga_satuan || 0);
+        const totalHarga = parseFloat(item.harga_total || (Number(item.stok) * hargaSatuan));
+
         return [
           item.id_referensi || `BRG-${item.id}`,
           item.nama_barang || '-',
-          item.kategori || '-',
-          formatRupiahTable(item.harga_satuan),
-          formatRupiahTable(item.harga_total),
+          String(item.kategori || '-').replace(/&amp;/g, '&'),
+          formatRupiahTable(hargaSatuan),
+          formatRupiahTable(totalHarga),
           `${item.stok} ${item.satuan}`,
           getStatus(item).label
         ];
@@ -231,8 +256,9 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
       <aside className={`fixed inset-y-0 left-0 z-50 w-[260px] bg-white border-r border-gray-100 flex flex-col shrink-0 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-6 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-[#5452F6] rounded-xl flex items-center justify-center shrink-0 shadow-sm shadow-indigo-100">
-              <Box className="w-6 h-6 text-white" strokeWidth={2} />
+            {/* LOGO AMRITA */}
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 overflow-hidden bg-gray-50">
+              <img src={logoAmrita} alt="Logo" className="w-full h-full object-contain" />
             </div>
             <div>
               <h1 className="text-[#5452F6] font-bold text-[13px] leading-tight tracking-wide uppercase">
@@ -470,6 +496,10 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
                       const status = getStatus(item);
                       const iconData = getCategoryIcon(item.kategori);
                       const IconComponent = iconData.icon;
+                      
+                      // PERBAIKAN: Gunakan harga_satuan dan harga_total yang benar dari API
+                      const hargaSatuan = parseFloat(item.harga_satuan || 0);
+                      const totalHarga = parseFloat(item.harga_total || (Number(item.stok) * hargaSatuan));
 
                       return (
                         <tr key={item.id} className="hover:bg-gray-50/50 transition-all duration-200">
@@ -486,14 +516,14 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
                           </td>
                           <td className="py-3 md:py-4 px-4 md:px-6">
                             <span className="text-[9px] md:text-[10px] font-bold text-gray-500 uppercase bg-gray-100 px-2 py-1 rounded-md tracking-wider">
-                              {item.kategori || '-'}
+                              {String(item.kategori || '-').replace(/&amp;/g, '&')}
                             </span>
                           </td>
                           <td className="py-3 md:py-4 px-4 md:px-6 text-right text-xs md:text-sm font-bold text-gray-600 whitespace-nowrap">
-                            {formatRupiahTable(item.harga_satuan)}
+                            {formatRupiahTable(hargaSatuan)}
                           </td>
                           <td className="py-3 md:py-4 px-4 md:px-6 text-right text-xs md:text-sm font-black text-[#5452F6] whitespace-nowrap">
-                            {formatRupiahTable(item.harga_total)}
+                            {formatRupiahTable(totalHarga)}
                           </td>
                           <td className="py-3 md:py-4 px-4 md:px-6 text-center text-xs md:text-sm font-black text-gray-800 whitespace-nowrap">
                             {item.stok} <span className="text-[9px] md:text-[10px] uppercase font-bold text-gray-400 ml-1">{item.satuan}</span>

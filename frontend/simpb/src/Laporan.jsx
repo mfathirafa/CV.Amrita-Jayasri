@@ -1,5 +1,4 @@
 import * as XLSX from 'xlsx';
-
 import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, Box, Truck, Users, 
@@ -13,8 +12,9 @@ import {
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-// === IMPORT KOMPONEN MODAL ===
+// === IMPORT KOMPONEN MODAL & LOGO ===
 import ExportModal from './ExportModal';
+import logoAmrita from './assets/Logo Amrita.png';
 
 const Laporan = ({ onLogout, onNavigate }) => {
   // === STATES ===
@@ -134,7 +134,6 @@ const Laporan = ({ onLogout, onNavigate }) => {
     try {
       let dataToExport = laporanData;
 
-      // Filter berdasarkan pilihan rentang waktu di modal
       if (config.range === 'bulan_ini') {
         const now = new Date();
         const currentMonth = now.getMonth();
@@ -146,7 +145,6 @@ const Laporan = ({ onLogout, onNavigate }) => {
       } else if (config.range === 'custom' && config.startDate && config.endDate) {
         const start = new Date(config.startDate);
         const end = new Date(config.endDate);
-        // Set jam ke akhir hari untuk endDate
         end.setHours(23, 59, 59, 999);
         
         dataToExport = laporanData.filter(item => {
@@ -160,7 +158,6 @@ const Laporan = ({ onLogout, onNavigate }) => {
         return;
       }
 
-      // Memformat data menjadi baris Excel
       const excelData = dataToExport.map((item, index) => {
         const isMasuk = item._type === 'masuk';
         return {
@@ -177,7 +174,6 @@ const Laporan = ({ onLogout, onNavigate }) => {
         };
       });
 
-      // Proses konversi dan pembuatan file .xlsx
       const worksheet = XLSX.utils.json_to_sheet(excelData);
       const workbook = XLSX.utils.book_new();
       
@@ -281,12 +277,13 @@ const Laporan = ({ onLogout, onNavigate }) => {
           <div className="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity" onClick={() => setIsMobileMenuOpen(false)} />
         )}
 
-        {/* ================= SIDEBAR RESPONSIF (DIKEMBALIKAN SEPERTI DESAIN ASLI) ================= */}
+        {/* ================= SIDEBAR RESPONSIF ================= */}
         <aside className={`fixed inset-y-0 left-0 z-50 w-[260px] bg-white border-r border-gray-100 flex flex-col shrink-0 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
           <div className="p-6 flex justify-between items-center">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-[#5452F6] rounded-xl flex items-center justify-center shrink-0 shadow-sm shadow-indigo-100">
-                <Box className="w-6 h-6 text-white" strokeWidth={2} />
+              {/* LOGO BARU */}
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 overflow-hidden bg-gray-50">
+                <img src={logoAmrita} alt="Logo" className="w-full h-full object-contain" />
               </div>
               <div>
                 <h1 className="text-[#5452F6] font-bold text-[13px] leading-tight tracking-wide uppercase">CV. AMRITA<br/>JAYASRI</h1>

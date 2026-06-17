@@ -4,11 +4,12 @@ import {
   LayoutDashboard, Box, Users, Truck, ArrowDownRight, 
   ArrowUpRight, Activity, BarChart2, AlertTriangle, 
   Banknote, History, ChevronLeft, ChevronRight, CircleUser, FileText, Loader2,
-  Menu, X // <-- Tambahan icon untuk menu HP
+  Menu, X
 } from 'lucide-react';
 
-// Import komponen modal yang baru dibuat
 import DeleteConfirmModal from './DeleteConfirmModal';
+import logoAmrita from './assets/Logo Amrita.png';
+
 
 const DataBarang = ({ onNavigate, onLogout }) => {
   // --- STATES ---
@@ -28,8 +29,16 @@ const DataBarang = ({ onNavigate, onLogout }) => {
   const [itemToDelete, setItemToDelete] = useState({ id: null, namaBarang: '' });
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // --- KATEGORI ---
-  const categories = ['Semua Barang', 'Buku & Jurnal', 'Kertas & Media', 'Alat Tulis', 'Arsip & Penyimpanan', 'Tinta & Toner', 'Aksesoris Meja'];
+  // --- KATEGORI (Disesuaikan dengan data database API) ---
+  const categories = [
+    'Semua Barang', 
+    'Kertas & Media', 
+    'Alat Tulis', 
+    'Tinta & Toner', 
+    'Arsip & Penyimpanan', 
+    'Buku & Jurnal', 
+    'Aksesori Meja'
+  ];
 
   // --- FUNGSI FORMAT RUPIAH ---
   const formatRupiah = (angka) => {
@@ -37,14 +46,18 @@ const DataBarang = ({ onNavigate, onLogout }) => {
       style: 'currency',
       currency: 'IDR',
       minimumFractionDigits: 0
-    }).format(angka);
+    }).format(angka || 0);
   };
 
-  // --- LOGIKA MENGHITUNG STATISTIK ---
+  // --- LOGIKA MENGHITUNG STATISTIK DARI DATA API ---
   const totalBarang = tableData.length;
-  const stokMenipisCount = tableData.filter(item => item.stok <= item.stok_minimum * 1.5).length;
+  const stokMenipisCount = tableData.filter(item => 
+    (item.status_stok === 'rendah' || item.status_stok === 'kritis') || 
+    (item.stok <= item.stok_minimum * 1.5)
+  ).length;
+  
   const nilaiInventaris = tableData.reduce((total, item) => {
-    return total + (parseFloat(item.harga) * item.stok);
+    return total + (Number(item.nilai_stok) || (parseFloat(item.harga) * item.stok));
   }, 0);
 
   const stats = [
@@ -62,17 +75,19 @@ const DataBarang = ({ onNavigate, onLogout }) => {
   ];
 
   // --- FUNGSI HITUNG STATUS STOK ---
-  const getStockStatus = (stok, stok_minimum) => {
-    const current = Number(stok);
-    const min = Number(stok_minimum);
+  const getStockStatus = (item) => {
+    const statusBackend = (item.status_stok || '').toLowerCase();
+    const current = Number(item.stok);
+    const min = Number(item.stok_minimum);
+
+    if (current <= 0 || statusBackend === 'habis') return { label: 'HABIS', color: 'bg-red-100 text-red-700' };
+    if (current <= min || statusBackend === 'kritis') return { label: 'KRITIS', color: 'bg-red-100 text-red-700' };
+    if (statusBackend === 'rendah' || current <= min * 1.5) return { label: 'MENIPIS', color: 'bg-orange-100 text-orange-700' };
     
-    if (current <= 0) return { label: 'HABIS', color: 'bg-red-100 text-red-700' };
-    if (current <= min) return { label: 'KRITIS', color: 'bg-red-100 text-red-700' };
-    if (current <= min * 1.5) return { label: 'MENIPIS', color: 'bg-orange-100 text-orange-700' };
     return { label: 'AMAN', color: 'bg-emerald-100 text-emerald-700' };
   };
 
-  // --- FUNGSI URL GAMBAR BACKEND (Ganti ke Railway) ---
+  // --- FUNGSI URL GAMBAR BACKEND ---
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
     if (imagePath.startsWith('http')) return imagePath; 
@@ -83,7 +98,7 @@ const DataBarang = ({ onNavigate, onLogout }) => {
     return `${baseUrl}/storage/${imagePath}`; 
   };
 
-  // --- FUNGSI AMBIL DATA DARI BACKEND (Ganti ke Railway) ---
+  // --- FUNGSI AMBIL DATA DARI BACKEND ---
   useEffect(() => {
     const fetchBarang = async () => {
       try {
@@ -92,7 +107,6 @@ const DataBarang = ({ onNavigate, onLogout }) => {
         const rawApiUrl = import.meta.env.VITE_API_URL || 'https://cvamrita-jayasri-production.up.railway.app/api';
         const cleanApiUrl = rawApiUrl.replace(/\/$/, ""); 
         
-        // Tambahkan per_page=100 agar semua data tertarik ke client (untuk pagination frontend)
         const endpoint = cleanApiUrl.endsWith('/api') 
           ? `${cleanApiUrl}/barang?per_page=100` 
           : `${cleanApiUrl}/api/barang?per_page=100`;
@@ -123,19 +137,16 @@ const DataBarang = ({ onNavigate, onLogout }) => {
     fetchBarang();
   }, []);
 
-  // --- FUNGSI NAVIGASI HP (Tutup Sidebar otomatis) ---
   const handleNavigation = (path) => {
     setIsMobileMenuOpen(false);
     onNavigate(path);
   };
 
-  // --- TRIGGER BUKA MODAL HAPUS ---
   const openDeleteModal = (id, namaBarang) => {
     setItemToDelete({ id, namaBarang });
     setIsDeleteModalOpen(true);
   };
 
-  // --- FUNGSI EKSEKUSI HAPUS KE BACKEND (Ganti ke Railway) ---
   const executeDelete = async () => {
     if (!itemToDelete.id) return;
     
@@ -172,9 +183,6 @@ const DataBarang = ({ onNavigate, onLogout }) => {
     }
   };
 
-  // ========================================================
-  // INI BAGIAN FILTER YANG SUDAH KEBAL (CASE-INSENSITIVE)
-  // ========================================================
   const filteredData = tableData.filter((item) => {
     const dbCategory = String(item.kategori || '').replace(/&amp;/g, '&').trim().toLowerCase();
     const selectedCategory = activeCategory.trim().toLowerCase();
@@ -189,9 +197,7 @@ const DataBarang = ({ onNavigate, onLogout }) => {
     
     return matchCategory && matchSearch;
   });
-  // ========================================================
 
-  // --- LOGIKA PAGINATION ---
   const totalPages = Math.ceil(filteredData.length / itemsPerPage) || 1;
   const startIndex = (currentPage - 1) * itemsPerPage;
   const currentData = filteredData.slice(startIndex, startIndex + itemsPerPage);
@@ -211,7 +217,6 @@ const DataBarang = ({ onNavigate, onLogout }) => {
     <>
       <div className="flex h-screen bg-[#F4F7FC] font-sans overflow-hidden">
         
-        {/* ================= MOBILE OVERLAY ================= */}
         {isMobileMenuOpen && (
           <div 
             className="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity"
@@ -219,13 +224,14 @@ const DataBarang = ({ onNavigate, onLogout }) => {
           />
         )}
 
-        {/* ================= SIDEBAR RESPONSIF ================= */}
         <aside className={`fixed inset-y-0 left-0 z-50 w-[260px] bg-white border-r border-gray-100 flex flex-col shrink-0 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
           <div className="p-6 flex justify-between items-center">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-[#5452F6] rounded-xl flex items-center justify-center shrink-0 shadow-sm shadow-indigo-100">
-                <Box className="w-6 h-6 text-white" strokeWidth={2} />
+              {/* LOGO DIPASANG DI SINI */}
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 overflow-hidden bg-gray-50">
+                <img src={logoAmrita} alt="Logo" className="w-full h-full object-contain" />
               </div>
+              
               <div>
                 <h1 className="text-[#5452F6] font-bold text-[13px] leading-tight tracking-wide uppercase">
                   CV. AMRITA<br/>JAYASRI
@@ -233,7 +239,6 @@ const DataBarang = ({ onNavigate, onLogout }) => {
                 <p className="text-gray-400 font-medium text-[10px] mt-0.5">Sistem Inventaris ATK</p>
               </div>
             </div>
-            {/* Tombol Close Sidebar (Hanya muncul di HP) */}
             <button className="md:hidden text-gray-400 hover:text-gray-600" onClick={() => setIsMobileMenuOpen(false)}>
               <X className="w-6 h-6" />
             </button>
@@ -273,13 +278,10 @@ const DataBarang = ({ onNavigate, onLogout }) => {
           </div>
         </aside>
 
-        {/* ================= MAIN CONTENT ================= */}
         <main className="flex-1 flex flex-col overflow-hidden relative w-full">
           
-          {/* ================= HEADER RESPONSIF ================= */}
           <header className="h-16 md:h-20 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between px-4 md:px-8 z-10 sticky top-0 shrink-0">
             <div className="flex items-center gap-3">
-              {/* Tombol Hamburger (Hanya muncul di HP) */}
               <button className="md:hidden text-gray-500 hover:text-gray-800 p-1" onClick={() => setIsMobileMenuOpen(true)}>
                 <Menu className="w-6 h-6" />
               </button>
@@ -288,7 +290,6 @@ const DataBarang = ({ onNavigate, onLogout }) => {
             </div>
             
             <div className="flex items-center gap-4 md:gap-6">
-              {/* Search Bar Desktop (Tersembunyi di HP, diganti ke area konten) */}
               <div className="relative w-72 hidden md:block">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input 
@@ -312,17 +313,14 @@ const DataBarang = ({ onNavigate, onLogout }) => {
             </div>
           </header>
 
-          {/* ================= PAGE CONTENT ================= */}
           <div className="flex-1 overflow-y-auto p-4 md:p-8 pb-12 w-full">
             
-            {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 md:mb-8">
               <div>
                 <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-1">Data Barang</h2>
                 <p className="text-xs md:text-sm text-gray-500">Kelola dan monitor tingkat stok inventaris kantor pusat</p>
               </div>
               <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                {/* Search Bar Mobile (Hanya muncul di HP, agar tidak makan tempat di header) */}
                 <div className="relative w-full md:hidden">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input 
@@ -343,7 +341,6 @@ const DataBarang = ({ onNavigate, onLogout }) => {
               </div>
             </div>
 
-            {/* Stats Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
               {stats.map((stat, index) => (
                 <div key={index} className="bg-white rounded-[20px] p-4 md:p-5 shadow-sm border border-gray-100 flex flex-col justify-between h-28 md:h-32 relative overflow-hidden hover:shadow-md transition-shadow">
@@ -366,7 +363,6 @@ const DataBarang = ({ onNavigate, onLogout }) => {
               ))}
             </div>
 
-            {/* Category Pills */}
             <div className="flex gap-2 mb-4 md:mb-6 overflow-x-auto pb-2 scrollbar-hide">
               {categories.map((cat) => (
                 <button 
@@ -383,7 +379,6 @@ const DataBarang = ({ onNavigate, onLogout }) => {
               ))}
             </div>
 
-            {/* Data Table */}
             <div className="bg-white rounded-[20px] shadow-sm border border-gray-100 overflow-hidden relative min-h-[300px]">
               {isLoading ? (
                 <div className="absolute inset-0 z-10 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center">
@@ -414,14 +409,13 @@ const DataBarang = ({ onNavigate, onLogout }) => {
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                       {currentData.map((item) => {
-                        const status = getStockStatus(item.stok, item.stok_minimum);
+                        const status = getStockStatus(item);
                         
                         return (
                           <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
                             <td className="py-3 md:py-4 px-4 md:px-6">
                               <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0 overflow-hidden relative">
-                                  {/* --- FOTO LANGSUNG MENGGUNAKAN API RAILWAY --- */}
                                   {item.foto_url || item.gambar ? (
                                     <img 
                                       src={getImageUrl(item.foto_url || item.gambar)} 
@@ -432,8 +426,6 @@ const DataBarang = ({ onNavigate, onLogout }) => {
                                       }}
                                     />
                                   ) : null}
-                                  {/* --------------------------------------------- */}
-                                  
                                   <div className="absolute inset-0 flex items-center justify-center z-0">
                                     {item.kategori?.includes('Buku') ? <FileText className="w-4 h-4 md:w-5 md:h-5 text-gray-500" /> : <Box className="w-4 h-4 md:w-5 md:h-5 text-gray-500" />}
                                   </div>
@@ -444,9 +436,8 @@ const DataBarang = ({ onNavigate, onLogout }) => {
                                 </div>
                               </div>
                             </td>
-                            {/* --- PERBAIKAN TEKS KATEGORI DI SINI --- */}
                             <td className="py-3 md:py-4 px-4 md:px-6 text-xs md:text-sm text-gray-600 font-medium">
-                              {String(item.kategori || '').replace(/&amp;/g, '&').replace(/&amp;/g, '&')}
+                              {String(item.kategori || '').replace(/&amp;/g, '&')}
                             </td>
                             <td className="py-3 md:py-4 px-4 md:px-6 text-xs md:text-sm font-bold text-gray-800">{formatRupiah(item.harga)}</td>
                             <td className="py-3 md:py-4 px-4 md:px-6 text-xs md:text-sm font-bold text-center text-gray-800">
@@ -485,7 +476,6 @@ const DataBarang = ({ onNavigate, onLogout }) => {
                 </div>
               )}
 
-              {/* Pagination Controls */}
               {!isLoading && filteredData.length > 0 && (
                 <div className="flex flex-col sm:flex-row items-center justify-between px-4 md:px-6 py-3 md:py-4 border-t border-gray-100 bg-white gap-3">
                   <p className="text-[10px] md:text-xs text-gray-500 font-medium text-center sm:text-left">
@@ -529,7 +519,6 @@ const DataBarang = ({ onNavigate, onLogout }) => {
         </main>
       </div>
 
-      {/* RENDER MODAL HAPUS DI SINI */}
       <DeleteConfirmModal 
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}

@@ -4,10 +4,11 @@ import {
   ArrowUpRight, Activity, BarChart2, ArrowDownLeft, 
   Search, Bell, CircleUser, ChevronDown, CalendarDays,
   Package, PenTool, Zap, CheckCircle2, ChevronLeft, ChevronRight, Loader2, Plus,
-  Menu, X // <-- Tambahan icon Menu & X untuk mobile
+  Menu, X 
 } from 'lucide-react';
 
 import SuccessTransactionModal from './SuccessTransactionModal';
+import logoAmrita from './assets/Logo Amrita.png';
 
 const BarangMasuk = ({ onNavigate, onLogout }) => {
   // === STATE UNTUK MENU HP ===
@@ -211,8 +212,9 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
         <aside className={`fixed inset-y-0 left-0 z-50 w-[260px] bg-white border-r border-gray-100 flex flex-col shrink-0 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
           <div className="p-6 flex justify-between items-center">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-[#5452F6] rounded-xl flex items-center justify-center shrink-0 shadow-sm shadow-indigo-100">
-                <Box className="w-6 h-6 text-white" strokeWidth={2} />
+              {/* LOGO DI SINI */}
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 overflow-hidden bg-gray-50">
+                <img src={logoAmrita} alt="Logo" className="w-full h-full object-contain" />
               </div>
               <div>
                 <h1 className="text-[#5452F6] font-bold text-[13px] leading-tight tracking-wide uppercase">
@@ -296,7 +298,7 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
           </header>
 
           <div className="flex-1 overflow-y-auto p-4 md:p-8 pb-12 relative w-full">
-              
+            {/* Konten Utama */}
             <div className="flex flex-col md:flex-row md:justify-between items-start md:items-end mb-6 md:mb-8 gap-4 md:gap-4">
               <div>
                 <p className="text-[10px] md:text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-1">Manajemen Inventaris</p>
@@ -397,7 +399,7 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
                               </div>
                           </div>
 
-                          {/* PILIH PEMASOK (DENGAN TOGGLE BARU) */}
+                          {/* PILIH PEMASOK */}
                           <div>
                               <div className="flex justify-between items-center mb-1.5 md:mb-2">
                                   <label className="block text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wider">PILIH SUPPLIER</label>
@@ -545,7 +547,7 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
               </div>
             </div>
 
-            {/* ================= TABEL RIWAYAT BARANG MASUK ================= */}
+            {/* TABEL RIWAYAT */}
             <div className="mt-6 md:mt-8 bg-white rounded-[20px] shadow-sm border border-gray-100 overflow-hidden">
                 <div className="px-4 md:px-6 py-4 md:py-5 border-b border-gray-100 flex justify-between items-center bg-white">
                     <h3 className="text-sm md:text-base font-bold text-gray-800">Riwayat Barang Masuk</h3>
