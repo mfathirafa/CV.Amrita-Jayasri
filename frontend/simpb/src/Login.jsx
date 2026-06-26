@@ -25,7 +25,7 @@ const Login = ({ onLogin, onNavigate }) => {
     setIsLoading(true);
     setError('');
 
-    const API_URL = import.meta.env.VITE_API_URL || 'http://103.253.213.251/api';
+    const API_URL = import.meta.env.VITE_API_URL || 'https://cvamritajayasri.my.id/api';
 
     try {
       const response = await fetch(`${API_URL}/login`, {

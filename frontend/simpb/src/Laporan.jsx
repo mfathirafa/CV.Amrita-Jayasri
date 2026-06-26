@@ -18,6 +18,7 @@ import logoAmrita from './assets/Logo Amrita.png';
 
 const Laporan = ({ onLogout, onNavigate }) => {
   // === STATES ===
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [startDate, setStartDate] = useState('2026-03-01');
   const [endDate, setEndDate] = useState('2026-04-30'); 
@@ -57,7 +58,7 @@ const Laporan = ({ onLogout, onNavigate }) => {
     try {
       setIsLoading(true);
       const token = localStorage.getItem('token');
-      const rawApiUrl = import.meta.env.VITE_API_URL || 'http://103.253.213.251/api';
+      const rawApiUrl = import.meta.env.VITE_API_URL || 'https://cvamritajayasri.my.id/api';
       const cleanApiUrl = rawApiUrl.replace(/\/$/, ""); 
       const baseApi = cleanApiUrl.endsWith('/api') ? cleanApiUrl : `${cleanApiUrl}/api`;
       
@@ -340,9 +341,28 @@ const Laporan = ({ onLogout, onNavigate }) => {
                 <span className="absolute -top-0.5 right-0.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
               </button>
               <div className="h-6 w-px bg-gray-200 hidden md:block"></div>
-              <div className="flex items-center gap-2.5 cursor-pointer">
-                <CircleUser className="w-7 h-7 md:w-8 md:h-8 text-[#5452F6]" strokeWidth={1.5} />
-                <span className="text-xs md:text-sm font-semibold text-[#1E232C] hidden md:block">Administrator</span>
+              <div className="relative">
+                <button
+                  onClick={() => setIsProfileOpen(prev => !prev)}
+                  className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
+                >
+                  <CircleUser className="w-7 h-7 md:w-8 md:h-8 text-[#5452F6]" strokeWidth={1.5} />
+                  <span className="text-xs md:text-sm font-semibold text-[#1E232C] hidden md:block">Administrator</span>
+                </button>
+                {isProfileOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-44 bg-white rounded-xl shadow-lg border border-gray-100 z-50 py-1 animate-in fade-in zoom-in-95">
+                    <div className="px-4 py-2.5 border-b border-gray-100">
+                      <p className="text-xs font-bold text-gray-800">Administrator</p>
+                      <p className="text-[10px] text-gray-400 truncate">admin@amrita.com</p>
+                    </div>
+                    <button
+                      onClick={() => { setIsProfileOpen(false); onLogout && onLogout(); }}
+                      className="w-full text-left px-4 py-2.5 text-xs font-semibold text-red-500 hover:bg-red-50 transition-colors rounded-b-xl"
+                    >
+                      Keluar
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </header>

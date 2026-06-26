@@ -67,7 +67,7 @@ const ResetPassword = ({ onNavigate }) => {
       return;
     }
 
-    const API_URL = import.meta.env.VITE_API_URL || 'http://103.253.213.251/api';
+    const API_URL = import.meta.env.VITE_API_URL || 'https://cvamritajayasri.my.id/api';
 
     try {
       /* === KODE API UNTUK BACKEND SENSEI === */

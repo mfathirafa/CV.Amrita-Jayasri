@@ -44,7 +44,7 @@ const App = () => {
     const token = localStorage.getItem('token');
 
     try {
-      await fetch('https://cvamrita-jayasri-production.up.railway.app/api/logout', {
+      await fetch('https://cvamritajayasri.my.id/api/logout', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

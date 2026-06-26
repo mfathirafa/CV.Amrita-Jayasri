@@ -40,7 +40,7 @@ const EditKonsumenModal = ({ isOpen, onClose, onSave, konsumenData }) => {
 
     try {
       const token = localStorage.getItem('token');
-      const rawApiUrl = import.meta.env.VITE_API_URL || 'http://103.253.213.251/api';
+      const rawApiUrl = import.meta.env.VITE_API_URL || 'https://cvamritajayasri.my.id/api';
       const cleanApiUrl = rawApiUrl.replace(/\/$/, ""); 
       
       const endpoint = cleanApiUrl.endsWith('/api') 
