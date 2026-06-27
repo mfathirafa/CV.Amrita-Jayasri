@@ -4,7 +4,7 @@ import {
   ArrowDownRight, ArrowUpRight, Activity, 
   BarChart2, Bell, Plus, 
   Calendar, AlertTriangle, TrendingUp, AlertCircle, CircleUser, Loader2,
-  Menu, X
+  Menu, X, CheckCircle // <-- DIPERBAIKI: Menambahkan CheckCircle ke dalam import
 } from 'lucide-react';
 
 import DateRangePickerModal from './DateRangePickerModal';
@@ -13,6 +13,7 @@ import logoAmrita from './assets/Logo Amrita.png';
 const Dashboard = ({ onLogout, onNavigate }) => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   // === STATE UNTUK MENYIMPAN DATA DARI API DASHBOARD ===
@@ -124,9 +125,7 @@ const Dashboard = ({ onLogout, onNavigate }) => {
       <aside className={`fixed inset-y-0 left-0 z-50 w-[260px] bg-white border-r border-gray-100 flex flex-col shrink-0 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-6 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            {/* LOGO ASLI AMRITA JAYASRI */}
             <img src={logoAmrita} alt="Logo CV Amrita Jayasri" className="w-12 h-12 object-contain shrink-0 drop-shadow-sm" />
-            
             <div>
               <h1 className="text-[#5452F6] font-bold text-[13px] leading-tight tracking-wide">
                 CV. AMRITA<br/>JAYASRI
@@ -186,21 +185,93 @@ const Dashboard = ({ onLogout, onNavigate }) => {
             <h2 className="font-bold text-[#1E232C] text-sm sm:hidden">SIMPB</h2>
           </div>
           <div className="flex items-center gap-4 md:gap-6">
-            <button className="relative text-gray-500 hover:text-gray-800 transition-colors">
-              <Bell className="w-5 h-5" />
-              <span className="absolute -top-0.5 right-0.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-            </button>
+            
+            {/* ================= NOTIFIKASI BELL ================= */}
+            <div className="relative">
+              <button 
+                onClick={() => {
+                  setIsNotifOpen(!isNotifOpen);
+                  if(isProfileOpen) setIsProfileOpen(false);
+                }}
+                className="relative text-gray-500 hover:text-gray-800 transition-colors p-1"
+              >
+                <Bell className="w-5 h-5" />
+                {stokKritisList.length > 0 && (
+                  <span className="absolute top-0.5 right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+                )}
+              </button>
+
+              {/* DROPDOWN NOTIFIKASI */}
+              {isNotifOpen && (
+                <div className="absolute right-0 top-full mt-3 w-72 md:w-80 bg-white rounded-xl shadow-lg border border-gray-100 z-50 py-1 animate-in fade-in zoom-in-95">
+                  <div className="px-4 py-3 border-b border-gray-50 flex justify-between items-center">
+                    <p className="text-sm font-bold text-gray-800">Notifikasi</p>
+                    {stokKritisList.length > 0 && (
+                      <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded-full">
+                        {stokKritisList.length} Peringatan
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className="max-h-64 overflow-y-auto">
+                    {isLoading ? (
+                      <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-[#5452F6]" /></div>
+                    ) : stokKritisList.length === 0 ? (
+                      <div className="px-4 py-8 text-center flex flex-col items-center">
+                        <CheckCircle className="w-8 h-8 text-green-500 mb-2" />
+                        <p className="text-xs text-gray-500 font-medium">Semua stok dalam kondisi aman.</p>
+                      </div>
+                    ) : (
+                      stokKritisList.map((item) => (
+                        <div 
+                          key={item.id} 
+                          onClick={() => { setIsNotifOpen(false); onNavigate('monitoring-stok'); }}
+                          className="px-4 py-3 hover:bg-gray-50 border-b border-gray-50 last:border-0 transition-colors cursor-pointer group"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="mt-0.5 p-1.5 bg-red-50 rounded-lg shrink-0 group-hover:bg-red-100 transition-colors">
+                              <AlertTriangle className="w-4 h-4 text-red-500" />
+                            </div>
+                            <div>
+                              <p className="text-[11px] md:text-xs font-bold text-gray-800 mb-1 leading-tight">{item.nama_barang}</p>
+                              <p className="text-[10px] text-gray-500">Stok tersisa: <span className="font-bold text-red-600">{item.stok} {item.satuan}</span> (Min: {item.stok_minimum})</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  
+                  {stokKritisList.length > 0 && (
+                    <div className="px-4 py-2.5 border-t border-gray-50 text-center">
+                      <button 
+                        onClick={() => { setIsNotifOpen(false); onNavigate('monitoring-stok'); }}
+                        className="text-[11px] font-bold text-[#5452F6] hover:text-[#4341E3] transition-colors"
+                      >
+                        Lihat Semua Pemantauan
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             <div className="h-6 w-px bg-gray-200 hidden md:block"></div>
+            
+            {/* ================= PROFILE MENU ================= */}
             <div className="relative">
               <button
-                onClick={() => setIsProfileOpen(prev => !prev)}
+                onClick={() => {
+                  setIsProfileOpen(!isProfileOpen);
+                  if(isNotifOpen) setIsNotifOpen(false);
+                }}
                 className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
               >
                 <CircleUser className="w-7 h-7 md:w-8 md:h-8 text-[#5452F6]" strokeWidth={1.5} />
                 <span className="text-sm font-semibold text-[#1E232C] hidden md:block">Administrator</span>
               </button>
               {isProfileOpen && (
-                <div className="absolute right-0 top-full mt-2 w-44 bg-white rounded-xl shadow-lg border border-gray-100 z-50 py-1 animate-in fade-in zoom-in-95">
+                <div className="absolute right-0 top-full mt-3 w-44 bg-white rounded-xl shadow-lg border border-gray-100 z-50 py-1 animate-in fade-in zoom-in-95">
                   <div className="px-4 py-2.5 border-b border-gray-100">
                     <p className="text-xs font-bold text-gray-800">Administrator</p>
                     <p className="text-[10px] text-gray-400 truncate">admin@amrita.com</p>
@@ -311,7 +382,7 @@ const Dashboard = ({ onLogout, onNavigate }) => {
                 </div>
                 
                 <div className="overflow-x-auto w-full pb-2">
-                  <div className="relative h-[200px] md:h-[260px] ml-8 md:ml-10 mt-2 md:mt-6 min-w-[300px]">
+                  <div className="relative h-[200px] md:h-[260px] ml-8 md:ml-10 mt-10 md:mt-12 min-w-[300px]">
                     {/* Y-Axis Labels */}
                     <div className="absolute -left-8 md:-left-10 top-0 bottom-6 md:bottom-8 w-6 md:w-8 flex flex-col justify-between text-right text-[9px] md:text-[10px] text-gray-400 font-bold">
                       <span>{maxChartValue}</span>
@@ -342,9 +413,9 @@ const Dashboard = ({ onLogout, onNavigate }) => {
 
                           return (
                             <div key={index} className="flex-1 flex justify-center items-end gap-0.5 md:gap-1.5 h-full relative group">
-                              {/* Tooltip Hover */}
-                              <div className="opacity-0 group-hover:opacity-100 absolute -top-8 md:-top-10 bg-gray-800 text-white text-[9px] md:text-[10px] px-2 py-1 md:px-2.5 md:py-1.5 rounded shadow-lg pointer-events-none transition-opacity whitespace-nowrap z-20">
-                                Masuk: {valMasuk} | Keluar: {valKeluar}
+                              <div className="opacity-0 group-hover:opacity-100 absolute -top-10 md:-top-12 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] md:text-[11px] font-medium px-3 py-1.5 rounded-lg shadow-xl pointer-events-none transition-all duration-200 whitespace-nowrap z-50 flex flex-col items-center">
+                                <span>Masuk: {valMasuk} | Keluar: {valKeluar}</span>
+                                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-800 rotate-45 rounded-sm"></div>
                               </div>
 
                               {/* Bar Masuk */}
