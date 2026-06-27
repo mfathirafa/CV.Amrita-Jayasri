@@ -33,7 +33,7 @@ const TambahKonsumenModal = ({ isOpen, onClose, onSave }) => {
       setErrorMessage('');
 
       const token = localStorage.getItem('token');
-      const rawApiUrl = import.meta.env.VITE_API_URL || 'http://103.253.213.251/api';
+      const rawApiUrl = import.meta.env.VITE_API_URL || 'https://cvamritajayasri.my.id/api';
       const cleanApiUrl = rawApiUrl.replace(/\/$/, "");
       const baseApi = cleanApiUrl.endsWith('/api') ? cleanApiUrl : `${cleanApiUrl}/api`;
 

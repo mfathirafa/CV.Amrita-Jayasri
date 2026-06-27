@@ -92,7 +92,7 @@ const DataBarang = ({ onNavigate, onLogout }) => {
     if (!imagePath) return null;
     if (imagePath.startsWith('http')) return imagePath; 
     
-    const rawApiUrl = import.meta.env.VITE_API_URL || 'https://cvamrita-jayasri-production.up.railway.app/api';
+    const rawApiUrl = import.meta.env.VITE_API_URL || 'https://cvamritajayasri.my.id/api';
     const baseUrl = rawApiUrl.replace(/\/api\/?$/, ""); 
     
     return `${baseUrl}/storage/${imagePath}`; 
@@ -104,7 +104,7 @@ const DataBarang = ({ onNavigate, onLogout }) => {
       try {
         setIsLoading(true);
         const token = localStorage.getItem('token');
-        const rawApiUrl = import.meta.env.VITE_API_URL || 'https://cvamrita-jayasri-production.up.railway.app/api';
+        const rawApiUrl = import.meta.env.VITE_API_URL || 'https://cvamritajayasri.my.id/api';
         const cleanApiUrl = rawApiUrl.replace(/\/$/, ""); 
         
         const endpoint = cleanApiUrl.endsWith('/api') 
@@ -153,7 +153,7 @@ const DataBarang = ({ onNavigate, onLogout }) => {
     setIsDeleting(true);
     try {
       const token = localStorage.getItem('token');
-      const rawApiUrl = import.meta.env.VITE_API_URL || 'https://cvamrita-jayasri-production.up.railway.app/api';
+      const rawApiUrl = import.meta.env.VITE_API_URL || 'https://cvamritajayasri.my.id/api';
       const cleanApiUrl = rawApiUrl.replace(/\/$/, ""); 
       
       const endpoint = cleanApiUrl.endsWith('/api') 
