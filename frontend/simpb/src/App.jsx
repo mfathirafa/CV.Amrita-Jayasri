@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import LandingPage from './LandingPage'; // <-- 1. IMPORT LANDING PAGE
 import Login from './Login';
 import Dashboard from './Dashboard'; 
 import DataBarang from './DataBarang'; 
@@ -8,12 +9,13 @@ import BarangMasuk from './BarangMasuk';
 import BarangKeluar from './BarangKeluar'; 
 import MonitoringStok from './MonitoringStok';
 import TambahBarang from './TambahBarang';
-import EditBarang from './EditBarang'; // <-- 1. IMPORT EDIT BARANG
+import EditBarang from './EditBarang'; 
 import Laporan from './Laporan';
 import LogoutModal from './LogoutModal'; 
 
 const App = () => {
-  const [activePage, setActivePage] = useState('login');
+  // === 2. UBAH DEFAULT STATE MENJADI 'landing' ===
+  const [activePage, setActivePage] = useState('landing'); 
   const [user, setUser] = useState(null);
   
   // === STATE BARU UNTUK MENYIMPAN ID BARANG YANG AKAN DIEDIT ===
@@ -25,6 +27,7 @@ const App = () => {
     const savedToken = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
 
+    // Jika sudah ada token, langsung masuk ke dashboard
     if (savedToken && savedUser) {
       setUser(JSON.parse(savedUser));
       setActivePage('dashboard');
@@ -59,10 +62,12 @@ const App = () => {
     localStorage.removeItem('user');
     setUser(null);
     setIsLogoutModalOpen(false); 
-    setActivePage('login');
+    
+    // Setelah logout, kita kembalikan user ke Landing Page
+    setActivePage('landing'); 
   };
 
-  // === 2. FUNGSI NAVIGASI BARU ===
+  // === FUNGSI NAVIGASI ===
   // Fungsi ini bisa menangkap nama halaman DAN id barang (opsional)
   const handleNavigate = (page, id = null) => {
     setActivePage(page);
@@ -71,17 +76,18 @@ const App = () => {
 
   const renderPage = () => {
     switch (activePage) {
+      // === 3. TAMBAHKAN CASE UNTUK LANDING PAGE ===
+      case 'landing':
+        return <LandingPage onNavigate={handleNavigate} />;
+        
       case 'login':
         return <Login onLogin={handleLogin} />;
       case 'dashboard':
-        // Ganti semua setActivePage menjadi handleNavigate
         return <Dashboard onNavigate={handleNavigate} onLogout={handleShowLogoutModal} user={user} />;
       case 'data-barang':
         return <DataBarang onNavigate={handleNavigate} onLogout={handleShowLogoutModal} />;
       case 'tambah-barang':
         return <TambahBarang onNavigate={handleNavigate} onLogout={handleShowLogoutModal} />;
-      
-      // === 3. TAMBAHKAN CASE UNTUK EDIT BARANG ===
       case 'edit-barang':
         return (
           <EditBarang 
@@ -90,7 +96,6 @@ const App = () => {
             itemId={selectedItemId} // Kirimkan ID yang disimpan ke komponen Edit
           />
         );
-
       case 'pemasok':
         return <Pemasok onNavigate={handleNavigate} onLogout={handleShowLogoutModal} />;
       case 'konsumen':
@@ -104,7 +109,8 @@ const App = () => {
       case 'laporan':
         return <Laporan onNavigate={handleNavigate} onLogout={handleShowLogoutModal} />;
       default:
-        return <Dashboard onNavigate={handleNavigate} onLogout={handleShowLogoutModal} user={user} />;
+        // Default dikembalikan ke Landing Page jika halaman tidak ditemukan
+        return <LandingPage onNavigate={handleNavigate} />; 
     }
   };
 
