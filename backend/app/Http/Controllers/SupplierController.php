@@ -17,7 +17,7 @@ class SupplierController extends Controller
             $query->where('nama_supplier', 'like', '%' . Sanitizer::clean($request->search) . '%');
         }
 
-        $perPage  = min((int) $request->get('per_page', 10), 100);
+        $perPage  = min((int) $request->get("per_page", 10), 1000);
         $supplier = $query->orderBy('nama_supplier', 'asc')->paginate($perPage);
 
         return response()->json([

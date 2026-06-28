@@ -31,7 +31,7 @@ class StokController extends Controller
             $query->where('nama_barang', 'like', '%' . Sanitizer::clean($request->search) . '%');
         }
 
-        $perPage = min((int) $request->get('per_page', 10), 100);
+        $perPage = min((int) $request->get("per_page", 10), 1000);
         $barang  = $query->orderBy('nama_barang', 'asc')->paginate($perPage);
 
         // Hitung total nilai inventaris semua barang (tidak terpengaruh pagination)

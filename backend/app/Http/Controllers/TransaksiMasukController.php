@@ -36,7 +36,7 @@ class TransaksiMasukController extends Controller
             $query->where('supplier_id', (int) $request->supplier_id);
         }
 
-        $perPage   = min((int) $request->get('per_page', 10), 100);
+        $perPage   = min((int) $request->get("per_page", 10), 1000);
         $transaksi = $query->orderBy('tanggal_masuk', 'desc')->paginate($perPage);
 
         return response()->json([

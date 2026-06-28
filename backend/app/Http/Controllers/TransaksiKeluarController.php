@@ -36,7 +36,7 @@ class TransaksiKeluarController extends Controller
             $query->where('konsumen_id', (int) $request->konsumen_id);
         }
 
-        $perPage   = min((int) $request->get('per_page', 10), 100);
+        $perPage   = min((int) $request->get("per_page", 10), 1000);
         $transaksi = $query->orderBy('tanggal_keluar', 'desc')->paginate($perPage);
 
         return response()->json([
