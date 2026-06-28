@@ -62,7 +62,7 @@ class TransaksiKeluarController extends Controller
             'alamat_konsumen'  => 'nullable|string|max:500',  // ← baru: opsional
             'telepon_konsumen' => 'nullable|string|max:20',   // ← baru: opsional
             'nama_instansi'    => 'nullable|string|max:200',
-            'jumlah'           => 'required|integer|min:1|max:999999',
+            'jumlah'           => 'required|numeric|min:0.01|max:999999',
             'harga_jual'       => 'required|numeric|min:0|max:999999999',
             'tanggal_keluar'   => 'required|date|before_or_equal:today',
             'keterangan'       => 'nullable|string|max:500',

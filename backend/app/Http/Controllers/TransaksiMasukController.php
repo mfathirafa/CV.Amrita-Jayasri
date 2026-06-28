@@ -61,7 +61,7 @@ class TransaksiMasukController extends Controller
             'nama_supplier'  => 'nullable|string|max:200',  // ← baru: input manual
             'alamat_supplier'=> 'nullable|string|max:500',  // ← baru: opsional
             'telepon_supplier'=> 'nullable|string|max:20',  // ← baru: opsional
-            'jumlah'         => 'required|integer|min:1|max:999999',
+            'jumlah'         => 'required|numeric|min:0.01|max:999999',
             'harga_beli'     => 'required|numeric|min:0|max:999999999',
             'tanggal_masuk'  => 'required|date|before_or_equal:today',
             'keterangan'     => 'nullable|string|max:500',
