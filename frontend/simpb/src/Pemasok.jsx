@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react'; 
-import { 
-  LayoutDashboard, Box, Truck, Users, 
-  ArrowDownRight, ArrowUpRight, Activity, 
-  BarChart2, Search, Bell, CircleUser, 
-  Plus, Edit2, Trash2, ChevronLeft, ChevronRight, Info, 
-  ArrowDownLeft, Phone, Loader2, Menu, X, CheckCircle 
+import React, { useState, useEffect } from 'react';
+import {
+  LayoutDashboard, Box, Truck, Users,
+  ArrowDownRight, ArrowUpRight, Activity,
+  BarChart2, Search, Bell, CircleUser,
+  Plus, Edit2, Trash2, ChevronLeft, ChevronRight, Info,
+  ArrowDownLeft, Phone, Loader2, Menu, X, CheckCircle, ChevronsLeft, ChevronsRight
 } from 'lucide-react';
 
-import TambahSupplierModal from './TambahSupplierModal'; 
-import EditSupplierModal from './EditSupplierModal'; 
+import TambahSupplierModal from './TambahSupplierModal';
+import EditSupplierModal from './EditSupplierModal';
 import DeleteConfirmModal from './DeleteConfirmModal';
 import logoAmrita from './assets/Logo Amrita.png';
 
@@ -20,7 +20,7 @@ const Pemasok = ({ onNavigate, onLogout }) => {
   // === STATE UNTUK KONTROL MODAL ===
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedSupplier, setSelectedSupplier] = useState(null); 
+  const [selectedSupplier, setSelectedSupplier] = useState(null);
 
   // === STATE UNTUK MODAL HAPUS ===
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -32,33 +32,65 @@ const Pemasok = ({ onNavigate, onLogout }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // === STATE UNTUK PAGINASI ===
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   // === FUNGSI AMBIL DATA DARI API RAILWAY (GET) ===
   const fetchSuppliers = async () => {
     try {
       setIsLoading(true);
       const token = localStorage.getItem('token');
       const rawApiUrl = import.meta.env.VITE_API_URL || 'https://cvamritajayasri.my.id/api';
-      const cleanApiUrl = rawApiUrl.replace(/\/$/, ""); 
-      
-      const endpoint = cleanApiUrl.endsWith('/api') 
-        ? `${cleanApiUrl}/supplier` 
+      const cleanApiUrl = rawApiUrl.replace(/\/$/, "");
+
+      const endpoint = cleanApiUrl.endsWith('/api')
+        ? `${cleanApiUrl}/supplier`
         : `${cleanApiUrl}/api/supplier`;
 
-      const response = await fetch(endpoint, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${token}`
+      let allData = [];
+      let page = 1;
+      let lastPage = 1;
+      let hasMore = true;
+
+      while (hasMore) {
+        const url = `${endpoint}?per_page=1000&page=${page}`;
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        const data = await response.json();
+
+        if (response.ok || data.success) {
+          let arrayData = [];
+          if (Array.isArray(data)) arrayData = data;
+          else if (Array.isArray(data.data)) arrayData = data.data;
+          else if (data.data && Array.isArray(data.data.data)) arrayData = data.data.data;
+
+          allData = [...allData, ...arrayData];
+
+          let extractedLastPage = 1;
+          if (data.last_page) extractedLastPage = data.last_page;
+          else if (data.meta && data.meta.last_page) extractedLastPage = data.meta.last_page;
+          else if (data.data && data.data.last_page) extractedLastPage = data.data.last_page;
+
+          lastPage = Math.max(lastPage, extractedLastPage);
+
+          if (arrayData.length < 1000 || page >= lastPage) {
+            hasMore = false;
+          } else {
+            page++;
+          }
+        } else {
+          console.error("Gagal mengambil data:", data);
+          hasMore = false;
         }
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        setSuppliers(data.data || []);
-      } else {
-        console.error("Gagal mengambil data:", data);
       }
+      setSuppliers(allData);
     } catch (error) {
       console.error("Error Fetching:", error);
     } finally {
@@ -74,7 +106,7 @@ const Pemasok = ({ onNavigate, onLogout }) => {
     if (!name) return '??';
     const firstWord = name.split(' ')[0].toUpperCase();
     if (['PT', 'CV', 'UD', 'FA', 'TB'].includes(firstWord)) return firstWord;
-    return name.substring(0, 2).toUpperCase(); 
+    return name.substring(0, 2).toUpperCase();
   };
 
   // === FUNGSI NAVIGASI HP ===
@@ -84,17 +116,17 @@ const Pemasok = ({ onNavigate, onLogout }) => {
   };
 
   const handleSaveNewSupplier = (newSupplierData) => {
-    fetchSuppliers(); 
+    fetchSuppliers();
     setIsAddModalOpen(false);
   };
 
   const handleEditClick = (supplier) => {
-    setSelectedSupplier(supplier); 
-    setIsEditModalOpen(true);      
+    setSelectedSupplier(supplier);
+    setIsEditModalOpen(true);
   };
 
   const handleSaveEditSupplier = (updatedSupplierData) => {
-    fetchSuppliers(); 
+    fetchSuppliers();
     setIsEditModalOpen(false);
   };
 
@@ -106,15 +138,15 @@ const Pemasok = ({ onNavigate, onLogout }) => {
 
   const executeDelete = async () => {
     if (!itemToDelete.id) return;
-    
+
     setIsDeleting(true);
     try {
       const token = localStorage.getItem('token');
       const rawApiUrl = import.meta.env.VITE_API_URL || 'https://cvamritajayasri.my.id/api';
-      const cleanApiUrl = rawApiUrl.replace(/\/$/, ""); 
-      
-      const endpoint = cleanApiUrl.endsWith('/api') 
-        ? `${cleanApiUrl}/supplier/${itemToDelete.id}` 
+      const cleanApiUrl = rawApiUrl.replace(/\/$/, "");
+
+      const endpoint = cleanApiUrl.endsWith('/api')
+        ? `${cleanApiUrl}/supplier/${itemToDelete.id}`
         : `${cleanApiUrl}/api/supplier/${itemToDelete.id}`;
 
       const response = await fetch(endpoint, {
@@ -127,7 +159,7 @@ const Pemasok = ({ onNavigate, onLogout }) => {
 
       if (response.ok) {
         setSuppliers(prevData => prevData.filter(item => item.id !== itemToDelete.id));
-        setIsDeleteModalOpen(false); 
+        setIsDeleteModalOpen(false);
       } else {
         const errorData = await response.json();
         alert(`Gagal menghapus pemasok: ${errorData.message || 'Server error'}`);
@@ -144,21 +176,30 @@ const Pemasok = ({ onNavigate, onLogout }) => {
   const filteredSuppliers = suppliers.filter((item) => {
     const searchLower = searchQuery.toLowerCase().trim();
     if (searchLower === '') return true;
-    
+
     // PERBAIKAN: Format HTML entity saat mencari data
     const namaLower = String(item.nama_supplier || '').replace(/&#039;/g, "'").toLowerCase();
     const alamatLower = String(item.alamat || '').toLowerCase();
-    
+
     return namaLower.includes(searchLower) || alamatLower.includes(searchLower);
   });
+
+  // === PAGINASI LOGIKA ===
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredSuppliers.length / itemsPerPage));
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const currentSuppliers = filteredSuppliers.slice(startIndex, startIndex + itemsPerPage);
 
   return (
     <>
       <div className="flex h-screen bg-[#F8F9FA] font-sans overflow-hidden">
-        
+
         {/* ================= MOBILE OVERLAY ================= */}
         {isMobileMenuOpen && (
-          <div 
+          <div
             className="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity"
             onClick={() => setIsMobileMenuOpen(false)}
           />
@@ -172,10 +213,10 @@ const Pemasok = ({ onNavigate, onLogout }) => {
               <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 overflow-hidden bg-gray-50">
                 <img src={logoAmrita} alt="Logo" className="w-full h-full object-contain" />
               </div>
-              
+
               <div>
                 <h1 className="text-[#5452F6] font-bold text-[13px] leading-tight tracking-wide uppercase">
-                  CV. AMRITA<br/>JAYASRI
+                  CV. AMRITA<br />JAYASRI
                 </h1>
                 <p className="text-gray-400 font-medium text-[10px] mt-0.5">
                   Sistem Inventaris ATK
@@ -186,7 +227,7 @@ const Pemasok = ({ onNavigate, onLogout }) => {
               <X className="w-6 h-6" />
             </button>
           </div>
-          
+
           <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto mt-2 scrollbar-hide">
             <button onClick={() => handleNavigation('dashboard')} className="w-full flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 hover:text-gray-800 rounded-xl font-medium text-sm transition-colors text-left">
               <LayoutDashboard className="w-5 h-5" /> Dashboard
@@ -194,7 +235,7 @@ const Pemasok = ({ onNavigate, onLogout }) => {
             <button onClick={() => handleNavigation('data-barang')} className="w-full flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 hover:text-gray-800 rounded-xl font-medium text-sm transition-colors text-left">
               <Box className="w-5 h-5" /> Data Barang
             </button>
-            
+
             <button onClick={() => handleNavigation('pemasok')} className="w-full flex items-center gap-3 px-4 py-3 bg-[#F0EFFF] text-[#5452F6] rounded-xl font-bold text-sm transition-colors text-left">
               <Truck className="w-5 h-5" /> Pemasok
             </button>
@@ -225,7 +266,7 @@ const Pemasok = ({ onNavigate, onLogout }) => {
 
         {/* ================= MAIN CONTENT ================= */}
         <main className="flex-1 flex flex-col overflow-hidden relative w-full">
-          
+
           {/* === HEADER RESPONSIF === */}
           <header className="h-16 md:h-20 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between px-4 md:px-8 z-10 sticky top-0 shrink-0">
             <div className="flex items-center gap-3">
@@ -235,26 +276,26 @@ const Pemasok = ({ onNavigate, onLogout }) => {
               <h2 className="font-bold text-[#1E232C] text-sm md:text-base hidden sm:block">SIMPB - CV. Amrita Jayasri</h2>
               <h2 className="font-bold text-[#1E232C] text-sm sm:hidden">SIMPB</h2>
             </div>
-            
+
             <div className="flex items-center gap-4 md:gap-6">
               <div className="relative w-72 hidden md:block">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Cari nama atau alamat supplier..." 
-                  className="w-full pl-11 pr-4 py-2.5 bg-[#F4F7FC] border-transparent rounded-full text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] transition-all" 
+                  placeholder="Cari nama atau alamat supplier..."
+                  className="w-full pl-11 pr-4 py-2.5 bg-[#F4F7FC] border-transparent rounded-full text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] transition-all"
                 />
               </div>
-              
+
               <button className="relative text-gray-500 hover:text-gray-800 transition-colors">
                 <Bell className="w-5 h-5" />
                 <span className="absolute -top-0.5 right-0.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
               </button>
-              
+
               <div className="h-6 w-px bg-gray-200 hidden md:block"></div>
-              
+
               <div className="relative">
                 <button
                   onClick={() => setIsProfileOpen(prev => !prev)}
@@ -283,15 +324,15 @@ const Pemasok = ({ onNavigate, onLogout }) => {
 
           {/* ================= AREA CONTENT ================= */}
           <div className="flex-1 overflow-y-auto p-4 md:p-8 pb-12 w-full">
-            
+
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6 md:mb-8">
               <div>
                 <h1 className="text-xl md:text-2xl font-bold text-gray-800">Direktori Supplier</h1>
                 <p className="text-xs md:text-sm text-gray-500 mt-1">Kelola dan pantau jaringan kemitraan strategis Anda.</p>
               </div>
-              
+
               <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                <button 
+                <button
                   onClick={() => setIsAddModalOpen(true)}
                   className="flex justify-center items-center gap-2 px-4 md:px-5 py-2.5 bg-[#5452F6] hover:bg-[#4341E3] text-white rounded-xl text-sm font-semibold transition-colors shadow-lg shadow-indigo-500/30 w-full sm:w-auto"
                 >
@@ -350,10 +391,10 @@ const Pemasok = ({ onNavigate, onLogout }) => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {filteredSuppliers.map((item) => {
+                      {currentSuppliers.map((item) => {
                         // PERBAIKAN: Decode entitas HTML untuk setiap item agar bisa digunakan berkali-kali dengan rapi
                         const decodedName = String(item.nama_supplier || '').replace(/&#039;/g, "'");
-                        
+
                         return (
                           <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
                             <td className="py-3 md:py-4 px-4 md:px-6">
@@ -382,14 +423,14 @@ const Pemasok = ({ onNavigate, onLogout }) => {
                             </td>
                             <td className="py-3 md:py-4 px-4 md:px-6 text-right">
                               <div className="flex items-center justify-end gap-1.5 md:gap-2">
-                                <button 
+                                <button
                                   onClick={() => handleEditClick(item)}
                                   className="p-1.5 md:p-2 text-[#5452F6] hover:bg-indigo-50 rounded-lg transition-colors border border-gray-100 shadow-inner bg-gray-50/50"
                                 >
                                   <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
                                 </button>
-                                
-                                <button 
+
+                                <button
                                   // PERBAIKAN: Lempar nama yang sudah di-decode ke modal hapus
                                   onClick={() => openDeleteModal(item.id, decodedName)}
                                   className="p-1.5 md:p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-gray-100 shadow-inner bg-gray-50/50"
@@ -406,24 +447,67 @@ const Pemasok = ({ onNavigate, onLogout }) => {
                 </div>
               )}
             </div>
+
+            {/* Pagination */}
+            {suppliers.length > 0 && filteredSuppliers.length > 0 && (
+              <div className="p-4 md:p-6 bg-gray-50/30 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 mt-auto rounded-b-[20px] shadow-sm border border-t-0">
+                <p className="text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center sm:text-left">
+                  Menampilkan {startIndex + 1} - {Math.min(startIndex + itemsPerPage, filteredSuppliers.length)} dari {filteredSuppliers.length} data
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                    className="p-1.5 md:p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    title="Halaman Pertama"
+                  >
+                    <ChevronsLeft className="w-4 h-4 md:w-5 md:h-5" />
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="p-1.5 md:p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    title="Halaman Sebelumnya"
+                  >
+                    <ChevronLeft className="w-4 h-4 md:w-5 md:h-5" />
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="p-1.5 md:p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    title="Halaman Selanjutnya"
+                  >
+                    <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                    className="p-1.5 md:p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    title="Halaman Terakhir"
+                  >
+                    <ChevronsRight className="w-4 h-4 md:w-5 md:h-5" />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </main>
       </div>
 
-      <TambahSupplierModal 
-        isOpen={isAddModalOpen} 
+      <TambahSupplierModal
+        isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onSave={handleSaveNewSupplier}
       />
 
-      <EditSupplierModal 
+      <EditSupplierModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         onSave={handleSaveEditSupplier}
-        supplierData={selectedSupplier} 
+        supplierData={selectedSupplier}
       />
 
-      <DeleteConfirmModal 
+      <DeleteConfirmModal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={executeDelete}
