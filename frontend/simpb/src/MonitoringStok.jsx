@@ -6,7 +6,7 @@ import {
   Package, AlertTriangle, ShoppingCart, Coins,
   FileText, PenTool, Printer, ChevronLeft, ChevronRight,
   Filter, Download, Edit2, Loader2,
-  Menu, X 
+  Menu, X, ChevronsLeft, ChevronsRight, ArrowDown, ArrowUp, ArrowUpDown
 } from 'lucide-react';
 
 // === IMPORT LIBRARY PDF ===
@@ -37,6 +37,7 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
 
   // === FUNGSI AMBIL DATA DARI BACKEND API/STOK ===
   useEffect(() => {
@@ -48,10 +49,10 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
         const rawApiUrl = import.meta.env.VITE_API_URL || 'https://cvamritajayasri.my.id/api';
         const cleanApiUrl = rawApiUrl.replace(/\/$/, ""); 
         
-        // PERUBAHAN: per_page=100 menjadi per_page=1000
+        // PERUBAHAN: per_page=100 menjadi per_page=999999 (Semua data)
         const endpoint = cleanApiUrl.endsWith('/api') 
-          ? `${cleanApiUrl}/stok?per_page=1000` 
-          : `${cleanApiUrl}/api/stok?per_page=1000`;
+          ? `${cleanApiUrl}/stok?per_page=999999` 
+          : `${cleanApiUrl}/api/stok?per_page=999999`;
 
         const response = await fetch(endpoint, {
           method: 'GET',
@@ -171,13 +172,37 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
     return false;
   });
 
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage) || 1;
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const sortedData = [...filteredData].sort((a, b) => {
+    if (!sortConfig.key) return 0;
+    
+    let aValue = a[sortConfig.key] || '';
+    let bValue = b[sortConfig.key] || '';
+
+    if (sortConfig.key === 'nama_barang') {
+      aValue = aValue.toString().toLowerCase();
+      bValue = bValue.toString().toLowerCase();
+    }
+
+    if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const totalPages = Math.ceil(sortedData.length / itemsPerPage) || 1;
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentData = filteredData.slice(startIndex, startIndex + itemsPerPage);
+  const currentData = sortedData.slice(startIndex, startIndex + itemsPerPage);
 
   // === FUNGSI EKSPOR PDF ===
   const handleExportPDF = () => {
-    if (filteredData.length === 0) {
+    if (sortedData.length === 0) {
       alert("Tidak ada data untuk diekspor!");
       return;
     }
@@ -199,7 +224,7 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
 
       // Persiapan Data Tabel
       const tableColumn = ["ID Barang", "Nama Barang", "Kategori", "Harga Satuan", "Total Harga", "Sisa Stok", "Status"];
-      const tableRows = filteredData.map(item => {
+      const tableRows = sortedData.map(item => {
         // PERBAIKAN: Gunakan harga_satuan dan harga_total untuk Export PDF
         const hargaSatuan = parseFloat(item.harga_satuan || 0);
         const totalHarga = parseFloat(item.harga_total || (Number(item.stok) * hargaSatuan));
@@ -503,7 +528,21 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
                 <table className="w-full text-left border-collapse min-w-[800px] md:min-w-[1000px]">
                   <thead>
                     <tr className="bg-gray-50/80 text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100">
-                      <th className="py-3 md:py-5 px-4 md:px-6">NAMA BARANG / ID</th>
+                      <th 
+                        className="py-3 md:py-5 px-4 md:px-6 cursor-pointer hover:bg-gray-100 transition-colors group select-none"
+                        onClick={() => handleSort('nama_barang')}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          NAMA BARANG / ID
+                          <span className="text-gray-300 group-hover:text-gray-500 flex items-center">
+                            {sortConfig.key === 'nama_barang' ? (
+                              sortConfig.direction === 'asc' ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />
+                            ) : (
+                              <ArrowUpDown className="w-3.5 h-3.5" />
+                            )}
+                          </span>
+                        </div>
+                      </th>
                       <th className="py-3 md:py-5 px-4 md:px-6">KATEGORI</th>
                       <th className="py-3 md:py-5 px-4 md:px-6 text-right">HARGA SATUAN</th>
                       <th className="py-3 md:py-5 px-4 md:px-6 text-right">TOTAL HARGA</th>
@@ -571,16 +610,25 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
             )}
             
             {/* Pagination */}
-            {(tableData.length > 0 || !isLoading) && filteredData.length > 0 && (
+            {(tableData.length > 0 || !isLoading) && sortedData.length > 0 && (
               <div className="p-4 md:p-6 bg-gray-50/30 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 mt-auto">
                 <p className="text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center sm:text-left">
-                  Menampilkan {startIndex + 1} - {Math.min(startIndex + itemsPerPage, filteredData.length)} dari {filteredData.length} data
+                  Menampilkan {startIndex + 1} - {Math.min(startIndex + itemsPerPage, sortedData.length)} dari {sortedData.length} data
                 </p>
                 <div className="flex gap-2">
+                  <button
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                    className="p-1.5 md:p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    title="Halaman Pertama"
+                  >
+                    <ChevronsLeft className="w-4 h-4 md:w-5 md:h-5" />
+                  </button>
                   <button
                     onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                     disabled={currentPage === 1}
                     className="p-1.5 md:p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    title="Halaman Sebelumnya"
                   >
                     <ChevronLeft className="w-4 h-4 md:w-5 md:h-5" />
                   </button>
@@ -588,8 +636,17 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
                     onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                     disabled={currentPage === totalPages}
                     className="p-1.5 md:p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    title="Halaman Selanjutnya"
                   >
                     <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                    className="p-1.5 md:p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    title="Halaman Terakhir"
+                  >
+                    <ChevronsRight className="w-4 h-4 md:w-5 md:h-5" />
                   </button>
                 </div>
               </div>
