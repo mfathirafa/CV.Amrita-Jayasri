@@ -55,27 +55,52 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
           'Authorization': `Bearer ${token}`
         };
 
+        // Helper to fetch all pages
+        const fetchAllPages = async (endpoint) => {
+          let allData = [];
+          let currentPage = 1;
+          let lastPage = 1;
+          let hasMore = true;
+
+          while (hasMore) {
+            const url = `${endpoint}?per_page=1000&page=${currentPage}`;
+            const response = await fetch(url, { method: 'GET', headers });
+            const data = await response.json();
+
+            if (response.ok || data.success) {
+              let arrayData = [];
+              if (Array.isArray(data)) arrayData = data;
+              else if (Array.isArray(data.data)) arrayData = data.data;
+              else if (data.data && Array.isArray(data.data.data)) arrayData = data.data.data;
+
+              allData = [...allData, ...arrayData];
+
+              let extractedLastPage = 1;
+              if (data.last_page) extractedLastPage = data.last_page;
+              else if (data.meta && data.meta.last_page) extractedLastPage = data.meta.last_page;
+              else if (data.data && data.data.last_page) extractedLastPage = data.data.last_page;
+
+              lastPage = Math.max(lastPage, extractedLastPage);
+
+              if (arrayData.length < 1000 || currentPage >= lastPage) {
+                hasMore = false;
+              } else {
+                currentPage++;
+              }
+            } else {
+              hasMore = false;
+            }
+          }
+          return allData;
+        };
+
         // Fetch Data Barang (Semua Data)
-        const resBarang = await fetch(`${baseApi}/barang?per_page=999999`, { method: 'GET', headers });
-        const dataBarang = await resBarang.json();
-        if (resBarang.ok) {
-          let arrayBarang = [];
-          if (Array.isArray(dataBarang)) arrayBarang = dataBarang;
-          else if (Array.isArray(dataBarang.data)) arrayBarang = dataBarang.data;
-          else if (dataBarang.data && Array.isArray(dataBarang.data.data)) arrayBarang = dataBarang.data.data;
-          setDaftarBarang(arrayBarang);
-        }
+        const allBarang = await fetchAllPages(`${baseApi}/barang`);
+        setDaftarBarang(allBarang);
 
         // Fetch Data Pemasok (Supplier) (Semua Data)
-        const resPemasok = await fetch(`${baseApi}/supplier?per_page=999999`, { method: 'GET', headers });
-        const dataPemasok = await resPemasok.json();
-        if (resPemasok.ok) {
-          let arrayPemasok = [];
-          if (Array.isArray(dataPemasok)) arrayPemasok = dataPemasok;
-          else if (Array.isArray(dataPemasok.data)) arrayPemasok = dataPemasok.data;
-          else if (dataPemasok.data && Array.isArray(dataPemasok.data.data)) arrayPemasok = dataPemasok.data.data;
-          setDaftarPemasok(arrayPemasok);
-        }
+        const allPemasok = await fetchAllPages(`${baseApi}/supplier`);
+        setDaftarPemasok(allPemasok);
 
         // Set tanggal default ke hari ini
         const today = new Date().toISOString().split('T')[0];

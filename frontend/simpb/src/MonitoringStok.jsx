@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  LayoutDashboard, Box, Truck, Users, 
-  ArrowDownRight, ArrowUpRight, Activity, 
+import {
+  LayoutDashboard, Box, Truck, Users,
+  ArrowDownRight, ArrowUpRight, Activity,
   BarChart2, Search, Bell, CircleUser, ArrowDownLeft,
   Package, AlertTriangle, ShoppingCart, Coins,
   FileText, PenTool, Printer, ChevronLeft, ChevronRight,
@@ -30,7 +30,7 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   // === STATES TAMBAHAN UNTUK FILTER ===
   const [activeFilter, setActiveFilter] = useState('semua');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -44,45 +44,69 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
     const fetchStok = async (isBackgroundRefresh = false) => {
       try {
         if (!isBackgroundRefresh) setIsLoading(true);
-        
+
         const token = localStorage.getItem('token');
         const rawApiUrl = import.meta.env.VITE_API_URL || 'https://cvamritajayasri.my.id/api';
-        const cleanApiUrl = rawApiUrl.replace(/\/$/, ""); 
-        
-        // PERUBAHAN: per_page=100 menjadi per_page=999999 (Semua data)
-        const endpoint = cleanApiUrl.endsWith('/api') 
-          ? `${cleanApiUrl}/stok?per_page=999999` 
-          : `${cleanApiUrl}/api/stok?per_page=999999`;
+        const cleanApiUrl = rawApiUrl.replace(/\/$/, "");
 
-        const response = await fetch(endpoint, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        });
+        let allData = [];
+        let currentPage = 1;
+        let lastPage = 1;
+        let hasMore = true;
 
-        const data = await response.json();
+        while (hasMore) {
+          const endpoint = cleanApiUrl.endsWith('/api')
+            ? `${cleanApiUrl}/stok?per_page=1000&page=${currentPage}`
+            : `${cleanApiUrl}/api/stok?per_page=1000&page=${currentPage}`;
 
-        if (response.ok || data.success) {
-          let arrayData = [];
-          
-          if (Array.isArray(data)) {
-            arrayData = data; 
-          } else if (Array.isArray(data.data)) {
-            arrayData = data.data; 
-          } else if (data.data && Array.isArray(data.data.data)) {
-            arrayData = data.data.data; 
+          const response = await fetch(endpoint, {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          const data = await response.json();
+
+          if (response.ok || data.success) {
+            let arrayData = [];
+
+            if (Array.isArray(data)) {
+              arrayData = data;
+            } else if (Array.isArray(data.data)) {
+              arrayData = data.data;
+            } else if (data.data && Array.isArray(data.data.data)) {
+              arrayData = data.data.data;
+            }
+
+            allData = [...allData, ...arrayData];
+
+            if (currentPage === 1 && data.ringkasan) {
+              setSummaryStats(data.ringkasan);
+            }
+
+            // Cari tahu jumlah total halaman
+            let extractedLastPage = 1;
+            if (data.last_page) extractedLastPage = data.last_page;
+            else if (data.meta && data.meta.last_page) extractedLastPage = data.meta.last_page;
+            else if (data.data && data.data.last_page) extractedLastPage = data.data.last_page;
+
+            lastPage = Math.max(lastPage, extractedLastPage);
+
+            // Jika kurang dari 1000 data yang dikembalikan atau halaman sudah mencapai akhir, maka stop
+            if (arrayData.length < 1000 || currentPage >= lastPage) {
+              hasMore = false;
+            } else {
+              currentPage++;
+            }
+          } else {
+            console.error("Gagal mengambil data stok:", data);
+            hasMore = false; // Stop fetching on error
           }
-          
-          setTableData(arrayData);
-          
-          if (data.ringkasan) {
-            setSummaryStats(data.ringkasan);
-          }
-        } else {
-          console.error("Gagal mengambil data stok:", data);
         }
+
+        setTableData(allData);
       } catch (error) {
         console.error("Error Fetching Stok:", error);
       } finally {
@@ -93,7 +117,7 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
     fetchStok();
 
     const intervalId = setInterval(() => {
-      fetchStok(true); 
+      fetchStok(true);
     }, 10000);
 
     return () => clearInterval(intervalId);
@@ -101,22 +125,22 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
 
   // === MENGHITUNG STATISTIK KARTU ===
   const totalItems = summaryStats.total_jenis_barang > 0 ? summaryStats.total_jenis_barang : tableData.length;
-  
+
   // PERBAIKAN: Hitung valuasi total pakai harga_satuan
   const calculatedTotalValuasi = tableData.reduce((acc, item) => {
     const hargaSatuan = parseFloat(item.harga_satuan || 0);
     return acc + (Number(item.stok) * hargaSatuan);
   }, 0);
-  
+
   const valuasiTotal = summaryStats.total_nilai_inventaris > 0 ? summaryStats.total_nilai_inventaris : calculatedTotalValuasi;
-  
-  const stokRendahCount = tableData.filter(item => 
-    (item.status_stok && (item.status_stok.toLowerCase() === 'kritis' || item.status_stok.toLowerCase() === 'rendah')) || 
+
+  const stokRendahCount = tableData.filter(item =>
+    (item.status_stok && (item.status_stok.toLowerCase() === 'kritis' || item.status_stok.toLowerCase() === 'rendah')) ||
     (item.stok_minimum && Number(item.stok) <= Number(item.stok_minimum) && Number(item.stok) > 0)
   ).length;
-  
-  const stokHabisCount = tableData.filter(item => 
-    (item.status_stok && item.status_stok.toLowerCase() === 'habis') || 
+
+  const stokHabisCount = tableData.filter(item =>
+    (item.status_stok && item.status_stok.toLowerCase() === 'habis') ||
     Number(item.stok) <= 0
   ).length;
 
@@ -156,19 +180,19 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
   const filteredData = tableData.filter((item) => {
     // Filter Pencarian
     const search = searchQuery.toLowerCase();
-    const matchesSearch = (item.nama_barang || '').toLowerCase().includes(search) || 
-                          (item.id_referensi || '').toLowerCase().includes(search);
-    
+    const matchesSearch = (item.nama_barang || '').toLowerCase().includes(search) ||
+      (item.id_referensi || '').toLowerCase().includes(search);
+
     if (!matchesSearch) return false;
 
     // Filter Status (Dropdown)
     if (activeFilter === 'semua') return true;
-    
+
     const statusLabel = getStatus(item).label;
     if (activeFilter === 'habis' && statusLabel === 'PESAN SEGERA') return true;
     if (activeFilter === 'kritis' && statusLabel === 'STOK RENDAH') return true;
     if (activeFilter === 'optimal' && statusLabel === 'OPTIMAL') return true;
-    
+
     return false;
   });
 
@@ -182,7 +206,7 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
 
   const sortedData = [...filteredData].sort((a, b) => {
     if (!sortConfig.key) return 0;
-    
+
     let aValue = a[sortConfig.key] || '';
     let bValue = b[sortConfig.key] || '';
 
@@ -209,16 +233,16 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
 
     try {
       const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-      
+
       // Header
       doc.setFontSize(16);
-      doc.setTextColor(30, 35, 44); 
+      doc.setTextColor(30, 35, 44);
       doc.text('Laporan Monitoring Stok - CV. Amrita Jayasri', 14, 15);
-      
+
       doc.setFontSize(10);
       doc.setTextColor(100, 100, 100);
       doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`, 14, 22);
-      
+
       const filterLabel = activeFilter === 'semua' ? 'Semua Status' : activeFilter === 'habis' ? 'Stok Habis' : activeFilter === 'kritis' ? 'Stok Kritis' : 'Optimal';
       doc.text(`Filter Aktif: ${filterLabel}`, 14, 28);
 
@@ -248,8 +272,8 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
         theme: 'grid',
         headStyles: { fillColor: [84, 82, 246] },
         styles: { fontSize: 8, cellPadding: 3, valign: 'middle' },
-        columnStyles: { 
-          3: { halign: 'right' }, 
+        columnStyles: {
+          3: { halign: 'right' },
           4: { halign: 'right' },
           5: { halign: 'center' },
           6: { halign: 'center' }
@@ -270,10 +294,10 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
 
   return (
     <div className="flex h-screen bg-[#F4F7FC] font-sans overflow-hidden">
-      
+
       {/* ================= MOBILE OVERLAY ================= */}
       {isMobileMenuOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity"
           onClick={() => setIsMobileMenuOpen(false)}
         />
@@ -289,7 +313,7 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
             </div>
             <div>
               <h1 className="text-[#5452F6] font-bold text-[13px] leading-tight tracking-wide uppercase">
-                CV. AMRITA<br/>JAYASRI
+                CV. AMRITA<br />JAYASRI
               </h1>
               <p className="text-gray-400 font-medium text-[10px] mt-0.5">Sistem Inventaris ATK</p>
             </div>
@@ -298,7 +322,7 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
             <X className="w-6 h-6" />
           </button>
         </div>
-        
+
         <nav className="flex-1 px-4 space-y-1.5 mt-2 overflow-y-auto scrollbar-hide">
           <button onClick={() => handleNavigation('dashboard')} className="w-full flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 hover:text-gray-800 rounded-xl font-medium text-sm transition-colors text-left">
             <LayoutDashboard className="w-5 h-5" /> Dashboard
@@ -335,7 +359,7 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
 
       {/* ================= MAIN CONTENT ================= */}
       <main className="flex-1 flex flex-col overflow-hidden relative w-full">
-        
+
         {/* === HEADER RESPONSIF === */}
         <header className="h-16 md:h-20 bg-white border-b border-gray-100 flex items-center justify-between px-4 md:px-8 z-10 sticky top-0 shrink-0">
           <div className="flex items-center gap-3">
@@ -345,16 +369,16 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
             <h2 className="font-bold text-[#1E232C] text-sm md:text-base hidden sm:block">SIMPB - CV. Amrita Jayasri</h2>
             <h2 className="font-bold text-[#1E232C] text-sm sm:hidden">SIMPB</h2>
           </div>
-          
+
           <div className="flex items-center gap-4 md:gap-6">
             <div className="relative w-72 hidden md:block">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={searchQuery}
                 onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                placeholder="Cari nama barang atau ID..." 
-                className="w-full pl-11 pr-4 py-2.5 bg-[#F4F7FC] border-transparent rounded-full text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] focus:ring-1 focus:ring-[#5452F6] transition-all" 
+                placeholder="Cari nama barang atau ID..."
+                className="w-full pl-11 pr-4 py-2.5 bg-[#F4F7FC] border-transparent rounded-full text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] focus:ring-1 focus:ring-[#5452F6] transition-all"
               />
             </div>
             <button className="relative text-gray-500 hover:text-gray-800 transition-colors">
@@ -464,29 +488,29 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
                 {/* Search input di mobile untuk tabel */}
                 <div className="relative flex-1 sm:hidden">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={searchQuery}
                     onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                    placeholder="Cari..." 
-                    className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-[#5452F6]" 
+                    placeholder="Cari..."
+                    className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-[#5452F6]"
                   />
                 </div>
-                
+
                 {/* TOMBOL FILTER */}
                 <div className="relative">
-                  <button 
+                  <button
                     onClick={() => setIsFilterOpen(!isFilterOpen)}
                     className={`flex items-center justify-center gap-2 px-3 md:px-4 py-2 border rounded-xl text-xs font-bold transition-colors w-full sm:w-auto ${activeFilter !== 'semua' ? 'bg-indigo-50 border-indigo-200 text-[#5452F6]' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
                   >
-                    <Filter className="w-3.5 h-3.5" /> 
+                    <Filter className="w-3.5 h-3.5" />
                     <span className="hidden sm:inline">
-                      {activeFilter === 'semua' ? 'Filter' : 
-                       activeFilter === 'habis' ? 'Stok Habis' : 
-                       activeFilter === 'kritis' ? 'Stok Kritis' : 'Optimal'}
+                      {activeFilter === 'semua' ? 'Filter' :
+                        activeFilter === 'habis' ? 'Stok Habis' :
+                          activeFilter === 'kritis' ? 'Stok Kritis' : 'Optimal'}
                     </span>
                   </button>
-                  
+
                   {isFilterOpen && (
                     <>
                       <div className="fixed inset-0 z-40" onClick={() => setIsFilterOpen(false)}></div>
@@ -501,7 +525,7 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
                 </div>
 
                 {/* TOMBOL EKSPOR PDF */}
-                <button 
+                <button
                   onClick={handleExportPDF}
                   className="flex items-center justify-center gap-2 px-3 md:px-4 py-2 bg-[#5452F6] text-white rounded-xl text-xs font-bold hover:bg-[#4341E3] shadow-md shadow-indigo-100 transition-colors w-full sm:w-auto"
                 >
@@ -528,7 +552,7 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
                 <table className="w-full text-left border-collapse min-w-[800px] md:min-w-[1000px]">
                   <thead>
                     <tr className="bg-gray-50/80 text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100">
-                      <th 
+                      <th
                         className="py-3 md:py-5 px-4 md:px-6 cursor-pointer hover:bg-gray-100 transition-colors group select-none"
                         onClick={() => handleSort('nama_barang')}
                       >
@@ -556,7 +580,7 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
                       const status = getStatus(item);
                       const iconData = getCategoryIcon(item.kategori);
                       const IconComponent = iconData.icon;
-                      
+
                       // PERBAIKAN: Gunakan harga_satuan dan harga_total yang benar dari API
                       const hargaSatuan = parseFloat(item.harga_satuan || 0);
                       const totalHarga = parseFloat(item.harga_total || (Number(item.stok) * hargaSatuan));
@@ -594,7 +618,7 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
                             </span>
                           </td>
                           <td className="py-3 md:py-4 px-4 md:px-6 text-right">
-                            <button 
+                            <button
                               onClick={() => onNavigate('edit-barang', item.id)}
                               className="p-1.5 md:p-2 text-[#5452F6] hover:bg-indigo-50 rounded-lg transition-colors"
                             >
@@ -608,7 +632,7 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
                 </table>
               </div>
             )}
-            
+
             {/* Pagination */}
             {(tableData.length > 0 || !isLoading) && sortedData.length > 0 && (
               <div className="p-4 md:p-6 bg-gray-50/30 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 mt-auto">
