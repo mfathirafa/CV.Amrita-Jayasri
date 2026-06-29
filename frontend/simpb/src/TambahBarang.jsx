@@ -5,7 +5,7 @@ import {
   BarChart2, ArrowDownLeft, Search, Bell, CircleUser,
   ChevronDown, Camera, Lock, Info, Save,
   RotateCcw, QrCode, ShieldCheck,
-  AlertTriangle, AlertCircle, Loader2, X, Menu, CheckCircle // <-- Menambahkan CheckCircle
+  AlertTriangle, AlertCircle, Loader2, X, Menu, CheckCircle 
 } from 'lucide-react';
 
 import SuccessModal from './SuccessModal';
@@ -19,6 +19,10 @@ const TambahBarang = ({ onNavigate, onLogout }) => {
   const [harga, setHarga] = useState('');
   const [stok, setStok] = useState('');
   const [ambangBatas, setAmbangBatas] = useState('');
+  
+  // STATE TAMBAHAN UNTUK INPUT MANUAL
+  const [isCustomKategori, setIsCustomKategori] = useState(false);
+  const [isCustomSatuan, setIsCustomSatuan] = useState(false);
   
   // STATE BARU UNTUK FILE FOTO & PREVIEW
   const [foto, setFoto] = useState(null);
@@ -142,6 +146,8 @@ const TambahBarang = ({ onNavigate, onLogout }) => {
         setAmbangBatas('');
         setFoto(null);
         setPreviewFoto(null);
+        setIsCustomKategori(false);
+        setIsCustomSatuan(false);
       } else {
         const errorMsg = data.errors 
           ? Object.values(data.errors)[0][0] 
@@ -412,46 +418,107 @@ const TambahBarang = ({ onNavigate, onLogout }) => {
 
                 {/* Grid 3 Kolom untuk Kategori, Satuan, Harga */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                  
+                  {/* KOLOM KATEGORI */}
                   <div>
                     <label className="block text-xs font-bold text-gray-800 mb-1.5 md:mb-2">Kategori <span className="text-red-500">*</span></label>
-                    <div className="relative">
-                      <select 
-                        value={kategori}
-                        onChange={(e) => setKategori(e.target.value)}
-                        disabled={isLoading}
-                        className="w-full px-3 md:px-4 py-2.5 md:py-3 bg-[#F4F7FC] border-transparent rounded-xl text-xs md:text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] focus:ring-1 focus:ring-[#5452F6] appearance-none cursor-pointer disabled:opacity-60"
-                      >
-                        <option value="" disabled>Pilih Kategori</option>
-                        <option value="Kertas & Media">Kertas & Media</option>
-                        <option value="Alat Tulis">Alat Tulis</option>
-                        <option value="Tinta & Toner">Tinta & Toner</option>
-                        <option value="Arsip & Penyimpanan">Arsip & Penyimpanan</option>
-                        <option value="Aksesoris Meja">Aksesoris Meja</option>
-                      </select>
-                      <ChevronDown className="absolute right-3 md:right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                    </div>
+                    {isCustomKategori ? (
+                      <div className="relative flex items-center">
+                        <input 
+                          type="text"
+                          value={kategori}
+                          onChange={(e) => setKategori(e.target.value)}
+                          disabled={isLoading}
+                          placeholder="Ketik kategori baru..."
+                          className="w-full pl-3 pr-10 md:pl-4 md:pr-10 py-2.5 md:py-3 bg-[#F4F7FC] border-transparent rounded-xl text-xs md:text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] focus:ring-1 focus:ring-[#5452F6] transition-all disabled:opacity-60"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => { setIsCustomKategori(false); setKategori(''); }}
+                          className="absolute right-2 md:right-3 p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Batal input manual"
+                        >
+                          <X className="w-4 h-4 md:w-5 md:h-5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="relative">
+                        <select 
+                          value={kategori}
+                          onChange={(e) => {
+                            if (e.target.value === 'custom') {
+                              setIsCustomKategori(true);
+                              setKategori('');
+                            } else {
+                              setKategori(e.target.value);
+                            }
+                          }}
+                          disabled={isLoading}
+                          className="w-full px-3 md:px-4 py-2.5 md:py-3 bg-[#F4F7FC] border-transparent rounded-xl text-xs md:text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] focus:ring-1 focus:ring-[#5452F6] appearance-none cursor-pointer disabled:opacity-60"
+                        >
+                          <option value="" disabled>Pilih Kategori</option>
+                          <option value="Kertas & Media">Kertas & Media</option>
+                          <option value="Alat Tulis">Alat Tulis</option>
+                          <option value="Tinta & Toner">Tinta & Toner</option>
+                          <option value="Arsip & Penyimpanan">Arsip & Penyimpanan</option>
+                          <option value="Aksesoris Meja">Aksesoris Meja</option>
+                          <option value="Buku & Jurnal">Buku & Jurnal</option>
+                          <option value="custom" className="font-bold text-[#5452F6]">+ Tambah Manual...</option>
+                        </select>
+                        <ChevronDown className="absolute right-3 md:right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                      </div>
+                    )}
                   </div>
 
                   {/* KOLOM SATUAN */}
                   <div>
                     <label className="block text-xs font-bold text-gray-800 mb-1.5 md:mb-2">Satuan <span className="text-red-500">*</span></label>
-                    <div className="relative">
-                      <select 
-                        value={satuan}
-                        onChange={(e) => setSatuan(e.target.value)}
-                        disabled={isLoading}
-                        className="w-full px-3 md:px-4 py-2.5 md:py-3 bg-[#F4F7FC] border-transparent rounded-xl text-xs md:text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] focus:ring-1 focus:ring-[#5452F6] appearance-none cursor-pointer disabled:opacity-60"
-                      >
-                        <option value="" disabled>Pilih Satuan</option>
-                        <option value="Rim">Rim</option>
-                        <option value="Box">Box</option>
-                        <option value="Pcs">Pcs</option>
-                        <option value="Pack">Pack</option>
-                        <option value="Lusin">Lusin</option>
-                        <option value="Unit">Unit</option>
-                      </select>
-                      <ChevronDown className="absolute right-3 md:right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                    </div>
+                    {isCustomSatuan ? (
+                      <div className="relative flex items-center">
+                        <input 
+                          type="text"
+                          value={satuan}
+                          onChange={(e) => setSatuan(e.target.value)}
+                          disabled={isLoading}
+                          placeholder="Ketik satuan baru..."
+                          className="w-full pl-3 pr-10 md:pl-4 md:pr-10 py-2.5 md:py-3 bg-[#F4F7FC] border-transparent rounded-xl text-xs md:text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] focus:ring-1 focus:ring-[#5452F6] transition-all disabled:opacity-60"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => { setIsCustomSatuan(false); setSatuan(''); }}
+                          className="absolute right-2 md:right-3 p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Batal input manual"
+                        >
+                          <X className="w-4 h-4 md:w-5 md:h-5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="relative">
+                        <select 
+                          value={satuan}
+                          onChange={(e) => {
+                            if (e.target.value === 'custom') {
+                              setIsCustomSatuan(true);
+                              setSatuan('');
+                            } else {
+                              setSatuan(e.target.value);
+                            }
+                          }}
+                          disabled={isLoading}
+                          className="w-full px-3 md:px-4 py-2.5 md:py-3 bg-[#F4F7FC] border-transparent rounded-xl text-xs md:text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] focus:ring-1 focus:ring-[#5452F6] appearance-none cursor-pointer disabled:opacity-60"
+                        >
+                          <option value="" disabled>Pilih Satuan</option>
+                          <option value="Rim">Rim</option>
+                          <option value="Box">Box</option>
+                          <option value="Pcs">Pcs</option>
+                          <option value="Pack">Pack</option>
+                          <option value="Lusin">Lusin</option>
+                          <option value="Unit">Unit</option>
+                          <option value="custom" className="font-bold text-[#5452F6]">+ Tambah Manual...</option>
+                        </select>
+                        <ChevronDown className="absolute right-3 md:right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                      </div>
+                    )}
                   </div>
 
                   <div>
