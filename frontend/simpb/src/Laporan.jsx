@@ -6,7 +6,7 @@ import {
   BarChart2, Search, Bell, CircleUser, 
   Calendar, FileText, Download, FileSpreadsheet, 
   ChevronDown, Filter, Loader2, ArrowUpDown, Menu, X,
-  AlertTriangle, CheckCircle // <-- Ditambahkan untuk Notifikasi
+  AlertTriangle, CheckCircle
 } from 'lucide-react';
 
 // === IMPORT LIBRARY PDF (CARA PALING STABIL) ===
@@ -31,9 +31,9 @@ const Laporan = ({ onLogout, onNavigate }) => {
   const [ringkasan, setRingkasan] = useState({ total_transaksi: 0, total_jumlah_barang: 0, total_nilai: 0 });
   const [isLoading, setIsLoading] = useState(true);
 
-  // === PAGINATION STATES ===
+  // === PAGINATION STATES (FRONTEND) ===
   const [currentPage, setCurrentPage] = useState(1);
-  const [lastPage, setLastPage] = useState(1);
+  const itemsPerPage = 50; // Maksimal 50 data per halaman
 
   // === NOTIFIKASI STATES ===
   const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -95,7 +95,7 @@ const Laporan = ({ onLogout, onNavigate }) => {
     fetchNotifData();
   }, []);
 
-  // === FUNGSI AMBIL DATA LAPORAN & PAGINATION API ===
+  // === FUNGSI AMBIL SELURUH DATA LAPORAN (MAX 2000) ===
   const fetchLaporan = async () => {
     try {
       setIsLoading(true);
@@ -105,22 +105,21 @@ const Laporan = ({ onLogout, onNavigate }) => {
       const baseApi = cleanApiUrl.endsWith('/api') ? cleanApiUrl : `${cleanApiUrl}/api`;
       
       const headers = { 'Accept': 'application/json', 'Authorization': `Bearer ${token}` };
-      const params = `?start_date=${startDate}&end_date=${endDate}&page=${currentPage}`; // <-- Ditambah page
+      
+      // Menggunakan per_page=2000 untuk menarik data setahun penuh tanpa terpotong pagination backend
+      const params = `?start_date=${startDate}&end_date=${endDate}&per_page=2000`; 
 
       let masukData = [];
       let keluarData = [];
-      let maxLastPage = 1;
       let totalItems = 0;
 
       if (activeTab === 'masuk' || activeTab === 'semua') {
         const resMasuk = await fetch(`${baseApi}/laporan/transaksi-masuk${params}`, { headers });
         const jsonMasuk = await resMasuk.json();
         if (jsonMasuk.success) {
-          // Dukungan struktur paginate Laravel (json.data.data)
           const arr = Array.isArray(jsonMasuk.data) ? jsonMasuk.data : (jsonMasuk.data?.data || []);
           masukData = arr.map(item => ({ ...item, _type: 'masuk' }));
           
-          if (jsonMasuk.data?.last_page) maxLastPage = Math.max(maxLastPage, jsonMasuk.data.last_page);
           if (jsonMasuk.data?.total) totalItems += jsonMasuk.data.total;
           else totalItems += masukData.length;
         }
@@ -133,7 +132,6 @@ const Laporan = ({ onLogout, onNavigate }) => {
           const arr = Array.isArray(jsonKeluar.data) ? jsonKeluar.data : (jsonKeluar.data?.data || []);
           keluarData = arr.map(item => ({ ...item, _type: 'keluar' }));
           
-          if (jsonKeluar.data?.last_page) maxLastPage = Math.max(maxLastPage, jsonKeluar.data.last_page);
           if (jsonKeluar.data?.total) totalItems += jsonKeluar.data.total;
           else totalItems += keluarData.length;
         }
@@ -141,9 +139,8 @@ const Laporan = ({ onLogout, onNavigate }) => {
 
       let combinedData = [...masukData, ...keluarData];
       setLaporanData(combinedData);
-      setLastPage(maxLastPage);
 
-      const total_transaksi = totalItems;
+      const total_transaksi = combinedData.length; // Hitung dari data real yang berhasil ditarik
       const total_jumlah_barang = combinedData.reduce((acc, curr) => acc + curr.jumlah, 0);
       const total_nilai = combinedData.reduce((acc, curr) => {
         const harga = curr._type === 'masuk' ? curr.harga_beli : curr.harga_jual;
@@ -151,6 +148,9 @@ const Laporan = ({ onLogout, onNavigate }) => {
       }, 0);
 
       setRingkasan({ total_transaksi, total_jumlah_barang, total_nilai });
+      
+      // Reset ke halaman 1 tiap kali filter tanggal/tipe berubah
+      setCurrentPage(1);
     } catch (error) {
       console.error("Error Fetching Laporan:", error);
     } finally {
@@ -160,19 +160,16 @@ const Laporan = ({ onLogout, onNavigate }) => {
 
   useEffect(() => {
     fetchLaporan();
-  }, [startDate, endDate, activeTab, currentPage]); 
+  }, [startDate, endDate, activeTab]); 
 
-  // === HANDLER FILTER (Reset Page) ===
+  // === HANDLER FILTER LOKAL (Pencarian & Reset Page) ===
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1); // Reset page saat mencari
+  };
+
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    setCurrentPage(1);
-  };
-  const handleStartDateChange = (e) => {
-    setStartDate(e.target.value);
-    setCurrentPage(1);
-  };
-  const handleEndDateChange = (e) => {
-    setEndDate(e.target.value);
     setCurrentPage(1);
   };
 
@@ -199,6 +196,11 @@ const Laporan = ({ onLogout, onNavigate }) => {
       if (sortOrder === 'terendah') return totalA - totalB;
       return 0;
     });
+
+  // === LOGIKA PAGINATION FRONTEND ===
+  const totalPages = Math.ceil(processedData.length / itemsPerPage) || 1;
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const currentData = processedData.slice(startIndex, startIndex + itemsPerPage);
 
   // === FUNGSI EKSEKUSI EKSPOR EXCEL ===
   const handleExecuteExport = (config) => {
@@ -352,7 +354,6 @@ const Laporan = ({ onLogout, onNavigate }) => {
         <aside className={`fixed inset-y-0 left-0 z-50 w-[260px] bg-white border-r border-gray-100 flex flex-col shrink-0 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
           <div className="p-6 flex justify-between items-center">
             <div className="flex items-center gap-3">
-              {/* LOGO BARU */}
               <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 overflow-hidden bg-gray-50">
                 <img src={logoAmrita} alt="Logo" className="w-full h-full object-contain" />
               </div>
@@ -402,7 +403,7 @@ const Laporan = ({ onLogout, onNavigate }) => {
                   type="text" 
                   placeholder="Cari..." 
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={handleSearchChange}
                   className="w-full pl-11 pr-4 py-2 md:py-2.5 bg-[#F4F7FC] border-transparent rounded-full text-xs md:text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] transition-all" 
                 />
               </div>
@@ -542,7 +543,7 @@ const Laporan = ({ onLogout, onNavigate }) => {
                         <input 
                           type="date" 
                           value={startDate}
-                          onChange={handleStartDateChange}
+                          onChange={(e) => setStartDate(e.target.value)}
                           className="w-full pl-8 pr-1 py-2.5 md:py-3 bg-[#F4F7FC] border-transparent rounded-xl text-[10px] font-bold text-gray-600 focus:bg-white focus:border-[#5452F6] transition-colors" 
                         />
                       </div>
@@ -552,7 +553,7 @@ const Laporan = ({ onLogout, onNavigate }) => {
                         <input 
                           type="date" 
                           value={endDate}
-                          onChange={handleEndDateChange}
+                          onChange={(e) => setEndDate(e.target.value)}
                           className="w-full pl-8 pr-1 py-2.5 md:py-3 bg-[#F4F7FC] border-transparent rounded-xl text-[10px] font-bold text-gray-600 focus:bg-white focus:border-[#5452F6] transition-colors" 
                         />
                       </div>
@@ -576,7 +577,7 @@ const Laporan = ({ onLogout, onNavigate }) => {
                 </div>
                 <div className="flex items-center gap-2 mt-auto pt-2">
                   <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-[#5452F6] rounded-full animate-pulse"></div>
-                  <span className="text-[9px] md:text-[10px] font-bold text-gray-500">Sinkronisasi data langsung aktif</span>
+                  <span className="text-[9px] md:text-[10px] font-bold text-gray-500">Sinkronisasi data otomatis aktif</span>
                 </div>
               </div>
             </div>
@@ -615,7 +616,7 @@ const Laporan = ({ onLogout, onNavigate }) => {
                       <div className="fixed inset-0 z-40" onClick={() => setIsSortOpen(false)}></div>
                       <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-lg z-50 py-1">
                         {['terbaru', 'terlama', 'tertinggi', 'terendah'].map(opt => (
-                          <button key={opt} onClick={() => { setSortOrder(opt); setIsSortOpen(false); }} className={`w-full text-left px-4 py-2.5 text-xs font-bold capitalize ${sortOrder === opt ? 'text-[#5452F6] bg-indigo-50/50' : 'text-gray-600'}`}>{opt.replace('ter', 'Ter')}</button>
+                          <button key={opt} onClick={() => { setSortOrder(opt); setCurrentPage(1); setIsSortOpen(false); }} className={`w-full text-left px-4 py-2.5 text-xs font-bold capitalize ${sortOrder === opt ? 'text-[#5452F6] bg-indigo-50/50' : 'text-gray-600'}`}>{opt.replace('ter', 'Ter')}</button>
                         ))}
                       </div>
                     </>
@@ -627,16 +628,17 @@ const Laporan = ({ onLogout, onNavigate }) => {
 
             {/* === TABLE AREA === */}
             <div className="bg-white rounded-[20px] md:rounded-[24px] shadow-sm border border-gray-100 overflow-hidden mb-8 min-h-[300px] relative w-full">
-              <div className="p-4 md:p-6 border-b border-gray-50">
+              <div className="p-4 md:p-6 border-b border-gray-50 flex justify-between items-center">
                 <h3 className="text-[10px] md:text-sm font-black text-gray-800 uppercase tracking-widest">Log Transaksi Terperinci</h3>
+                <span className="text-[10px] font-bold text-[#5452F6] bg-indigo-50 px-3 py-1 rounded-full">{processedData.length} Data Ditemukan</span>
               </div>
               
               {isLoading ? (
                 <div className="py-20 flex flex-col items-center justify-center">
                   <Loader2 className="w-8 h-8 text-[#5452F6] animate-spin mb-4" />
-                  <p className="text-xs font-bold text-gray-500">Menarik data laporan...</p>
+                  <p className="text-xs font-bold text-gray-500">Menarik data laporan tahunan...</p>
                 </div>
-              ) : processedData.length === 0 ? (
+              ) : currentData.length === 0 ? (
                 <div className="py-20 flex flex-col items-center justify-center text-center px-4">
                   <FileText className="w-12 h-12 text-gray-300 mb-4" />
                   <h3 className="text-base font-bold text-gray-800">Tidak Ada Transaksi</h3>
@@ -656,7 +658,7 @@ const Laporan = ({ onLogout, onNavigate }) => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {processedData.map((item) => {
+                      {currentData.map((item) => {
                         const isMasuk = item._type === 'masuk';
                         return (
                           <tr key={`${item._type}-${item.id}`} className="hover:bg-gray-50/50 transition-colors">
@@ -688,30 +690,32 @@ const Laporan = ({ onLogout, onNavigate }) => {
               )}
               
               {/* === PAGINATION CONTROLS === */}
-              <div className="p-4 md:p-6 bg-white border-t border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4">
-                <p className="text-[10px] font-medium text-gray-500 text-center sm:text-left">
-                  Menampilkan <span className="font-bold text-gray-800">{processedData.length}</span> dari <span className="font-bold text-gray-800">{ringkasan.total_transaksi}</span> data (Halaman {currentPage} / {lastPage})
-                </p>
-                <div className="flex items-center gap-1.5">
-                  <button 
-                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                    disabled={currentPage === 1 || isLoading}
-                    className="text-[10px] font-bold text-gray-400 px-3 py-1.5 rounded-lg disabled:opacity-50 hover:bg-gray-100 hover:text-gray-700 transition-colors"
-                  >
-                    Prev
-                  </button>
-                  <button className="w-6 h-6 md:w-7 md:h-7 flex items-center justify-center rounded-lg bg-[#5452F6] text-white text-[10px] font-bold">
-                    {currentPage}
-                  </button>
-                  <button 
-                    onClick={() => setCurrentPage(p => Math.min(lastPage, p + 1))}
-                    disabled={currentPage === lastPage || isLoading}
-                    className="text-[10px] font-bold text-gray-500 px-3 py-1.5 rounded-lg disabled:opacity-50 hover:bg-gray-100 hover:text-gray-800 transition-colors"
-                  >
-                    Next
-                  </button>
+              {processedData.length > 0 && !isLoading && (
+                <div className="p-4 md:p-6 bg-white border-t border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4">
+                  <p className="text-[10px] font-medium text-gray-500 text-center sm:text-left">
+                    Menampilkan <span className="font-bold text-gray-800">{startIndex + 1}</span> - <span className="font-bold text-gray-800">{Math.min(startIndex + itemsPerPage, processedData.length)}</span> dari <span className="font-bold text-gray-800">{processedData.length}</span> data (Halaman {currentPage} / {totalPages})
+                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <button 
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="text-[10px] font-bold text-gray-400 px-3 py-1.5 rounded-lg disabled:opacity-50 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+                    >
+                      Prev
+                    </button>
+                    <button className="w-6 h-6 md:w-7 md:h-7 flex items-center justify-center rounded-lg bg-[#5452F6] text-white text-[10px] font-bold">
+                      {currentPage}
+                    </button>
+                    <button 
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="text-[10px] font-bold text-gray-500 px-3 py-1.5 rounded-lg disabled:opacity-50 hover:bg-gray-100 hover:text-gray-800 transition-colors"
+                    >
+                      Next
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
           </div>
