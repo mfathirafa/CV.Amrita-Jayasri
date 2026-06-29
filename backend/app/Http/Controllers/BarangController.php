@@ -24,7 +24,7 @@ class BarangController extends Controller
         }
 
         // Pagination — default 10 per halaman, maks 100
-        $perPage = min((int) $request->get('per_page', 10), 100);
+        $perPage = min((int) $request->get("per_page", 10), 1000);
         $barang  = $query->orderBy('nama_barang', 'asc')->paginate($perPage);
 
         return response()->json([
