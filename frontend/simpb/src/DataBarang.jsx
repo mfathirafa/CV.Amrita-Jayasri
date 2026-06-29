@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Box, Users, Truck, ArrowDownRight, 
   ArrowUpRight, Activity, BarChart2, AlertTriangle, 
   Banknote, History, ChevronLeft, ChevronRight, CircleUser, FileText, Loader2,
-  Menu, X, CheckCircle // <-- Menambahkan CheckCircle
+  Menu, X, CheckCircle, ArrowDown, ArrowUp, ArrowUpDown
 } from 'lucide-react';
 
 import DeleteConfirmModal from './DeleteConfirmModal';
@@ -24,6 +24,10 @@ const DataBarang = ({ onNavigate, onLogout }) => {
   // --- STATES UNTUK MENU HP & NOTIFIKASI ---
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+  // --- STATE UNTUK SORTING ---
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
 
   // --- STATES UNTUK MODAL HAPUS ---
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -129,25 +133,52 @@ const DataBarang = ({ onNavigate, onLogout }) => {
         const cleanApiUrl = rawApiUrl.replace(/\/$/, ""); 
         
         const endpoint = cleanApiUrl.endsWith('/api') 
-          ? `${cleanApiUrl}/barang?per_page=1000` 
-          : `${cleanApiUrl}/api/barang?per_page=1000`;
+          ? `${cleanApiUrl}/barang` 
+          : `${cleanApiUrl}/api/barang`;
 
-        const response = await fetch(endpoint, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${token}`
+        let allData = [];
+        let page = 1;
+        let lastPage = 1;
+        let hasMore = true;
+
+        while (hasMore) {
+          const url = `${endpoint}?per_page=1000&page=${page}`;
+          const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          const data = await response.json();
+
+          if (response.ok || data.success) {
+            const arrayData = Array.isArray(data) ? data : (data.data || []);
+            let finalArray = [];
+            if (Array.isArray(arrayData)) finalArray = arrayData;
+            else if (arrayData.data && Array.isArray(arrayData.data)) finalArray = arrayData.data;
+
+            allData = [...allData, ...finalArray];
+
+            let extractedLastPage = 1;
+            if (data.last_page) extractedLastPage = data.last_page;
+            else if (data.meta && data.meta.last_page) extractedLastPage = data.meta.last_page;
+            else if (data.data && data.data.last_page) extractedLastPage = data.data.last_page;
+
+            lastPage = Math.max(lastPage, extractedLastPage);
+
+            if (finalArray.length < 1000 || page >= lastPage) {
+              hasMore = false;
+            } else {
+              page++;
+            }
+          } else {
+            console.error("Gagal mengambil data:", data);
+            hasMore = false;
           }
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-          const arrayData = Array.isArray(data) ? data : (data.data || []);
-          setTableData(arrayData);
-        } else {
-          console.error("Gagal mengambil data:", data);
         }
+        setTableData(allData);
       } catch (error) {
         console.error("Error Fetching:", error);
       } finally {
@@ -219,9 +250,32 @@ const DataBarang = ({ onNavigate, onLogout }) => {
     return matchCategory && matchSearch;
   });
 
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage) || 1;
+  // --- FUNGSI SORTING ---
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const sortedData = [...filteredData].sort((a, b) => {
+    if (!sortConfig.key) return 0;
+
+    let aValue = a[sortConfig.key];
+    let bValue = b[sortConfig.key];
+
+    if (typeof aValue === 'string') aValue = aValue.toLowerCase();
+    if (typeof bValue === 'string') bValue = bValue.toLowerCase();
+
+    if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const totalPages = Math.ceil(sortedData.length / itemsPerPage) || 1;
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentData = filteredData.slice(startIndex, startIndex + itemsPerPage);
+  const currentData = sortedData.slice(startIndex, startIndex + itemsPerPage);
 
   const handlePrevPage = () => {
     if (currentPage > 1) setCurrentPage(currentPage - 1);
@@ -389,9 +443,28 @@ const DataBarang = ({ onNavigate, onLogout }) => {
               </div>
 
               <div className="h-6 w-px bg-gray-200 hidden md:block"></div>
-              <div onClick={() => alert("Menu Profil Administrator (Segera Hadir)")} className="flex items-center gap-2.5 cursor-pointer hover:opacity-80 transition-opacity">
-                <CircleUser className="w-7 h-7 md:w-8 md:h-8 text-[#5452F6]" strokeWidth={1.5} />
-                <span className="text-sm font-semibold text-[#1E232C] hidden md:block">Administrator</span>
+              <div className="relative">
+                <button
+                  onClick={() => setIsProfileOpen(prev => !prev)}
+                  className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
+                >
+                  <CircleUser className="w-7 h-7 md:w-8 md:h-8 text-[#5452F6]" strokeWidth={1.5} />
+                  <span className="text-sm font-semibold text-[#1E232C] hidden md:block">Administrator</span>
+                </button>
+                {isProfileOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-44 bg-white rounded-xl shadow-lg border border-gray-100 z-50 py-1 animate-in fade-in zoom-in-95">
+                    <div className="px-4 py-2.5 border-b border-gray-100">
+                      <p className="text-xs font-bold text-gray-800">Administrator</p>
+                      <p className="text-[10px] text-gray-400 truncate">admin@amrita.com</p>
+                    </div>
+                    <button
+                      onClick={() => { setIsProfileOpen(false); onLogout && onLogout(); }}
+                      className="w-full text-left px-4 py-2.5 text-xs font-semibold text-red-500 hover:bg-red-50 transition-colors rounded-b-xl"
+                    >
+                      Keluar
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </header>
@@ -481,7 +554,21 @@ const DataBarang = ({ onNavigate, onLogout }) => {
                   <table className="w-full text-left border-collapse min-w-[800px]">
                     <thead>
                       <tr className="bg-gray-50/80 border-b border-gray-100">
-                        <th className="py-3 md:py-4 px-4 md:px-6 text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wider">Nama Barang</th>
+                        <th 
+                          className="py-3 md:py-4 px-4 md:px-6 text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors group select-none"
+                          onClick={() => handleSort('nama_barang')}
+                        >
+                          <div className="flex items-center gap-1.5">
+                            Nama Barang
+                            <span className="text-gray-300 group-hover:text-gray-500 flex items-center">
+                              {sortConfig.key === 'nama_barang' ? (
+                                sortConfig.direction === 'asc' ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />
+                              ) : (
+                                <ArrowUpDown className="w-3.5 h-3.5" />
+                              )}
+                            </span>
+                          </div>
+                        </th>
                         <th className="py-3 md:py-4 px-4 md:px-6 text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wider">Kategori</th>
                         <th className="py-3 md:py-4 px-4 md:px-6 text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wider">Harga</th>
                         <th className="py-3 md:py-4 px-4 md:px-6 text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wider text-center">Stok</th>
