@@ -4,7 +4,7 @@ import {
   ArrowDownRight, ArrowUpRight, Activity, 
   BarChart2, Search, Bell, CircleUser, 
   Plus, Edit2, Trash2, ChevronLeft, ChevronRight, Info, 
-  ArrowDownLeft, Phone, Loader2, Menu, X 
+  ArrowDownLeft, Phone, Loader2, Menu, X, CheckCircle 
 } from 'lucide-react';
 
 import TambahSupplierModal from './TambahSupplierModal'; 
@@ -145,7 +145,8 @@ const Pemasok = ({ onNavigate, onLogout }) => {
     const searchLower = searchQuery.toLowerCase().trim();
     if (searchLower === '') return true;
     
-    const namaLower = String(item.nama_supplier || '').toLowerCase();
+    // PERBAIKAN: Format HTML entity saat mencari data
+    const namaLower = String(item.nama_supplier || '').replace(/&#039;/g, "'").toLowerCase();
     const alamatLower = String(item.alamat || '').toLowerCase();
     
     return namaLower.includes(searchLower) || alamatLower.includes(searchLower);
@@ -349,49 +350,57 @@ const Pemasok = ({ onNavigate, onLogout }) => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {filteredSuppliers.map((item) => (
-                        <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
-                          <td className="py-3 md:py-4 px-4 md:px-6">
-                            <div className="flex items-center gap-3 md:gap-3.5">
-                              <div className="w-8 h-8 md:w-10 md:h-10 bg-gray-100 text-gray-500 font-bold text-xs md:text-sm rounded-full flex items-center justify-center shrink-0 uppercase border border-gray-200 shadow-inner">
-                                {getInitial(item.nama_supplier)}
+                      {filteredSuppliers.map((item) => {
+                        // PERBAIKAN: Decode entitas HTML untuk setiap item agar bisa digunakan berkali-kali dengan rapi
+                        const decodedName = String(item.nama_supplier || '').replace(/&#039;/g, "'");
+                        
+                        return (
+                          <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
+                            <td className="py-3 md:py-4 px-4 md:px-6">
+                              <div className="flex items-center gap-3 md:gap-3.5">
+                                <div className="w-8 h-8 md:w-10 md:h-10 bg-gray-100 text-gray-500 font-bold text-xs md:text-sm rounded-full flex items-center justify-center shrink-0 uppercase border border-gray-200 shadow-inner">
+                                  {/* Gunakan nama yang sudah di-decode untuk inisial */}
+                                  {getInitial(decodedName)}
+                                </div>
+                                <div>
+                                  {/* Gunakan nama yang sudah di-decode untuk text utama */}
+                                  <p className="font-bold text-gray-800 text-xs md:text-sm">{decodedName}</p>
+                                  <p className="text-[9px] md:text-[10px] text-gray-400 mt-0.5 font-medium uppercase tracking-wider">ID: {item.id}</p>
+                                </div>
                               </div>
-                              <div>
-                                <p className="font-bold text-gray-800 text-xs md:text-sm">{item.nama_supplier}</p>
-                                <p className="text-[9px] md:text-[10px] text-gray-400 mt-0.5 font-medium uppercase tracking-wider">ID: {item.id}</p>
+                            </td>
+                            <td className="py-3 md:py-4 px-4 md:px-6">
+                              <p className="text-[11px] md:text-xs text-gray-600 font-medium leading-relaxed max-w-[200px] md:max-w-[280px]">{item.alamat}</p>
+                            </td>
+                            <td className="py-3 md:py-4 px-4 md:px-6">
+                              <div className="flex items-center gap-2">
+                                <span className="w-6 h-6 md:w-8 md:h-8 rounded-lg bg-gray-50 text-gray-400 flex items-center justify-center border border-gray-100 shrink-0">
+                                  <Phone className="w-3 h-3 md:w-4 md:h-4" />
+                                </span>
+                                <p className="text-xs md:text-sm font-semibold text-gray-700">{item.no_telepon}</p>
                               </div>
-                            </div>
-                          </td>
-                          <td className="py-3 md:py-4 px-4 md:px-6">
-                            <p className="text-[11px] md:text-xs text-gray-600 font-medium leading-relaxed max-w-[200px] md:max-w-[280px]">{item.alamat}</p>
-                          </td>
-                          <td className="py-3 md:py-4 px-4 md:px-6">
-                            <div className="flex items-center gap-2">
-                              <span className="w-6 h-6 md:w-8 md:h-8 rounded-lg bg-gray-50 text-gray-400 flex items-center justify-center border border-gray-100 shrink-0">
-                                <Phone className="w-3 h-3 md:w-4 md:h-4" />
-                              </span>
-                              <p className="text-xs md:text-sm font-semibold text-gray-700">{item.no_telepon}</p>
-                            </div>
-                          </td>
-                          <td className="py-3 md:py-4 px-4 md:px-6 text-right">
-                            <div className="flex items-center justify-end gap-1.5 md:gap-2">
-                              <button 
-                                onClick={() => handleEditClick(item)}
-                                className="p-1.5 md:p-2 text-[#5452F6] hover:bg-indigo-50 rounded-lg transition-colors border border-gray-100 shadow-inner bg-gray-50/50"
-                              >
-                                <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                              </button>
-                              
-                              <button 
-                                onClick={() => openDeleteModal(item.id, item.nama_supplier)}
-                                className="p-1.5 md:p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-gray-100 shadow-inner bg-gray-50/50"
-                              >
-                                <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                            </td>
+                            <td className="py-3 md:py-4 px-4 md:px-6 text-right">
+                              <div className="flex items-center justify-end gap-1.5 md:gap-2">
+                                <button 
+                                  onClick={() => handleEditClick(item)}
+                                  className="p-1.5 md:p-2 text-[#5452F6] hover:bg-indigo-50 rounded-lg transition-colors border border-gray-100 shadow-inner bg-gray-50/50"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                </button>
+                                
+                                <button 
+                                  // PERBAIKAN: Lempar nama yang sudah di-decode ke modal hapus
+                                  onClick={() => openDeleteModal(item.id, decodedName)}
+                                  className="p-1.5 md:p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-gray-100 shadow-inner bg-gray-50/50"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

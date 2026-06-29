@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react'; 
-import { 
-  LayoutDashboard, Box, Truck, Users, 
-  ArrowDownRight, ArrowUpRight, Activity, 
-  BarChart2, Search, Bell, CircleUser, 
-  Plus, Edit2, Trash2, ChevronLeft, ChevronRight, Info, 
-  ArrowDownLeft, Phone, Loader2, Menu, X, Bookmark, Star 
+import React, { useState, useEffect } from 'react';
+import {
+  LayoutDashboard, Box, Truck, Users,
+  ArrowDownRight, ArrowUpRight, Activity,
+  BarChart2, Search, Bell, CircleUser,
+  Plus, Edit2, Trash2, ChevronLeft, ChevronRight, Info,
+  ArrowDownLeft, Phone, Loader2, Menu, X, Bookmark, Star
 } from 'lucide-react';
 
 import TambahKonsumenModal from './TambahKonsumenModal';

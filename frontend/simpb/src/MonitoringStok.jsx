@@ -48,9 +48,10 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
         const rawApiUrl = import.meta.env.VITE_API_URL || 'https://cvamritajayasri.my.id/api';
         const cleanApiUrl = rawApiUrl.replace(/\/$/, ""); 
         
+        // PERUBAHAN: per_page=100 menjadi per_page=1000
         const endpoint = cleanApiUrl.endsWith('/api') 
-          ? `${cleanApiUrl}/stok?per_page=100` 
-          : `${cleanApiUrl}/api/stok?per_page=100`;
+          ? `${cleanApiUrl}/stok?per_page=1000` 
+          : `${cleanApiUrl}/api/stok?per_page=1000`;
 
         const response = await fetch(endpoint, {
           method: 'GET',
@@ -573,33 +574,22 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
             {(tableData.length > 0 || !isLoading) && filteredData.length > 0 && (
               <div className="p-4 md:p-6 bg-gray-50/30 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 mt-auto">
                 <p className="text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center sm:text-left">
-                  Menampilkan {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredData.length)} dari {filteredData.length} Item
+                  Menampilkan {startIndex + 1} - {Math.min(startIndex + itemsPerPage, filteredData.length)} dari {filteredData.length} data
                 </p>
-                <div className="flex gap-1 md:gap-1.5">
-                  <button 
+                <div className="flex gap-2">
+                  <button
                     onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                     disabled={currentPage === 1}
-                    className="w-7 h-7 md:w-8 md:h-8 flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-400 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                    className="p-1.5 md:p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    <ChevronLeft className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                    <ChevronLeft className="w-4 h-4 md:w-5 md:h-5" />
                   </button>
-                  <button className="w-7 h-7 md:w-8 md:h-8 flex items-center justify-center rounded-lg bg-[#5452F6] text-white text-[10px] md:text-xs font-bold shadow-md shadow-indigo-100">
-                    {currentPage}
-                  </button>
-                  {totalPages > 1 && currentPage < totalPages && (
-                    <button 
-                      onClick={() => setCurrentPage(prev => prev + 1)}
-                      className="w-7 h-7 md:w-8 md:h-8 flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 text-[10px] md:text-xs font-bold hover:bg-gray-50 transition-colors"
-                    >
-                      {currentPage + 1}
-                    </button>
-                  )}
-                  <button 
+                  <button
                     onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                     disabled={currentPage === totalPages}
-                    className="w-7 h-7 md:w-8 md:h-8 flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-400 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                    className="p-1.5 md:p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    <ChevronRight className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                    <ChevronRight className="w-4 h-4 md:w-5 md:h-5" />
                   </button>
                 </div>
               </div>

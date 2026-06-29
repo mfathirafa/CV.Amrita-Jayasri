@@ -5,7 +5,8 @@ import {
   ArrowDownRight, ArrowUpRight, ArrowDownLeft, Activity, 
   BarChart2, Search, Bell, CircleUser, 
   Calendar, FileText, Download, FileSpreadsheet, 
-  ChevronDown, Filter, Loader2, ArrowUpDown, Menu, X
+  ChevronDown, Filter, Loader2, ArrowUpDown, Menu, X,
+  AlertTriangle, CheckCircle // <-- Ditambahkan untuk Notifikasi
 } from 'lucide-react';
 
 // === IMPORT LIBRARY PDF (CARA PALING STABIL) ===
@@ -30,6 +31,15 @@ const Laporan = ({ onLogout, onNavigate }) => {
   const [ringkasan, setRingkasan] = useState({ total_transaksi: 0, total_jumlah_barang: 0, total_nilai: 0 });
   const [isLoading, setIsLoading] = useState(true);
 
+  // === PAGINATION STATES ===
+  const [currentPage, setCurrentPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
+
+  // === NOTIFIKASI STATES ===
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [stokKritisList, setStokKritisList] = useState([]);
+  const [isNotifLoading, setIsNotifLoading] = useState(true);
+
   // === MODAL EKSPOR STATES ===
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [initialExportFormat, setInitialExportFormat] = useState('excel');
@@ -53,7 +63,39 @@ const Laporan = ({ onLogout, onNavigate }) => {
 
   const displayDateRange = `${formatDate(startDate)} - ${formatDate(endDate)}`;
 
-  // === FUNGSI AMBIL DATA API ===
+  // === FUNGSI AMBIL DATA NOTIFIKASI ===
+  useEffect(() => {
+    const fetchNotifData = async () => {
+      try {
+        setIsNotifLoading(true);
+        const token = localStorage.getItem('token');
+        const rawApiUrl = import.meta.env.VITE_API_URL || 'https://cvamritajayasri.my.id/api';
+        const cleanApiUrl = rawApiUrl.replace(/\/$/, ""); 
+        const baseApi = cleanApiUrl.endsWith('/api') ? cleanApiUrl : `${cleanApiUrl}/api`;
+        
+        const response = await fetch(`${baseApi}/dashboard`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        const json = await response.json();
+        if (json.success) {
+          setStokKritisList(json.data?.stok_kritis || []);
+        }
+      } catch (error) {
+        console.error("Error Fetching Notif:", error);
+      } finally {
+        setIsNotifLoading(false);
+      }
+    };
+
+    fetchNotifData();
+  }, []);
+
+  // === FUNGSI AMBIL DATA LAPORAN & PAGINATION API ===
   const fetchLaporan = async () => {
     try {
       setIsLoading(true);
@@ -63,16 +105,24 @@ const Laporan = ({ onLogout, onNavigate }) => {
       const baseApi = cleanApiUrl.endsWith('/api') ? cleanApiUrl : `${cleanApiUrl}/api`;
       
       const headers = { 'Accept': 'application/json', 'Authorization': `Bearer ${token}` };
-      const params = `?start_date=${startDate}&end_date=${endDate}`;
+      const params = `?start_date=${startDate}&end_date=${endDate}&page=${currentPage}`; // <-- Ditambah page
 
       let masukData = [];
       let keluarData = [];
+      let maxLastPage = 1;
+      let totalItems = 0;
 
       if (activeTab === 'masuk' || activeTab === 'semua') {
         const resMasuk = await fetch(`${baseApi}/laporan/transaksi-masuk${params}`, { headers });
         const jsonMasuk = await resMasuk.json();
         if (jsonMasuk.success) {
-          masukData = jsonMasuk.data.map(item => ({ ...item, _type: 'masuk' }));
+          // Dukungan struktur paginate Laravel (json.data.data)
+          const arr = Array.isArray(jsonMasuk.data) ? jsonMasuk.data : (jsonMasuk.data?.data || []);
+          masukData = arr.map(item => ({ ...item, _type: 'masuk' }));
+          
+          if (jsonMasuk.data?.last_page) maxLastPage = Math.max(maxLastPage, jsonMasuk.data.last_page);
+          if (jsonMasuk.data?.total) totalItems += jsonMasuk.data.total;
+          else totalItems += masukData.length;
         }
       }
 
@@ -80,14 +130,20 @@ const Laporan = ({ onLogout, onNavigate }) => {
         const resKeluar = await fetch(`${baseApi}/laporan/transaksi-keluar${params}`, { headers });
         const jsonKeluar = await resKeluar.json();
         if (jsonKeluar.success) {
-          keluarData = jsonKeluar.data.map(item => ({ ...item, _type: 'keluar' }));
+          const arr = Array.isArray(jsonKeluar.data) ? jsonKeluar.data : (jsonKeluar.data?.data || []);
+          keluarData = arr.map(item => ({ ...item, _type: 'keluar' }));
+          
+          if (jsonKeluar.data?.last_page) maxLastPage = Math.max(maxLastPage, jsonKeluar.data.last_page);
+          if (jsonKeluar.data?.total) totalItems += jsonKeluar.data.total;
+          else totalItems += keluarData.length;
         }
       }
 
       let combinedData = [...masukData, ...keluarData];
       setLaporanData(combinedData);
+      setLastPage(maxLastPage);
 
-      const total_transaksi = combinedData.length;
+      const total_transaksi = totalItems;
       const total_jumlah_barang = combinedData.reduce((acc, curr) => acc + curr.jumlah, 0);
       const total_nilai = combinedData.reduce((acc, curr) => {
         const harga = curr._type === 'masuk' ? curr.harga_beli : curr.harga_jual;
@@ -104,7 +160,21 @@ const Laporan = ({ onLogout, onNavigate }) => {
 
   useEffect(() => {
     fetchLaporan();
-  }, [startDate, endDate, activeTab]); 
+  }, [startDate, endDate, activeTab, currentPage]); 
+
+  // === HANDLER FILTER (Reset Page) ===
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setCurrentPage(1);
+  };
+  const handleStartDateChange = (e) => {
+    setStartDate(e.target.value);
+    setCurrentPage(1);
+  };
+  const handleEndDateChange = (e) => {
+    setEndDate(e.target.value);
+    setCurrentPage(1);
+  };
 
   // === LOGIKA FILTER & SORT LOKAL ===
   const processedData = laporanData
@@ -336,11 +406,75 @@ const Laporan = ({ onLogout, onNavigate }) => {
                   className="w-full pl-11 pr-4 py-2 md:py-2.5 bg-[#F4F7FC] border-transparent rounded-full text-xs md:text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] transition-all" 
                 />
               </div>
-              <button className="relative text-gray-500">
-                <Bell className="w-5 h-5" />
-                <span className="absolute -top-0.5 right-0.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-              </button>
+
+              {/* ================= NOTIFIKASI BELL ================= */}
+              <div className="relative">
+                <button 
+                  onClick={() => setIsNotifOpen(!isNotifOpen)}
+                  className="relative text-gray-500 hover:text-gray-800 transition-colors p-1"
+                >
+                  <Bell className="w-5 h-5" />
+                  {stokKritisList.length > 0 && (
+                    <span className="absolute top-0.5 right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+                  )}
+                </button>
+
+                {isNotifOpen && (
+                  <div className="absolute right-0 top-full mt-3 w-72 md:w-80 bg-white rounded-xl shadow-lg border border-gray-100 z-50 py-1 animate-in fade-in zoom-in-95">
+                    <div className="px-4 py-3 border-b border-gray-50 flex justify-between items-center">
+                      <p className="text-sm font-bold text-gray-800">Notifikasi</p>
+                      {stokKritisList.length > 0 && (
+                        <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded-full">
+                          {stokKritisList.length} Peringatan
+                        </span>
+                      )}
+                    </div>
+                    
+                    <div className="max-h-64 overflow-y-auto">
+                      {isNotifLoading ? (
+                        <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-[#5452F6]" /></div>
+                      ) : stokKritisList.length === 0 ? (
+                        <div className="px-4 py-8 text-center flex flex-col items-center">
+                          <CheckCircle className="w-8 h-8 text-green-500 mb-2" />
+                          <p className="text-xs text-gray-500 font-medium">Semua stok dalam kondisi aman.</p>
+                        </div>
+                      ) : (
+                        stokKritisList.map((item) => (
+                          <div 
+                            key={item.id} 
+                            onClick={() => { setIsNotifOpen(false); onNavigate('monitoring-stok'); }}
+                            className="px-4 py-3 hover:bg-gray-50 border-b border-gray-50 last:border-0 transition-colors cursor-pointer group"
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="mt-0.5 p-1.5 bg-red-50 rounded-lg shrink-0 group-hover:bg-red-100 transition-colors">
+                                <AlertTriangle className="w-4 h-4 text-red-500" />
+                              </div>
+                              <div>
+                                <p className="text-[11px] md:text-xs font-bold text-gray-800 mb-1 leading-tight">{item.nama_barang}</p>
+                                <p className="text-[10px] text-gray-500">Stok tersisa: <span className="font-bold text-red-600">{item.stok} {item.satuan}</span> (Min: {item.stok_minimum})</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                    
+                    {stokKritisList.length > 0 && (
+                      <div className="px-4 py-2.5 border-t border-gray-50 text-center">
+                        <button 
+                          onClick={() => { setIsNotifOpen(false); onNavigate('monitoring-stok'); }}
+                          className="text-[11px] font-bold text-[#5452F6] hover:text-[#4341E3] transition-colors"
+                        >
+                          Lihat Semua Pemantauan
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
               <div className="h-6 w-px bg-gray-200 hidden md:block"></div>
+              
               <div className="relative">
                 <button
                   onClick={() => setIsProfileOpen(prev => !prev)}
@@ -408,7 +542,7 @@ const Laporan = ({ onLogout, onNavigate }) => {
                         <input 
                           type="date" 
                           value={startDate}
-                          onChange={(e) => setStartDate(e.target.value)}
+                          onChange={handleStartDateChange}
                           className="w-full pl-8 pr-1 py-2.5 md:py-3 bg-[#F4F7FC] border-transparent rounded-xl text-[10px] font-bold text-gray-600 focus:bg-white focus:border-[#5452F6] transition-colors" 
                         />
                       </div>
@@ -418,7 +552,7 @@ const Laporan = ({ onLogout, onNavigate }) => {
                         <input 
                           type="date" 
                           value={endDate}
-                          onChange={(e) => setEndDate(e.target.value)}
+                          onChange={handleEndDateChange}
                           className="w-full pl-8 pr-1 py-2.5 md:py-3 bg-[#F4F7FC] border-transparent rounded-xl text-[10px] font-bold text-gray-600 focus:bg-white focus:border-[#5452F6] transition-colors" 
                         />
                       </div>
@@ -429,7 +563,7 @@ const Laporan = ({ onLogout, onNavigate }) => {
                     <div className="relative">
                       <select 
                         value={activeTab}
-                        onChange={(e) => setActiveTab(e.target.value)}
+                        onChange={(e) => handleTabChange(e.target.value)}
                         className="w-full pl-4 pr-10 py-2.5 md:py-3 bg-[#F4F7FC] border-transparent rounded-xl text-[10px] md:text-[11px] font-bold text-gray-600 appearance-none focus:bg-white focus:border-[#5452F6] transition-colors"
                       >
                         <option value="semua">Semua Transaksi</option>
@@ -454,7 +588,7 @@ const Laporan = ({ onLogout, onNavigate }) => {
                   {['semua', 'masuk', 'keluar'].map((tab) => (
                     <button
                       key={tab}
-                      onClick={() => setActiveTab(tab)}
+                      onClick={() => handleTabChange(tab)}
                       className={`flex-1 sm:flex-none px-4 md:px-5 py-2 text-[10px] md:text-xs font-bold rounded-xl capitalize transition-all ${activeTab === tab ? 'bg-white shadow-sm text-[#5452F6]' : 'text-gray-400'}`}
                     >
                       {tab}
@@ -553,14 +687,29 @@ const Laporan = ({ onLogout, onNavigate }) => {
                 </div>
               )}
               
+              {/* === PAGINATION CONTROLS === */}
               <div className="p-4 md:p-6 bg-white border-t border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4">
                 <p className="text-[10px] font-medium text-gray-500 text-center sm:text-left">
-                  Menampilkan <span className="font-bold text-gray-800">{processedData.length}</span> dari <span className="font-bold text-gray-800">{ringkasan.total_transaksi}</span> data
+                  Menampilkan <span className="font-bold text-gray-800">{processedData.length}</span> dari <span className="font-bold text-gray-800">{ringkasan.total_transaksi}</span> data (Halaman {currentPage} / {lastPage})
                 </p>
                 <div className="flex items-center gap-1.5">
-                  <button className="text-[10px] font-bold text-gray-400 px-2 py-1">Prev</button>
-                  <button className="w-6 h-6 md:w-7 md:h-7 flex items-center justify-center rounded-lg bg-[#5452F6] text-white text-[10px] font-bold">1</button>
-                  <button className="text-[10px] font-bold text-gray-500 px-2 py-1">Next</button>
+                  <button 
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1 || isLoading}
+                    className="text-[10px] font-bold text-gray-400 px-3 py-1.5 rounded-lg disabled:opacity-50 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+                  >
+                    Prev
+                  </button>
+                  <button className="w-6 h-6 md:w-7 md:h-7 flex items-center justify-center rounded-lg bg-[#5452F6] text-white text-[10px] font-bold">
+                    {currentPage}
+                  </button>
+                  <button 
+                    onClick={() => setCurrentPage(p => Math.min(lastPage, p + 1))}
+                    disabled={currentPage === lastPage || isLoading}
+                    className="text-[10px] font-bold text-gray-500 px-3 py-1.5 rounded-lg disabled:opacity-50 hover:bg-gray-100 hover:text-gray-800 transition-colors"
+                  >
+                    Next
+                  </button>
                 </div>
               </div>
             </div>
