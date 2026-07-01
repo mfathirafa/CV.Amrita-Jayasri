@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  ArrowRight, Shield, BarChart2, Clock, 
-  Database, FileText, CheckCircle, Smartphone, 
-  Menu, X, ChevronRight, LayoutGrid, Lock, 
-  Activity, ShieldCheck, TrendingUp, MessageCircle
+  LogIn, Lock, CheckCircle, LayoutDashboard, Package, 
+  ArrowDownLeft, ArrowUpRight, Activity, FileText, 
+  Check, Menu, X, ArrowRight, Headphones 
 } from 'lucide-react';
 
 import logoAmrita from './assets/Logo Amrita.png';
@@ -11,62 +10,155 @@ import logoAmrita from './assets/Logo Amrita.png';
 const LandingPage = ({ onNavigate }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState('beranda');
 
-  // Nomor WhatsApp tujuan
-  const whatsappNumber = "6282225191432";
-  const whatsappMessage = encodeURIComponent("Halo tim Amrita Jayasri, saya tertarik dengan sistem inventarisnya. Boleh minta informasi lebih lanjut?");
-  const whatsappLink = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
+  // Link WhatsApp untuk administrator
+  const whatsappLink = "https://wa.me/6282225191432";
 
-  // Efek untuk mengubah gaya navbar saat di-scroll
+  // Mengelola scroll background navbar & deteksi active section secara real-time
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+
+    // Setup Intersection Observer untuk tracking section yang sedang dilihat
+    const observerOptions = {
+      root: null,
+      rootMargin: '-30% 0px -50% 0px', // Membaca section aktif saat berada di area tengah layar
+      threshold: 0,
+    };
+
+    const observerCallback = (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setActiveSection(entry.target.id);
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(observerCallback, observerOptions);
+    const sections = ['beranda', 'features', 'about'];
+    
+    sections.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      sections.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) observer.unobserve(el);
+      });
+    };
   }, []);
 
+  // Fungsi untuk scroll ke target secara halus
+  const scrollToSection = (id) => {
+    const element = document.getElementById(id);
+    if (element) {
+      const offset = 64; // Tinggi navbar (h-16 = 64px)
+      const bodyRect = document.body.getBoundingClientRect().top;
+      const elementRect = element.getBoundingClientRect().top;
+      const elementPosition = elementRect - bodyRect;
+      const offsetPosition = elementPosition - offset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-[#F8FAFC] font-sans selection:bg-[#5452F6] selection:text-white overflow-x-hidden relative">
+    <div className="min-h-screen bg-background text-on-background font-body-md antialiased flex flex-col selection:bg-primary-container selection:text-on-primary overflow-x-hidden">
       
       {/* ================= NAVBAR ================= */}
-      <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-white/80 backdrop-blur-md shadow-sm py-4' : 'bg-transparent py-6'}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center">
-            {/* Logo */}
-            <div className="flex items-center gap-2 cursor-pointer">
-              <img src={logoAmrita} alt="Logo Amrita" className="w-8 h-8 md:w-10 md:h-10 object-contain" />
-              <h1 className="text-[#322A9A] font-bold text-sm md:text-base leading-tight tracking-wide">
-                CV. Amrita Jayasri
-              </h1>
-            </div>
+      <nav className={`fixed top-0 left-0 right-0 z-50 h-16 transition-all duration-300 border-b ${
+        isScrolled 
+          ? 'bg-surface/90 backdrop-blur-md shadow-sm border-outline-variant' 
+          : 'bg-surface border-outline-variant/60'
+      }`}>
+        <div className="max-w-7xl mx-auto px-4 md:px-8 h-full flex justify-between items-center">
+          <div 
+            className="flex items-center gap-3 cursor-pointer shrink-0" 
+            onClick={() => scrollToSection('beranda')}
+          >
+            <img 
+              alt="Logo CV. Amrita Jayasri" 
+              className="h-10 w-10 object-contain rounded-DEFAULT hover:rotate-3 transition-transform duration-300" 
+              src={logoAmrita} 
+            />
+            <span className="font-headline-lg text-headline-lg font-bold text-primary">SIMPB</span>
+          </div>
+          
+          <div className="hidden md:flex items-center gap-6 h-full">
+            <a 
+              className={`h-full flex items-center px-1 font-label-bold border-b-2 transition-all duration-300 ${
+                activeSection === 'beranda' 
+                  ? 'text-primary border-primary' 
+                  : 'text-secondary border-transparent hover:text-primary hover:border-outline-variant'
+              }`} 
+              href="#beranda"
+              onClick={(e) => {
+                e.preventDefault();
+                scrollToSection('beranda');
+              }}
+            >
+              Beranda
+            </a>
+            <a 
+              className={`h-full flex items-center px-1 font-label-bold border-b-2 transition-all duration-300 ${
+                activeSection === 'features' 
+                  ? 'text-primary border-primary' 
+                  : 'text-secondary border-transparent hover:text-primary hover:border-outline-variant'
+              }`} 
+              href="#features"
+              onClick={(e) => {
+                e.preventDefault();
+                scrollToSection('features');
+              }}
+            >
+              Fitur
+            </a>
+            <a 
+              className={`h-full flex items-center px-1 font-label-bold border-b-2 transition-all duration-300 ${
+                activeSection === 'about' 
+                  ? 'text-primary border-primary' 
+                  : 'text-secondary border-transparent hover:text-primary hover:border-outline-variant'
+              }`} 
+              href="#about"
+              onClick={(e) => {
+                e.preventDefault();
+                scrollToSection('about');
+              }}
+            >
+              Tentang
+            </a>
+          </div>
 
-            {/* Desktop Menu */}
-            <div className="hidden md:flex items-center gap-8">
-              <a href="#beranda" className="text-sm font-semibold text-[#5452F6] border-b-2 border-[#5452F6] pb-1">Beranda</a>
-              <a href="#fitur" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors pb-1 border-b-2 border-transparent hover:border-gray-300">Fitur</a>
-              <a href="#keunggulan" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors pb-1 border-b-2 border-transparent hover:border-gray-300">Keunggulan</a>
-              <a href="#tentang" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors pb-1 border-b-2 border-transparent hover:border-gray-300">Tentang Kami</a>
-            </div>
-
-            {/* CTA Buttons */}
-            <div className="hidden md:flex items-center gap-6">
-              <button 
-                onClick={() => onNavigate('login')} 
-                className="text-sm font-semibold text-[#5452F6] hover:text-[#4341E3] transition-colors"
-              >
-                Login
-              </button>
-              <button 
-                onClick={() => onNavigate('login')} 
-                className="bg-[#5452F6] text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-[#4341E3] transition-all shadow-md shadow-indigo-200 hover:shadow-lg hover:-translate-y-0.5"
-              >
-                Coba Sekarang
-              </button>
-            </div>
-
-            {/* Mobile Menu Button */}
-            <button className="md:hidden text-gray-600" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+          <div className="flex items-center gap-3 shrink-0">
+            <a 
+              className="hidden lg:inline-flex text-primary border border-primary font-label-bold text-label-bold px-4 py-2 rounded-lg hover:bg-surface-container-low hover:scale-105 transition-all duration-300 text-sm" 
+              href={whatsappLink}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Hubungi Administrator
+            </a>
+            <button 
+              className="bg-primary-container text-on-primary font-label-bold text-label-bold px-4 py-2 rounded-lg hover:bg-primary hover:scale-105 transition-all duration-300 flex items-center gap-2 cursor-pointer shadow-sm text-sm"
+              onClick={() => onNavigate('login')}
+            >
+              <LogIn className="w-4 h-4" />
+              Masuk ke Sistem
+            </button>
+            <button 
+              className="md:hidden text-secondary hover:text-primary transition-colors p-1"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label="Toggle Menu"
+            >
               {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
@@ -74,358 +166,428 @@ const LandingPage = ({ onNavigate }) => {
 
         {/* Mobile Menu Dropdown */}
         {isMobileMenuOpen && (
-          <div className="md:hidden absolute top-full left-0 w-full bg-white border-t border-gray-100 shadow-lg py-4 px-4 flex flex-col gap-4">
-            <a href="#beranda" className="text-sm font-bold text-[#5452F6]" onClick={() => setIsMobileMenuOpen(false)}>Beranda</a>
-            <a href="#fitur" className="text-sm font-medium text-gray-600" onClick={() => setIsMobileMenuOpen(false)}>Fitur</a>
-            <a href="#keunggulan" className="text-sm font-medium text-gray-600" onClick={() => setIsMobileMenuOpen(false)}>Keunggulan</a>
-            <a href="#tentang" className="text-sm font-medium text-gray-600" onClick={() => setIsMobileMenuOpen(false)}>Tentang Kami</a>
-            <hr className="border-gray-100" />
-            <button onClick={() => onNavigate('login')} className="text-sm font-bold text-gray-600 text-left">Login</button>
-            <button onClick={() => onNavigate('login')} className="bg-[#5452F6] text-white px-4 py-2.5 rounded-xl text-sm font-bold w-full text-center">Coba Sekarang</button>
+          <div className="md:hidden absolute top-full left-0 w-full bg-surface border-b border-outline-variant shadow-lg py-4 px-4 flex flex-col gap-4">
+            <a 
+              className={`font-label-bold py-1 transition-colors ${
+                activeSection === 'beranda' ? 'text-primary' : 'text-secondary hover:text-primary'
+              }`} 
+              href="#beranda" 
+              onClick={(e) => {
+                e.preventDefault();
+                setIsMobileMenuOpen(false);
+                scrollToSection('beranda');
+              }}
+            >
+              Beranda
+            </a>
+            <a 
+              className={`font-label-bold py-1 transition-colors ${
+                activeSection === 'features' ? 'text-primary' : 'text-secondary hover:text-primary'
+              }`} 
+              href="#features" 
+              onClick={(e) => {
+                e.preventDefault();
+                setIsMobileMenuOpen(false);
+                scrollToSection('features');
+              }}
+            >
+              Fitur
+            </a>
+            <a 
+              className={`font-label-bold py-1 transition-colors ${
+                activeSection === 'about' ? 'text-primary' : 'text-secondary hover:text-primary'
+              }`} 
+              href="#about" 
+              onClick={(e) => {
+                e.preventDefault();
+                setIsMobileMenuOpen(false);
+                scrollToSection('about');
+              }}
+            >
+              Tentang
+            </a>
+            <hr className="border-outline-variant/60" />
+            <a 
+              className="text-secondary font-label-bold hover:text-primary transition-colors py-1" 
+              href={whatsappLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Hubungi Administrator
+            </a>
+            <button 
+              className="bg-primary-container text-on-primary font-label-bold text-label-bold px-4 py-2.5 rounded-lg hover:bg-primary transition-colors flex items-center justify-center gap-2 cursor-pointer w-full text-center"
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                onNavigate('login');
+              }}
+            >
+              <LogIn className="w-4 h-4" />
+              Masuk ke Sistem
+            </button>
           </div>
         )}
       </nav>
 
-      {/* ================= HERO SECTION ================= */}
-      <section id="beranda" className="pt-32 pb-20 md:pt-40 md:pb-28 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-center">
-          
-          {/* Hero Text */}
-          <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#E5EDFD] mb-6">
-              <ShieldCheck className="w-4 h-4 text-[#5452F6]" />
-              <span className="text-[11px] md:text-xs font-semibold text-[#5452F6]">Enterprise Grade Inventory Solution</span>
-            </div>
-            
-            <h1 className="text-5xl md:text-6xl lg:text-[64px] font-black text-[#1E232C] leading-[1.1] mb-6 tracking-tight">
-              Sistem<br className="hidden sm:block" /> Inventaris<br className="hidden sm:block" /> <span className="text-[#5452F6]">Cerdas</span> untuk<br className="hidden sm:block" /> Efisiensi Bisnis<br className="hidden sm:block" /> Anda
-            </h1>
-            
-            <p className="text-gray-500 text-base md:text-lg mb-8 leading-relaxed max-w-md font-medium">
-              Kelola stok, pantau transaksi, dan optimalkan pengadaan dalam satu platform terintegrasi. Dirancang khusus untuk kebutuhan operasional CV. Amrita Jayasri.
-            </p>
-            
-            <button 
-              onClick={() => onNavigate('login')}
-              className="bg-[#5452F6] text-white px-8 py-3.5 rounded-xl text-sm font-medium hover:bg-[#4341E3] transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-200 group w-full sm:w-auto"
-            >
-              Mulai Sekarang <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </button>
+      {/* ================= MAIN CONTENT ================= */}
+      <main className="flex-grow pt-16">
+        
+        {/* Hero Section */}
+        <section id="beranda" className="relative bg-surface-container-highest min-h-[500px] md:min-h-[600px] flex items-center overflow-hidden py-12 md:py-20">
+          <div className="absolute inset-0 z-0">
+            <img 
+              alt="Warehouse Background" 
+              className="w-full h-full object-cover opacity-10 mix-blend-multiply" 
+              src="https://lh3.googleusercontent.com/gps-cs-s/APNQkAEui3VcdwNeRbzPJz7u__UAZj69kUt_1uuvkJvxLc0lmF4rid8AwTuoP_lwTxoQmUcKMZH_VwzPhmBnyYKc14ZaIpwCl22oifPaa5W7vZY0_cOkSn7zgoF-PFGWERkkGS1DayOf=w1200-h900-k-no" 
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-surface via-surface/95 to-transparent"></div>
           </div>
-
-          {/* Hero Image / Graphic */}
-          <div className="relative w-full aspect-square md:aspect-auto md:h-[550px] flex items-center justify-center">
-            {/* Dekorasi Glow Latar Belakang */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-[#E5EDFD] to-white rounded-full scale-75 opacity-80 blur-[80px]"></div>
-            
-            <div className="relative w-full max-w-[480px] bg-white rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.05)] p-8 border border-gray-100 flex flex-col items-center justify-center aspect-square transform hover:-translate-y-2 transition-transform duration-500">
+          <div className="max-w-7xl mx-auto px-4 md:px-8 w-full relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            <div className="lg:col-span-7 flex flex-col gap-4 text-left">
+              <h1 className="font-headline-xl-mobile md:font-headline-xl text-headline-xl-mobile md:text-headline-xl text-on-surface leading-tight tracking-tight">
+                Kelola Persediaan Barang dengan Cepat, Akurat, dan Terintegrasi
+              </h1>
+              <p className="font-body-md text-body-md text-on-surface-variant max-w-2xl mt-2 leading-relaxed">
+                SIMPB membantu staf CV. Amrita Jayasri mencatat barang masuk dan keluar, memantau stok secara real-time, mengelola data pemasok dan pelanggan, serta menghasilkan laporan secara otomatis.
+              </p>
               
-              {/* Gambar Logo Besar */}
-              <div className="relative w-full h-full p-4 flex items-center justify-center pb-16">
-                <img src={logoAmrita} alt="CV Amrita Jayasri Logo" className="w-[85%] h-[85%] object-contain" />
-              </div>
-              
-              {/* Floating Card UI */}
-              <div className="absolute bottom-6 left-6 right-6 bg-white/80 backdrop-blur-md rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] p-5 border border-white/50 flex items-center justify-between">
-                <div>
-                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">TOTAL ASSET VALUE</p>
-                  <p className="text-2xl font-black text-[#5452F6]">Rp 2.45B</p>
+              {/* Call To Action & W-Full Buttons for Mobile */}
+              <div className="flex flex-col sm:flex-row gap-6 pt-4 w-full">
+                <div className="flex flex-col gap-1.5 flex-1 w-full sm:max-w-[240px]">
+                  <span className="text-xs text-secondary font-medium">Sudah memiliki akun?</span>
+                  <button 
+                    className="bg-primary-container text-on-primary font-label-bold text-label-bold px-6 py-3 rounded-lg hover:bg-primary hover:scale-105 transition-all duration-300 text-center shadow-sm cursor-pointer w-full"
+                    onClick={() => onNavigate('login')}
+                  >
+                    Masuk ke Sistem
+                  </button>
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-right flex flex-col items-end">
-                    <p className="text-[10px] font-bold text-gray-500 mb-0.5">Active Stock</p>
-                    <p className="text-xs font-black text-[#1E232C]">12,480 Units</p>
-                  </div>
-                  <div className="w-10 h-10 rounded-full bg-[#5452F6] flex items-center justify-center text-white shadow-md shadow-indigo-200 shrink-0">
-                    <TrendingUp className="w-5 h-5" />
-                  </div>
+                <div className="flex flex-col gap-1.5 flex-1 w-full sm:max-w-[240px]">
+                  <span className="text-xs text-secondary font-medium">Belum memiliki akun?</span>
+                  <a 
+                    className="border border-primary-container text-primary-container font-label-bold text-label-bold px-6 py-3 rounded-lg hover:bg-surface-container-low hover:scale-105 transition-all duration-300 text-center bg-surface flex items-center justify-center w-full" 
+                    href={whatsappLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Hubungi Administrator
+                  </a>
                 </div>
               </div>
 
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-      {/* ================= STATS SECTION ================= */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-24 relative z-20">
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 grid grid-cols-1 md:grid-cols-3 gap-8 divide-y md:divide-y-0 md:divide-x divide-gray-100">
-          <div className="flex flex-col items-center text-center pt-4 md:pt-0">
-            <h3 className="text-3xl font-black text-[#1E232C] mb-2">1.2k+</h3>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">BARANG DIKELOLA</p>
-          </div>
-          <div className="flex flex-col items-center text-center pt-8 md:pt-0">
-            <h3 className="text-3xl font-black text-[#1E232C] mb-2">100%</h3>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">DATA AMAN</p>
-          </div>
-          <div className="flex flex-col items-center text-center pt-8 md:pt-0">
-            <h3 className="text-3xl font-black text-[#5452F6] mb-2">40%</h3>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">EFISIENSI WAKTU</p>
-          </div>
-        </div>
-      </section>
-
-      {/* ================= FITUR UTAMA ================= */}
-      <section id="fitur" className="py-20 bg-white border-y border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-2xl mb-12">
-            <h2 className="text-3xl md:text-4xl font-black text-[#1E232C] mb-4 tracking-tight">Fitur Utama</h2>
-            <p className="text-gray-500 text-sm md:text-base leading-relaxed">
-              Solusi manajemen inventaris komprehensif yang dirancang untuk mendedikasikan efisiensi operasional CV. Amrita Jayasri.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-[#F8FAFC] p-6 rounded-[24px] border border-gray-100 hover:shadow-lg hover:border-indigo-100 transition-all group">
-              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-[#5452F6] mb-6 shadow-sm group-hover:scale-110 transition-transform">
-                <Database className="w-6 h-6" />
+              <div className="flex items-start sm:items-center gap-2 mt-6 text-secondary text-body-sm font-body-sm bg-surface/50 p-3 rounded-lg border border-outline-variant/50 w-fit">
+                <Lock className="w-[18px] h-[18px] text-primary-container shrink-0 mt-0.5 sm:mt-0" />
+                <span>Akses dibatasi untuk staf yang terdaftar. Jika belum memiliki akun, hubungi administrator.</span>
               </div>
-              <h3 className="text-lg font-bold text-gray-800 mb-3">Manajemen Multi-Gudang</h3>
-              <p className="text-sm text-gray-500 leading-relaxed">Pantau pergerakan stok di berbagai lokasi gudang dengan akurasi dan sinkronisasi realtime.</p>
             </div>
             
-            <div className="bg-[#F8FAFC] p-6 rounded-[24px] border border-gray-100 hover:shadow-lg hover:border-indigo-100 transition-all group">
-              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-[#5452F6] mb-6 shadow-sm group-hover:scale-110 transition-transform">
-                <BarChart2 className="w-6 h-6" />
+            <div className="lg:col-span-5 hidden lg:block">
+              <div className="relative h-[480px] w-full rounded-xl overflow-hidden border-4 border-surface shadow-md">
+                <img 
+                  alt="Warehouse Staff" 
+                  className="w-full h-full object-cover" 
+                  src="https://lh3.googleusercontent.com/gps-cs-s/APNQkAGQK6rhrGZ86zjWCdR7eeB6O0F898OS5OVke9eF-RVvnc2LHQZBcZBpquWsZ3a_-asbZefPmmyt50Ql793sgX7t_5RI8iCqRNc_LQ5yEyjgzMVHcSsiRIW3Olxcm2rVJ9swPNvN=w800-h1300-k-no" 
+                />
+                <div className="absolute bottom-4 left-4 right-4 bg-surface/90 backdrop-blur-sm p-4 rounded-lg border border-outline-variant shadow-sm flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-full bg-success-green/20 flex items-center justify-center text-success-green shrink-0">
+                    <CheckCircle className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="font-label-bold text-label-bold text-on-surface text-sm">Sistem Aktif</p>
+                    <p className="font-body-sm text-body-sm text-secondary text-xs">Terhubung ke database pusat</p>
+                  </div>
+                </div>
               </div>
-              <h3 className="text-lg font-bold text-gray-800 mb-3">Analisis Prediktif Stok</h3>
-              <p className="text-sm text-gray-500 leading-relaxed">Hindari kehabisan barang dengan notifikasi batas minimum dan analisis kecepatan stok keluar.</p>
-            </div>
-
-            <div className="bg-[#F8FAFC] p-6 rounded-[24px] border border-gray-100 hover:shadow-lg hover:border-indigo-100 transition-all group">
-              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-[#5452F6] mb-6 shadow-sm group-hover:scale-110 transition-transform">
-                <Lock className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold text-gray-800 mb-3">Audit Log Keamanan</h3>
-              <p className="text-sm text-gray-500 leading-relaxed">Lacak setiap perubahan data dengan sistem riwayat modifikasi untuk transparansi audit.</p>
-            </div>
-
-            <div className="bg-[#F8FAFC] p-6 rounded-[24px] border border-gray-100 hover:shadow-lg hover:border-indigo-100 transition-all group">
-              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-[#5452F6] mb-6 shadow-sm group-hover:scale-110 transition-transform">
-                <FileText className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold text-gray-800 mb-3">Laporan Mudah</h3>
-              <p className="text-sm text-gray-500 leading-relaxed">Ekspor data secara instan ke format PDF atau Excel dengan filter data kustom yang kuat.</p>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ================= BENTO GRID / KEUNGGULAN ================= */}
-      <section id="keunggulan" className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <h2 className="text-3xl md:text-4xl font-black text-[#1E232C] mb-4 tracking-tight">Keunggulan Sistem</h2>
-          <p className="text-gray-500 text-sm md:text-base leading-relaxed">
-            Arsitektur terstruktur untuk sebuah ekosistem performa tinggi dan efisiensi perusahaan.
-          </p>
-        </div>
+        {/* Statistics Section */}
+        <section className="border-y border-outline-variant bg-surface-container-lowest">
+          <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-outline-variant">
+            <div className="py-4 md:py-0 md:px-6 flex flex-col items-center md:items-start text-center md:text-left">
+              <span className="font-headline-xl text-headline-xl text-primary-container font-bold">Real-time</span>
+              <span className="font-label-bold text-label-bold text-secondary mt-1 uppercase tracking-wider text-xs">Monitoring Pergerakan Stok</span>
+            </div>
+            <div className="py-4 md:py-0 md:px-6 flex flex-col items-center md:items-start text-center md:text-left">
+              <span className="font-headline-xl text-headline-xl text-primary-container font-bold">PDF &amp; Excel</span>
+              <span className="font-label-bold text-label-bold text-secondary mt-1 uppercase tracking-wider text-xs">Format Laporan Tersedia</span>
+            </div>
+            <div className="py-4 md:py-0 md:px-6 flex flex-col items-center md:items-start text-center md:text-left">
+              <span className="font-headline-xl text-headline-xl text-primary-container font-bold">24/7</span>
+              <span className="font-label-bold text-label-bold text-secondary mt-1 uppercase tracking-wider text-xs">Akses Sistem Internal Staf</span>
+            </div>
+          </div>
+        </section>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Features Section */}
+        <section className="py-12 md:py-20 max-w-7xl mx-auto px-4 md:px-8" id="features">
+          <div className="text-center mb-12">
+            <h2 className="font-headline-lg text-headline-lg text-on-surface mb-2">Apa saja yang bisa dilakukan di SIMPB?</h2>
+            <p className="font-body-md text-secondary max-w-2xl mx-auto mb-4">
+              Semua kebutuhan manajemen persediaan barang tersedia dalam satu platform yang mudah digunakan oleh seluruh tim operasional.
+            </p>
+            <div className="w-16 h-1 bg-primary-container mx-auto rounded-full"></div>
+          </div>
           
-          <div className="lg:col-span-7 bg-white rounded-[32px] p-8 md:p-10 shadow-sm border border-gray-100 relative overflow-hidden flex flex-col justify-between">
-            <div className="relative z-10 max-w-md mb-8">
-              <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-[#5452F6] mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            
+            {/* Card 1 */}
+            <div className="bg-surface rounded-xl p-6 border border-outline-variant hover:border-primary-container hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group h-full flex flex-col">
+              <div className="w-12 h-12 bg-surface-container-low rounded-lg flex items-center justify-center text-primary-container mb-4 group-hover:bg-primary-container group-hover:text-on-primary transition-colors shrink-0">
+                <LayoutDashboard className="w-6 h-6" />
+              </div>
+              <div className="flex-1 flex flex-col">
+                <h3 className="font-label-bold text-label-bold text-on-surface mb-2 text-lg">Dashboard</h3>
+                <p className="font-body-sm text-body-sm text-secondary leading-relaxed">
+                  Lihat ringkasan jumlah barang, total transaksi hari ini, grafik pergerakan stok, dan daftar transaksi terbaru — semuanya di satu halaman utama.
+                </p>
+              </div>
+            </div>
+
+            {/* Card 2 */}
+            <div className="bg-surface rounded-xl p-6 border border-outline-variant hover:border-primary-container hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group h-full flex flex-col">
+              <div className="w-12 h-12 bg-surface-container-low rounded-lg flex items-center justify-center text-primary-container mb-4 group-hover:bg-primary-container group-hover:text-on-primary transition-colors shrink-0">
+                <Package className="w-6 h-6" />
+              </div>
+              <div className="flex-1 flex flex-col">
+                <h3 className="font-label-bold text-label-bold text-on-surface mb-2 text-lg">Data Barang</h3>
+                <p className="font-body-sm text-body-sm text-secondary leading-relaxed">
+                  Kelola master data seluruh item ATK: nama, kategori, satuan, stok minimum, harga, dan foto. Setiap item memiliki kode referensi unik (BRG-ATKxxx).
+                </p>
+              </div>
+            </div>
+
+            {/* Card 3 */}
+            <div className="bg-surface rounded-xl p-6 border border-outline-variant hover:border-primary-container hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group h-full flex flex-col">
+              <div className="w-12 h-12 bg-surface-container-low rounded-lg flex items-center justify-center text-success-green mb-4 group-hover:bg-success-green group-hover:text-white transition-colors shrink-0">
+                <ArrowDownLeft className="w-6 h-6" />
+              </div>
+              <div className="flex-1 flex flex-col">
+                <h3 className="font-label-bold text-label-bold text-on-surface mb-2 text-lg">Barang Masuk</h3>
+                <p className="font-body-sm text-body-sm text-secondary leading-relaxed">
+                  Catat setiap kedatangan stok dari pemasok lengkap dengan jumlah, harga beli, dan tanggal. Stok diperbarui otomatis setelah transaksi disimpan.
+                </p>
+              </div>
+            </div>
+
+            {/* Card 4 */}
+            <div className="bg-surface rounded-xl p-6 border border-outline-variant hover:border-primary-container hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group h-full flex flex-col">
+              <div className="w-12 h-12 bg-surface-container-low rounded-lg flex items-center justify-center text-warning-orange mb-4 group-hover:bg-warning-orange group-hover:text-white transition-colors shrink-0">
+                <ArrowUpRight className="w-6 h-6" />
+              </div>
+              <div className="flex-1 flex flex-col">
+                <h3 className="font-label-bold text-label-bold text-on-surface mb-2 text-lg">Barang Keluar</h3>
+                <p className="font-body-sm text-body-sm text-secondary leading-relaxed">
+                  Rekam distribusi barang kepada konsumen beserta harga jual dan tanggal. Seluruh riwayat transaksi tersimpan permanen untuk keperluan audit.
+                </p>
+              </div>
+            </div>
+
+            {/* Card 5 */}
+            <div className="bg-surface rounded-xl p-6 border border-outline-variant hover:border-primary-container hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group h-full flex flex-col">
+              <div className="w-12 h-12 bg-surface-container-low rounded-lg flex items-center justify-center text-primary-container mb-4 group-hover:bg-primary-container group-hover:text-on-primary transition-colors shrink-0">
                 <Activity className="w-6 h-6" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-3">Monitoring Real-time</h3>
-              <p className="text-gray-500 text-sm leading-relaxed mb-6">Pantau pergerakan stok, barang masuk, dan keluar setiap saat dari mana saja tanpa jeda sinkronisasi. Dashboard reaktif langsung menyajikan angka terbaru.</p>
-              <div className="flex gap-3">
-                <span className="px-3 py-1 bg-gray-50 border border-gray-100 rounded-lg text-[10px] font-bold text-gray-600 uppercase tracking-wider">RESPONSIF</span>
-                <span className="px-3 py-1 bg-gray-50 border border-gray-100 rounded-lg text-[10px] font-bold text-gray-600 uppercase tracking-wider">AKURAT</span>
+              <div className="flex-1 flex flex-col">
+                <h3 className="font-label-bold text-label-bold text-on-surface mb-2 text-lg">Monitoring Stok</h3>
+                <p className="font-body-sm text-body-sm text-secondary leading-relaxed">
+                  Pantau sisa stok seluruh item secara real-time. Sistem memberi notifikasi otomatis ketika stok menyentuh batas minimum yang ditentukan.
+                </p>
               </div>
             </div>
-            <div className="absolute right-0 bottom-0 w-64 h-64 bg-gradient-to-tl from-indigo-50 to-transparent rounded-tl-full opacity-50"></div>
-          </div>
 
-          <div className="lg:col-span-5 bg-[#F8FAFC] rounded-[32px] p-8 md:p-10 shadow-sm border border-gray-100 flex flex-col justify-between relative overflow-hidden">
-             <div className="relative z-10">
-              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-gray-800 mb-6 shadow-sm">
+            {/* Card 6 */}
+            <div className="bg-surface rounded-xl p-6 border border-outline-variant hover:border-primary-container hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group h-full flex flex-col">
+              <div className="w-12 h-12 bg-surface-container-low rounded-lg flex items-center justify-center text-primary-container mb-4 group-hover:bg-primary-container group-hover:text-on-primary transition-colors shrink-0">
                 <FileText className="w-6 h-6" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-3">Laporan Otomatis</h3>
-              <p className="text-gray-500 text-sm leading-relaxed mb-8">Hasilkan rekapitulasi pergerakan inventaris dan neraca sisa akhir yang presisi untuk kebutuhan laporan keuangan maupun manajerial mingguan.</p>
-            </div>
-            <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between z-10">
-              <div className="flex flex-col">
-                <span className="text-xs font-bold text-gray-800">PDF Terunduh: Laporan_Q1</span>
-                <span className="text-[10px] text-gray-400 mt-0.5">2.4 MB • 12 Hal</span>
-              </div>
-              <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center">
-                <ArrowRight className="w-4 h-4 text-[#5452F6]" />
+              <div className="flex-1 flex flex-col">
+                <h3 className="font-label-bold text-label-bold text-on-surface mb-2 text-lg">Laporan</h3>
+                <p className="font-body-sm text-body-sm text-secondary leading-relaxed">
+                  Ekspor data transaksi barang masuk, keluar, dan rekapitulasi stok ke format PDF atau Excel. Tersedia filter rentang tanggal yang fleksibel.
+                </p>
               </div>
             </div>
-          </div>
 
-          <div className="lg:col-span-12 bg-[#1E232C] rounded-[32px] p-8 md:p-12 shadow-xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-12">
-            <div className="relative z-10 max-w-lg">
-              <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center text-white mb-6 backdrop-blur-sm">
-                <Shield className="w-6 h-6" />
-              </div>
-              <h3 className="text-2xl md:text-3xl font-bold text-white mb-4">Sistem Integrasi Vendor</h3>
-              <p className="text-gray-400 text-sm md:text-base leading-relaxed mb-8">Data base seluruh pemasok terpusat. Mudahkan manajemen proses PO (Purchase Order) dan melacak konsistensi pengiriman produk mentah dari relasi distributor utama Anda.</p>
-              <button className="bg-white text-[#1E232C] px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-gray-100 transition-all">Lihat Detail</button>
+          </div>
+        </section>
+
+        {/* Workflow Section */}
+        <section className="bg-surface-container-low py-12 md:py-20 border-y border-outline-variant/60">
+          <div className="max-w-7xl mx-auto px-4 md:px-8">
+            <div className="text-center mb-12">
+              <span className="text-primary-container font-label-bold text-xs uppercase tracking-widest block mb-1">Cara menggunakan sistem</span>
+              <h2 className="font-headline-lg text-headline-lg text-on-surface mb-2">Alur Penggunaan Sistem</h2>
+              <div className="w-16 h-1 bg-primary-container mx-auto rounded-full"></div>
             </div>
             
-            <div className="relative z-10 w-full md:w-1/2 bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-md">
-              <div className="flex justify-between items-center mb-6 pb-4 border-b border-white/10">
-                <span className="text-xs font-bold text-gray-300 uppercase tracking-widest">DAFTAR VENDOR AKTIF</span>
-                <span className="text-xs font-bold text-[#5452F6]">STATUS</span>
-              </div>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between bg-white/5 p-3 rounded-xl">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-indigo-500/20"></div>
-                    <div className="w-32 h-2 bg-white/20 rounded-full"></div>
-                  </div>
-                  <span className="text-[10px] px-2 py-1 bg-green-500/20 text-green-400 rounded-md font-bold">TERVERIFIKASI</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+              
+              {/* Step 1 */}
+              <div className="relative bg-surface p-6 rounded-xl border border-outline-variant text-center flex flex-col items-center hover:-translate-y-1 hover:shadow-md transition-all duration-300">
+                <div className="w-12 h-12 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-label-bold mb-4 z-10 relative shadow-sm">
+                  <Lock className="w-5 h-5" />
                 </div>
-                <div className="flex items-center justify-between bg-white/5 p-3 rounded-xl">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-blue-500/20"></div>
-                    <div className="w-24 h-2 bg-white/20 rounded-full"></div>
-                  </div>
-                  <span className="text-[10px] px-2 py-1 bg-yellow-500/20 text-yellow-400 rounded-md font-bold">PENDING</span>
-                </div>
+                <h4 className="font-label-bold text-label-bold text-on-surface mb-2">🔑 1. Login</h4>
+                <p className="font-body-sm text-body-sm text-secondary">Masuk dengan akun terdaftar.</p>
+                <div className="hidden lg:block absolute top-12 -right-4 w-8 h-[2px] bg-outline-variant z-0"></div>
               </div>
-            </div>
 
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#5452F6] rounded-full blur-[120px] opacity-20 pointer-events-none"></div>
+              {/* Step 2 */}
+              <div className="relative bg-surface p-6 rounded-xl border border-outline-variant text-center flex flex-col items-center hover:-translate-y-1 hover:shadow-md transition-all duration-300">
+                <div className="w-12 h-12 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-label-bold mb-4 z-10 relative shadow-sm">
+                  <LayoutDashboard className="w-5 h-5" />
+                </div>
+                <h4 className="font-label-bold text-label-bold text-on-surface mb-2">📊 2. Dashboard</h4>
+                <p className="font-body-sm text-body-sm text-secondary">Tinjau status stok terkini.</p>
+                <div className="hidden lg:block absolute top-12 -right-4 w-8 h-[2px] bg-outline-variant z-0"></div>
+              </div>
+
+              {/* Step 3 */}
+              <div className="relative bg-surface p-6 rounded-xl border border-outline-variant text-center flex flex-col items-center hover:-translate-y-1 hover:shadow-md transition-all duration-300">
+                <div className="w-12 h-12 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-label-bold mb-4 z-10 relative shadow-sm">
+                  <Package className="w-5 h-5" />
+                </div>
+                <h4 className="font-label-bold text-label-bold text-on-surface mb-2">📦 3. Catat Barang</h4>
+                <p className="font-body-sm text-body-sm text-secondary">Catat transaksi masuk/keluar.</p>
+                <div className="hidden lg:block absolute top-12 -right-4 w-8 h-[2px] bg-outline-variant z-0"></div>
+              </div>
+
+              {/* Step 4 */}
+              <div className="relative bg-surface p-6 rounded-xl border border-outline-variant text-center flex flex-col items-center hover:-translate-y-1 hover:shadow-md transition-all duration-300">
+                <div className="w-12 h-12 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-label-bold mb-4 z-10 relative shadow-sm">
+                  <Activity className="w-5 h-5" />
+                </div>
+                <h4 className="font-label-bold text-label-bold text-on-surface mb-2">📈 4. Monitoring</h4>
+                <p className="font-body-sm text-body-sm text-secondary">Pantau batas minimum stok.</p>
+                <div className="hidden lg:block absolute top-12 -right-4 w-8 h-[2px] bg-outline-variant z-0"></div>
+              </div>
+
+              {/* Step 5 */}
+              <div className="relative bg-surface p-6 rounded-xl border border-primary-container/30 text-center flex flex-col items-center bg-primary-container/5 hover:-translate-y-1 hover:shadow-md transition-all duration-300">
+                <div className="w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center font-label-bold mb-4 z-10 relative shadow-sm">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <h4 className="font-label-bold text-label-bold text-primary mb-2">📄 5. Laporan</h4>
+                <p className="font-body-sm text-body-sm text-secondary">Unduh PDF / Excel berkala.</p>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        {/* About Us Section */}
+        <section className="py-12 md:py-20 max-w-7xl mx-auto px-4 md:px-8" id="about">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+            <div className="rounded-xl overflow-hidden border border-outline-variant shadow-sm h-[250px] md:h-[400px] relative">
+              <img 
+                alt="Warehouse Operations CV Amrita Jayasri" 
+                className="w-full h-full object-cover" 
+                src="https://lh3.googleusercontent.com/gps-cs-s/APNQkAGVVUzbPJRv0CGh8x5WcCiKNylI7F8enoEfi05f66l7M5yFW8cEBvnBLlWixoFg1y_gii-3d2VUo1wZHGNZRNUAvkVM4A5uat182oLRGIBOZGyA59YJi1txck4vTTuCUjNjR1yG=w1200-h900-k-no" 
+              />
+            </div>
+            <div className="flex flex-col gap-4">
+              <div className="mb-2">
+                <h2 className="font-headline-lg text-headline-lg text-on-surface mb-2">Tentang CV. Amrita Jayasri</h2>
+                <div className="w-16 h-1 bg-primary-container rounded-full"></div>
+              </div>
+              <div className="flex flex-col gap-4 font-body-md text-body-md text-secondary leading-relaxed">
+                <p>
+                  CV. Amrita Jayasri adalah perusahaan yang bergerak di bidang perdagangan alat tulis kantor, perlengkapan sekolah, supplies komputer, dan jasa pendukung perkantoran. Berlokasi di Purbalingga, Jawa Tengah, kami melayani kebutuhan instansi, sekolah, dan kantor di seluruh wilayah.
+                </p>
+                <p>
+                  SIMPB dibangun untuk mendukung efisiensi operasional internal — dari pencatatan stok hingga pelaporan transaksi — agar tim dapat bekerja lebih cepat, akurat, dan terstruktur.
+                </p>
+              </div>
+              <ul className="mt-2 space-y-3">
+                <li className="flex items-start gap-3">
+                  <Check className="text-primary-container mt-0.5 w-5 h-5 shrink-0" />
+                  <span className="font-body-md text-body-md text-on-surface">Distributor terpercaya berskala regional</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Check className="text-primary-container mt-0.5 w-5 h-5 shrink-0" />
+                  <span className="font-body-md text-body-md text-on-surface">Fokus pada efisiensi operasional dan transparansi</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Check className="text-primary-container mt-0.5 w-5 h-5 shrink-0" />
+                  <span className="font-body-md text-body-md text-on-surface">Sistem inventaris terstandarisasi</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </section>
+        
+      </main>
+
+      {/* ================= FOOTER ================= */}
+      <footer className="bg-surface-container-low w-full border-t border-outline-variant mt-auto">
+        <div className="max-w-7xl mx-auto py-12 px-4 md:px-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+          
+          {/* Col 1: System Info & Version */}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 mb-1">
+              <img 
+                alt="Logo Mini" 
+                className="h-6 w-6 object-contain rounded-DEFAULT hover:rotate-3 transition-transform duration-300" 
+                src={logoAmrita} 
+              />
+              <span className="font-label-bold text-label-bold text-on-surface">SIMPB - CV. Amrita Jayasri</span>
+            </div>
+            <p className="font-body-sm text-body-sm text-secondary text-xs leading-relaxed">
+              Sistem Informasi Manajemen Persediaan Barang internal untuk pencatatan logistik, monitoring sisa stok, dan penyusunan laporan transaksi.
+            </p>
+            <span className="text-[10px] font-mono-data bg-surface border border-outline-variant/60 text-secondary px-2.5 py-0.5 rounded-full w-fit mt-1">
+              Versi Sistem v1.0
+            </span>
           </div>
 
-        </div>
-      </section>
-
-      {/* ================= BIG BANNER CTA ================= */}
-      <section className="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-[#5452F6] rounded-[32px] p-12 md:p-20 text-center relative overflow-hidden shadow-2xl shadow-indigo-500/20">
-          <div className="relative z-10 max-w-3xl mx-auto">
-            <h2 className="text-3xl md:text-5xl font-black text-white mb-6 tracking-tight">Siap Mengoptimalkan Inventaris Anda?</h2>
-            <p className="text-indigo-100 text-sm md:text-base leading-relaxed mb-10 max-w-xl mx-auto">
-              Tingkatkan kinerja manajemen stok Anda hari ini. Bersama CV. Amrita Jayasri, hadirkan kemudahan pengelolaan gudang secara profesional.
+          {/* Col 2: Alamat Perusahaan */}
+          <div className="flex flex-col gap-2">
+            <h5 className="font-label-bold text-label-bold text-on-surface text-sm uppercase tracking-wider">Alamat Perusahaan</h5>
+            <p className="font-body-sm text-body-sm text-secondary text-xs leading-relaxed">
+              Purbalingga, Jawa Tengah, Indonesia.<br />
+              Melayani kebutuhan instansi pemerintahan, perkantoran, dan jaringan sekolah regional.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button 
-                onClick={() => onNavigate('login')}
-                className="bg-white text-[#5452F6] px-8 py-3.5 rounded-xl text-sm font-bold hover:bg-gray-50 transition-all shadow-lg"
-              >
-                Mulai Sekarang
-              </button>
-              {/* TOMBOL HUBUNGI KAMI MENGARAH KE WHATSAPP */}
+          </div>
+
+          {/* Col 3: Layanan Hubungi Admin */}
+          <div className="flex flex-col gap-2">
+            <h5 className="font-label-bold text-label-bold text-on-surface text-sm uppercase tracking-wider">Kontak Administrator</h5>
+            <p className="font-body-sm text-body-sm text-secondary text-xs">
+              WhatsApp: <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors font-medium text-on-surface">+62 822-2519-1432</a>
+            </p>
+            <p className="font-body-sm text-body-sm text-secondary text-xs">
+              Email: <span className="font-medium text-on-surface">admin.simpb@amritajayasri.com</span>
+            </p>
+            <div className="mt-2">
               <a 
+                className="border border-outline-variant bg-surface px-4 py-2 rounded-lg font-label-bold text-label-bold text-on-surface hover:border-primary-container hover:text-primary-container transition-all hover:scale-105 duration-300 flex items-center gap-2 text-xs w-fit shadow-sm" 
                 href={whatsappLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-indigo-600/50 text-white border border-indigo-400/30 px-8 py-3.5 rounded-xl text-sm font-bold hover:bg-indigo-600 transition-all backdrop-blur-sm flex items-center justify-center gap-2 w-full sm:w-auto"
               >
-                <MessageCircle className="w-5 h-5" />
-                Hubungi Tim Kami
+                <Headphones className="w-3.5 h-3.5" />
+                Hubungi Administrator
               </a>
             </div>
           </div>
-          <div className="absolute top-0 left-0 w-full h-full opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>
-        </div>
-      </section>
 
-      {/* ================= MENGAPA MEMILIH KAMI ================= */}
-      <section className="py-24 bg-white border-t border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <h2 className="text-3xl md:text-4xl font-black text-[#1E232C] mb-4 tracking-tight">Mengapa Memilih Kami?</h2>
-            <p className="text-gray-500 text-sm md:text-base leading-relaxed">
-              Keunggulan operasional yang menjadikan sistem ini fondasi andalan untuk kebutuhan inventaris Anda.
+        </div>
+
+        {/* Bottom row */}
+        <div className="border-t border-outline-variant/60 bg-surface-container-low/50">
+          <div className="max-w-7xl mx-auto py-4 px-4 md:px-8 flex flex-col sm:flex-row justify-between items-center gap-2 text-center sm:text-left">
+            <p className="font-body-sm text-body-sm text-secondary text-xs">
+              &copy; {new Date().getFullYear()} CV. Amrita Jayasri. Semua hak dilindungi.
             </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-14 h-14 mx-auto bg-indigo-50 rounded-2xl flex items-center justify-center text-[#5452F6] mb-6">
-                <CheckCircle className="w-7 h-7" />
-              </div>
-              <h3 className="text-lg font-bold text-gray-800 mb-3">Akurasi Real-time</h3>
-              <p className="text-sm text-gray-500 leading-relaxed">Sinkronisasi data langsung, memastikan laporan dan stok yang ditampilkan adalah yang terbaru di detik tersebut.</p>
-            </div>
-            
-            <div className="text-center">
-              <div className="w-14 h-14 mx-auto bg-indigo-50 rounded-2xl flex items-center justify-center text-[#5452F6] mb-6">
-                <BarChart2 className="w-7 h-7" />
-              </div>
-              <h3 className="text-lg font-bold text-gray-800 mb-3">Skalabilitas Tinggi</h3>
-              <p className="text-sm text-gray-500 leading-relaxed">Sistem yang dirancang agar dapat tumbuh bersama bisnis Anda, menampung ribuan transaksi setiap harinya.</p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-14 h-14 mx-auto bg-indigo-50 rounded-2xl flex items-center justify-center text-[#5452F6] mb-6">
-                <Smartphone className="w-7 h-7" />
-              </div>
-              <h3 className="text-lg font-bold text-gray-800 mb-3">Kemudahan Penggunaan</h3>
-              <p className="text-sm text-gray-500 leading-relaxed">Antarmuka antusias, dirancang bersih dan responsif, memudahkan staf mana pun untuk mengoperasikannya.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ================= TENTANG & FOOTER ================= */}
-      <section id="tentang" className="pt-20 pb-8 bg-[#F8FAFC]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-16 mb-20">
-            <div>
-              <h2 className="text-2xl md:text-3xl font-black text-[#1E232C] mb-6 tracking-tight">Tentang Amrita Jayasri</h2>
-              <p className="text-gray-500 text-sm md:text-base leading-relaxed mb-4">
-                Berdedikasi untuk terus membantu manajemen efisiensi bisnis korporat. Inventaris digital yang inovatif dan efisien kami merangkul teknologi guna menciptakan alat produktivitas yang berdampak positif bagi pertumbuhan.
-              </p>
-              <p className="text-gray-500 text-sm md:text-base leading-relaxed">
-                Visi kami adalah menjadikan setiap proses kerja perusahaan lebih mulus, transparan, dan terukur menuju era operasional digital yang cerdas dan terintegrasi.
-              </p>
-            </div>
-            
-            <div className="flex flex-col gap-4">
-              <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm border-l-4 border-l-[#5452F6]">
-                <h4 className="font-bold text-[#1E232C] mb-2">Inovasi Berkelanjutan</h4>
-                <p className="text-xs text-gray-500 leading-relaxed">Terus memperbarui sistem dengan teknologi terbaru.</p>
-              </div>
-              <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm border-l-4 border-l-[#5452F6]">
-                <h4 className="font-bold text-[#1E232C] mb-2">Keamanan Data Terjamin</h4>
-                <p className="text-xs text-gray-500 leading-relaxed">Memprioritaskan privasi dan keamanan infrastruktur data perusahaan.</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Footer Line */}
-          <div className="border-t border-gray-200 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="flex items-center gap-2">
-              <img src={logoAmrita} alt="Logo" className="w-6 h-6 object-contain" />
-              <span className="font-bold text-sm text-gray-800">Amrita Jayasri</span>
-            </div>
-            
-            <div className="flex items-center gap-6">
-              <a href="#" className="text-xs font-medium text-gray-500 hover:text-gray-900 transition-colors">Privasi</a>
-              <a href="#" className="text-xs font-medium text-gray-500 hover:text-gray-900 transition-colors">Ketentuan</a>
-              <a href="#" className="text-xs font-medium text-gray-500 hover:text-gray-900 transition-colors">Kontak</a>
-            </div>
-
-            <p className="text-xs text-gray-400 font-medium">
-              © {new Date().getFullYear()} CV. Amrita Jayasri.
+            <p className="font-body-sm text-body-sm text-secondary text-xs">
+              Sistem ini hanya untuk staf internal CV. Amrita Jayasri.
             </p>
           </div>
         </div>
-      </section>
-
-      {/* ================= FLOATING WHATSAPP BUTTON ================= */}
-      <a
-        href={whatsappLink}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="fixed bottom-6 right-6 bg-[#25D366] text-white p-3 md:p-4 rounded-full shadow-lg shadow-green-500/30 hover:scale-110 hover:-translate-y-1 transition-all z-50 flex items-center justify-center group"
-        aria-label="Chat on WhatsApp"
-      >
-        <svg className="w-6 h-6 md:w-8 md:h-8" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-        </svg>
-        <span className="absolute right-full mr-4 bg-white text-gray-800 text-xs font-bold px-3 py-1.5 rounded-lg shadow-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-          Hubungi Kami
-        </span>
-      </a>
+      </footer>
 
     </div>
   );
