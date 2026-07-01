@@ -547,7 +547,7 @@ const LandingPage = ({ onNavigate }) => {
           <div className="flex flex-col gap-2">
             <h5 className="font-label-bold text-label-bold text-on-surface text-sm uppercase tracking-wider">Alamat Perusahaan</h5>
             <p className="font-body-sm text-body-sm text-secondary text-xs leading-relaxed">
-              Purbalingga, Jawa Tengah, Indonesia.<br />
+              Purwokerto, Jawa Tengah, Indonesia.<br />
               Melayani kebutuhan instansi pemerintahan, perkantoran, dan jaringan sekolah regional.
             </p>
           </div>
@@ -559,7 +559,7 @@ const LandingPage = ({ onNavigate }) => {
               WhatsApp: <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors font-medium text-on-surface">+62 822-2519-1432</a>
             </p>
             <p className="font-body-sm text-body-sm text-secondary text-xs">
-              Email: <span className="font-medium text-on-surface">admin.simpb@amritajayasri.com</span>
+              Email: <span className="font-medium text-on-surface">cv.amritajayasri@gmail.com</span>
             </p>
             <div className="mt-2">
               <a 
