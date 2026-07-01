@@ -15,6 +15,7 @@ import autoTable from 'jspdf-autotable';
 
 // === IMPORT LOGO ===
 import logoAmrita from './assets/Logo Amrita.png';
+import NotificationBell from './NotificationBell';
 
 const MonitoringStok = ({ onLogout, onNavigate }) => {
   // === STATE UNTUK MENU HP ===
@@ -381,12 +382,7 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
                 className="w-full pl-11 pr-4 py-2.5 bg-[#F4F7FC] border-transparent rounded-full text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] focus:ring-1 focus:ring-[#5452F6] transition-all"
               />
             </div>
-            <button className="relative text-gray-500 hover:text-gray-800 transition-colors">
-              <Bell className="w-5 h-5" />
-              {stokRendahCount + stokHabisCount > 0 && (
-                <span className="absolute -top-0.5 right-0.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-              )}
-            </button>
+            <NotificationBell onNavigate={onNavigate || handleNavigation} />
             <div className="h-6 w-px bg-gray-200 hidden md:block"></div>
             <div className="relative">
               <button

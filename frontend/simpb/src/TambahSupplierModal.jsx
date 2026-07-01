@@ -20,8 +20,8 @@ const TambahSupplierModal = ({ isOpen, onClose, onSave }) => {
   };
 
   const handleSubmit = async () => {
-    if (!formData.name || !formData.address || !formData.phone) {
-      alert("Harap lengkapi semua kolom yang wajib diisi!");
+    if (!formData.name.trim()) {
+      alert("Nama supplier wajib diisi!");
       return;
     }
 
@@ -101,7 +101,7 @@ const TambahSupplierModal = ({ isOpen, onClose, onSave }) => {
             {/* Input Nama */}
             <div>
               <label className="block text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 md:mb-2">
-                NAMA SUPPLIER
+                NAMA SUPPLIER <span className="text-red-400">*</span>
               </label>
               <div className="flex items-center bg-[#F4F7FC] px-3 md:px-4 py-2.5 md:py-3 rounded-xl focus-within:bg-white focus-within:ring-1 focus-within:ring-[#5452F6] transition-all border border-transparent focus-within:border-indigo-100">
                 <Building2 className="w-4 h-4 text-[#5452F6] mr-3 shrink-0" />
@@ -120,7 +120,7 @@ const TambahSupplierModal = ({ isOpen, onClose, onSave }) => {
             {/* Input Alamat */}
             <div>
               <label className="block text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 md:mb-2">
-                ALAMAT LENGKAP
+                ALAMAT LENGKAP <span className="text-gray-300 normal-case tracking-normal font-semibold">(Opsional)</span>
               </label>
               <div className="flex items-center bg-[#F4F7FC] px-3 md:px-4 py-2.5 md:py-3 rounded-xl focus-within:bg-white focus-within:ring-1 focus-within:ring-[#5452F6] transition-all border border-transparent focus-within:border-indigo-100">
                 <MapPin className="w-4 h-4 text-[#5452F6] mr-3 shrink-0" />
@@ -139,7 +139,7 @@ const TambahSupplierModal = ({ isOpen, onClose, onSave }) => {
             {/* Input Telepon */}
             <div>
               <label className="block text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 md:mb-2">
-                NOMOR TELEPON
+                NOMOR TELEPON <span className="text-gray-300 normal-case tracking-normal font-semibold">(Opsional)</span>
               </label>
               <div className="flex items-center bg-[#F4F7FC] px-3 md:px-4 py-2.5 md:py-3 rounded-xl focus-within:bg-white focus-within:ring-1 focus-within:ring-[#5452F6] transition-all border border-transparent focus-within:border-indigo-100">
                 <Phone className="w-4 h-4 text-[#5452F6] mr-3 shrink-0" />

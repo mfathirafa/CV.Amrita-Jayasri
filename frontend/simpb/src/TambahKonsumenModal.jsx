@@ -23,8 +23,8 @@ const TambahKonsumenModal = ({ isOpen, onClose, onSave }) => {
 
   // === FUNGSI POST DATA KE API ===
   const handleSubmit = async () => {
-    if (!formData.name || !formData.address || !formData.phone) {
-      setErrorMessage("Semua kolom wajib diisi.");
+    if (!formData.name.trim()) {
+      setErrorMessage("Nama konsumen wajib diisi.");
       return;
     }
 
@@ -117,7 +117,7 @@ const TambahKonsumenModal = ({ isOpen, onClose, onSave }) => {
             {/* Nama Konsumen */}
             <div>
               <label className="block text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 md:mb-2">
-                NAMA KONSUMEN
+                NAMA KONSUMEN <span className="text-red-400">*</span>
               </label>
               <div className={`flex items-center bg-[#F4F7FC] px-3 md:px-4 py-2.5 md:py-3 rounded-xl focus-within:bg-white focus-within:ring-1 focus-within:ring-[#5452F6] transition-all border border-transparent focus-within:border-indigo-100 ${isSubmitting ? 'opacity-50 pointer-events-none' : ''}`}>
                 <Building2 className="w-4 h-4 text-[#5452F6] mr-3 shrink-0" />
@@ -133,7 +133,7 @@ const TambahKonsumenModal = ({ isOpen, onClose, onSave }) => {
             {/* Alamat */}
             <div>
               <label className="block text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 md:mb-2">
-                ALAMAT LENGKAP
+                ALAMAT LENGKAP <span className="text-gray-300 normal-case tracking-normal font-semibold">(Opsional)</span>
               </label>
               <div className={`flex items-center bg-[#F4F7FC] px-3 md:px-4 py-2.5 md:py-3 rounded-xl focus-within:bg-white focus-within:ring-1 focus-within:ring-[#5452F6] transition-all border border-transparent focus-within:border-indigo-100 ${isSubmitting ? 'opacity-50 pointer-events-none' : ''}`}>
                 <MapPin className="w-4 h-4 text-[#5452F6] mr-3 shrink-0" />
@@ -149,7 +149,7 @@ const TambahKonsumenModal = ({ isOpen, onClose, onSave }) => {
             {/* Nomor Telepon */}
             <div>
               <label className="block text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 md:mb-2">
-                NOMOR TELEPON
+                NOMOR TELEPON <span className="text-gray-300 normal-case tracking-normal font-semibold">(Opsional)</span>
               </label>
               <div className={`flex items-center bg-[#F4F7FC] px-3 md:px-4 py-2.5 md:py-3 rounded-xl focus-within:bg-white focus-within:ring-1 focus-within:ring-[#5452F6] transition-all border border-transparent focus-within:border-indigo-100 ${isSubmitting ? 'opacity-50 pointer-events-none' : ''}`}>
                 <Phone className="w-4 h-4 text-[#5452F6] mr-3 shrink-0" />

@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 
 import SuccessTransactionModal from './SuccessTransactionModal';
+import NotificationBell from './NotificationBell';
 import logoAmrita from './assets/Logo Amrita.png';
 
 const BarangMasuk = ({ onNavigate, onLogout }) => {
@@ -25,11 +26,15 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
   const [tanggalMasuk, setTanggalMasuk] = useState('');
 
   // State Form Pemasok (Supplier)
-  const [isPemasokBaru, setIsPemasokBaru] = useState(false); // Mode toggle
-  const [pemasokId, setPemasokId] = useState(''); // Untuk supplier lama
-  const [namaPemasokBaru, setNamaPemasokBaru] = useState(''); // Untuk supplier baru
-  const [alamatPemasokBaru, setAlamatPemasokBaru] = useState(''); // Untuk supplier baru
-  const [teleponPemasokBaru, setTeleponPemasokBaru] = useState(''); // Untuk supplier baru
+  const [isPemasokBaru, setIsPemasokBaru] = useState(false);
+  const [pemasokId, setPemasokId] = useState('');
+  const [selectedPemasokObj, setSelectedPemasokObj] = useState(null); // Tambahan untuk UI Dropdown
+  const [isSupplierDropdownOpen, setIsSupplierDropdownOpen] = useState(false); // Tambahan untuk UI Dropdown
+  const [searchSupplier, setSearchSupplier] = useState(''); // Tambahan untuk Search Supplier
+
+  const [namaPemasokBaru, setNamaPemasokBaru] = useState('');
+  const [alamatPemasokBaru, setAlamatPemasokBaru] = useState('');
+  const [teleponPemasokBaru, setTeleponPemasokBaru] = useState('');
 
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -37,9 +42,10 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
   // === STATE UNTUK DATA API ===
   const [daftarBarang, setDaftarBarang] = useState([]);
   const [daftarPemasok, setDaftarPemasok] = useState([]);
+  const [transaksiTerbaru, setTransaksiTerbaru] = useState([]); // State Transaksi Terbaru
   const [isLoading, setIsLoading] = useState(true);
 
-  // === AMBIL DATA MASTER BARANG & PEMASOK DARI API ===
+  // === AMBIL DATA MASTER BARANG, PEMASOK & TRANSAKSI DARI API ===
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -94,13 +100,28 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
           return allData;
         };
 
-        // Fetch Data Barang (Semua Data)
-        const allBarang = await fetchAllPages(`${baseApi}/barang`);
-        setDaftarBarang(allBarang);
+        // Fetch Data
+        const allBarangPromise = fetchAllPages(`${baseApi}/barang`);
+        const allPemasokPromise = fetchAllPages(`${baseApi}/supplier`);
+        const allTransaksiPromise = fetchAllPages(`${baseApi}/transaksi-masuk`); // Ambil riwayat transaksi
 
-        // Fetch Data Pemasok (Supplier) (Semua Data)
-        const allPemasok = await fetchAllPages(`${baseApi}/supplier`);
+        // Run concurrently
+        const [allBarang, allPemasok, allTransaksi] = await Promise.all([
+          allBarangPromise,
+          allPemasokPromise,
+          allTransaksiPromise
+        ]);
+
+        setDaftarBarang(allBarang);
         setDaftarPemasok(allPemasok);
+
+        // Sort transaksi descending (asumsikan ada 'id' atau 'created_at') dan ambil 3 teratas
+        const sortedTransaksi = allTransaksi.sort((a, b) => {
+          const dateA = new Date(a.created_at || a.tanggal_masuk || 0).getTime();
+          const dateB = new Date(b.created_at || b.tanggal_masuk || 0).getTime();
+          return dateB - dateA; // Terbesar/terbaru di atas
+        });
+        setTransaksiTerbaru(sortedTransaksi.slice(0, 3));
 
         // Set tanggal default ke hari ini
         const today = new Date().toISOString().split('T')[0];
@@ -116,14 +137,7 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
     fetchData();
   }, []);
 
-  // Mock data untuk Masuk Terbaru (Widget Kanan)
-  const masukTerbaru = [
-    { name: 'Printer Laser Jet Pro', details: '5 Unit • Hari Ini, 09:42', price: 'Rp 12.5jt', icon: Package, iconColor: 'text-purple-600', bgColor: 'bg-purple-100' },
-    { name: 'Box Pulpen Biru', details: '50 Pack • Kemarin', price: 'Rp 1.2jt', icon: PenTool, iconColor: 'text-blue-600', bgColor: 'bg-blue-100' },
-    { name: 'Kertas F4 70gsm', details: '100 Rim • Kemarin', price: 'Rp 4.5jt', icon: Zap, iconColor: 'text-orange-600', bgColor: 'bg-orange-100' }
-  ];
-
-  // Mock data untuk Tabel Riwayat di bawah
+  // Mock data untuk Tabel Riwayat di bawah (Jika ingin diganti dengan API, gunakan `allTransaksi` dari useEffect)
   const riwayatMasuk = [
     { tanggal: '12 Nov 2025', barang: 'Kertas A4 80gsm', pemasok: 'PT. Alat Tulis Kencana', jumlah: '100 Rim', hargaBeli: 'Rp 45.000', total: 'Rp 4.500.000', status: 'Sukses' },
     { tanggal: '12 Nov 2025', barang: 'Pulpen Pilot G2 Biru', pemasok: 'CV. Global Logistik Sejahtera', jumlah: '50 Pack', hargaBeli: 'Rp 24.000', total: 'Rp 1.200.000', status: 'Sukses' },
@@ -131,11 +145,18 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
     { tanggal: '09 Nov 2025', barang: 'Bantex Binder A4 Biru', pemasok: 'UD. Karya Mandiri Abadi', jumlah: '30 Unit', hargaBeli: 'Rp 35.000', total: 'Rp 1.050.000', status: 'Sukses' },
   ];
 
+  // Filter Barang
   const filteredBarang = daftarBarang.filter(item => {
     const nama = String(item.nama_barang || '').replace(/&amp;/g, '&').replace(/&#039;/g, "'").replace(/&quot;/g, '"');
     const ref = item.id_referensi || '';
     const search = searchBarang.toLowerCase();
     return nama.toLowerCase().includes(search) || ref.toLowerCase().includes(search);
+  });
+
+  // Filter Supplier
+  const filteredSupplier = daftarPemasok.filter(item => {
+    const nama = String(item.nama_supplier || '').toLowerCase();
+    return nama.includes(searchSupplier.toLowerCase());
   });
 
   const handleSelectBarang = (item) => {
@@ -145,6 +166,13 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
     if (item.harga) {
       setHargaBeli(Math.floor(Number(item.harga)).toString());
     }
+  };
+
+  const handleSelectSupplier = (supplier) => {
+    setSelectedPemasokObj(supplier);
+    setPemasokId(supplier.id); // Simpan ID untuk dikirim ke API
+    setIsSupplierDropdownOpen(false);
+    setSearchSupplier('');
   };
 
   // === FUNGSI NAVIGASI HP ===
@@ -214,11 +242,15 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
         // Bersihkan form setelah sukses
         setSelectedBarang(null);
         setPemasokId('');
+        setSelectedPemasokObj(null);
         setNamaPemasokBaru('');
         setAlamatPemasokBaru('');
         setTeleponPemasokBaru('');
         setJumlah('');
         setHargaBeli('');
+
+        // Optional: Refresh daftar transaksi terbaru disini jika diperlukan
+
       } else {
         alert(json.message || "Gagal menyimpan transaksi masuk.");
       }
@@ -246,7 +278,6 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
         <aside className={`fixed inset-y-0 left-0 z-50 w-[260px] bg-white border-r border-gray-100 flex flex-col shrink-0 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
           <div className="p-6 flex justify-between items-center">
             <div className="flex items-center gap-3">
-              {/* LOGO DI SINI */}
               <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 overflow-hidden bg-gray-50">
                 <img src={logoAmrita} alt="Logo" className="w-full h-full object-contain" />
               </div>
@@ -257,7 +288,6 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
                 <p className="text-gray-400 font-medium text-[10px] mt-0.5">Sistem Inventaris ATK</p>
               </div>
             </div>
-            {/* Tombol Tutup Sidebar di HP */}
             <button className="md:hidden text-gray-400 hover:text-gray-600" onClick={() => setIsMobileMenuOpen(false)}>
               <X className="w-6 h-6" />
             </button>
@@ -319,10 +349,7 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
                   className="w-full pl-11 pr-4 py-2.5 bg-[#F4F7FC] border-transparent rounded-full text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] transition-all"
                 />
               </div>
-              <button className="relative text-gray-500 hover:text-gray-800 transition-colors">
-                <Bell className="w-5 h-5" />
-                <span className="absolute -top-0.5 right-0.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-              </button>
+              <NotificationBell onNavigate={onNavigate} />
               <div className="h-6 w-px bg-gray-200 hidden md:block"></div>
               <div className="relative">
                 <button
@@ -452,7 +479,7 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
                       </div>
                     </div>
 
-                    {/* PILIH PEMASOK */}
+                    {/* PILIH PEMASOK (UPDATE: SEARCH DROPDOWN) */}
                     <div>
                       <div className="flex justify-between items-center mb-1.5 md:mb-2">
                         <label className="block text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wider">PILIH SUPPLIER</label>
@@ -490,20 +517,68 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
                         </div>
                       ) : (
                         <div className="relative animate-in fade-in">
-                          <select
-                            value={pemasokId}
-                            onChange={(e) => setPemasokId(e.target.value)}
-                            disabled={isLoading}
-                            className="w-full px-3 md:px-4 py-2.5 md:py-3 bg-[#F4F7FC] border border-gray-100 rounded-xl text-xs md:text-sm font-semibold text-gray-700 focus:outline-none focus:border-[#5452F6] appearance-none cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                          <div
+                            onClick={() => !isLoading && setIsSupplierDropdownOpen(!isSupplierDropdownOpen)}
+                            className={`w-full px-3 md:px-4 py-2.5 md:py-3 bg-[#F4F7FC] border ${isSupplierDropdownOpen ? 'border-[#5452F6] ring-1 ring-[#5452F6]' : 'border-gray-100'} rounded-xl text-xs md:text-sm flex justify-between items-center ${isLoading ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'} transition-all`}
                           >
-                            <option value="">-- Pilih Pemasok --</option>
-                            {daftarPemasok.map((supplier) => (
-                              <option key={supplier.id} value={supplier.id}>
-                                {String(supplier.nama_supplier || '').replace(/&amp;/g, '&').replace(/&#039;/g, "'").replace(/&quot;/g, '"')}
-                              </option>
-                            ))}
-                          </select>
-                          <ChevronDown className="absolute right-3 md:right-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 md:w-4 md:h-4 text-gray-400 pointer-events-none" />
+                            {isLoading ? (
+                              <div className="flex items-center text-gray-500">
+                                <Loader2 className="w-3.5 h-3.5 md:w-4 md:h-4 animate-spin mr-2" /> Memuat data...
+                              </div>
+                            ) : (
+                              <>
+                                <span className={selectedPemasokObj ? 'text-gray-800 font-semibold truncate pr-2' : 'text-gray-500'}>
+                                  {selectedPemasokObj ? String(selectedPemasokObj.nama_supplier || '').replace(/&amp;/g, '&').replace(/&#039;/g, "'").replace(/&quot;/g, '"') : 'Pilih supplier...'}
+                                </span>
+                                <ChevronDown className={`w-3.5 h-3.5 md:w-4 md:h-4 text-gray-400 transition-transform shrink-0 ${isSupplierDropdownOpen ? 'rotate-180' : ''}`} />
+                              </>
+                            )}
+                          </div>
+
+                          {isSupplierDropdownOpen && (
+                            <>
+                              <div className="fixed inset-0 z-40" onClick={() => setIsSupplierDropdownOpen(false)}></div>
+                              <div className="absolute z-50 w-full mt-2 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-top-2 max-w-[calc(100vw-2rem)] md:max-w-none">
+                                <div className="p-2 md:p-3 border-b border-gray-50 bg-gray-50/50">
+                                  <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 md:w-4 md:h-4 text-gray-400" />
+                                    <input
+                                      type="text"
+                                      placeholder="Cari nama supplier..."
+                                      value={searchSupplier}
+                                      onChange={(e) => setSearchSupplier(e.target.value)}
+                                      className="w-full pl-8 md:pl-9 pr-3 py-2 md:py-2.5 bg-white border border-gray-200 rounded-lg text-[10px] md:text-xs focus:outline-none focus:border-[#5452F6] transition-colors"
+                                      autoFocus
+                                    />
+                                  </div>
+                                </div>
+                                <div className="max-h-48 md:max-h-56 overflow-y-auto">
+                                  {filteredSupplier.length > 0 ? (
+                                    filteredSupplier.map((supplier) => (
+                                      <div
+                                        key={supplier.id}
+                                        onClick={() => handleSelectSupplier(supplier)}
+                                        className="px-3 md:px-4 py-2.5 md:py-3 hover:bg-[#F0EFFF] cursor-pointer flex items-center gap-2.5 md:gap-3 border-b border-gray-50 last:border-0 transition-colors group"
+                                      >
+                                        <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-gray-50 group-hover:bg-white flex items-center justify-center shrink-0 border border-gray-100 transition-colors">
+                                          <Truck className="w-3.5 h-3.5 md:w-4 md:h-4 text-gray-400 group-hover:text-[#5452F6]" />
+                                        </div>
+                                        <div className="min-w-0">
+                                          <p className="text-[11px] md:text-xs font-bold text-gray-800 group-hover:text-[#5452F6] truncate">
+                                            {String(supplier.nama_supplier || '').replace(/&amp;/g, '&').replace(/&#039;/g, "'").replace(/&quot;/g, '"')}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    ))
+                                  ) : (
+                                    <div className="px-4 py-6 text-center text-[10px] md:text-xs text-gray-500 font-medium">
+                                      Pemasok tidak ditemukan.
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </>
+                          )}
                         </div>
                       )}
                     </div>
@@ -574,22 +649,44 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
                   <h3 className="text-xs md:text-sm font-bold text-gray-800 mb-4 md:mb-6 flex items-center gap-2">
                     <ArrowDownRight className="w-4 h-4 text-[#5452F6]" /> Masuk Terbaru
                   </h3>
+
                   <div className="space-y-4 mb-4 md:mb-6 flex-1">
-                    {masukTerbaru.map((item, index) => (
-                      <div key={index} className="flex justify-between items-center gap-2 md:gap-4 border-b border-gray-50 pb-3 md:pb-4 last:border-0 last:pb-0">
-                        <div className="flex items-center gap-2.5 md:gap-3 min-w-0">
-                          <div className={`w-8 h-8 md:w-9 md:h-9 ${item.bgColor} rounded-lg flex items-center justify-center shrink-0`}>
-                            <item.icon className={`w-4 h-4 md:w-4.5 md:h-4.5 ${item.iconColor}`} />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-xs md:text-sm font-bold text-gray-800 truncate">{item.name}</p>
-                            <p className="text-[9px] md:text-[10px] text-gray-500 font-medium truncate">{item.details}</p>
-                          </div>
-                        </div>
-                        <span className="text-[10px] md:text-xs font-bold text-gray-800 shrink-0">{item.price}</span>
+                    {isLoading ? (
+                      <div className="flex flex-col items-center justify-center py-6 text-gray-400">
+                        <Loader2 className="w-5 h-5 animate-spin mb-2" />
+                        <span className="text-[10px] md:text-xs">Memuat riwayat...</span>
                       </div>
-                    ))}
+                    ) : transaksiTerbaru.length > 0 ? (
+                      transaksiTerbaru.map((item, index) => {
+                        // Formatting nama barang, qty, dan harga (sesuaikan dengan skema API sebenarnya jika berbeda)
+                        const namaBarang = typeof item.barang === 'object' ? item.barang?.nama_barang : (item.nama_barang || `Barang #${item.barang_id}`);
+                        const qty = item.jumlah || 0;
+                        const harga = item.harga_beli || item.total_harga || 0;
+                        const tanggal = item.tanggal_masuk || item.created_at ? new Date(item.tanggal_masuk || item.created_at).toLocaleDateString('id-ID') : 'Hari Ini';
+                        const formatHarga = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(harga);
+
+                        return (
+                          <div key={item.id || index} className="flex justify-between items-center gap-2 md:gap-4 border-b border-gray-50 pb-3 md:pb-4 last:border-0 last:pb-0">
+                            <div className="flex items-center gap-2.5 md:gap-3 min-w-0">
+                              <div className="w-8 h-8 md:w-9 md:h-9 bg-purple-100 rounded-lg flex items-center justify-center shrink-0">
+                                <Package className="w-4 h-4 md:w-4.5 md:h-4.5 text-purple-600" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-xs md:text-sm font-bold text-gray-800 truncate">{namaBarang}</p>
+                                <p className="text-[9px] md:text-[10px] text-gray-500 font-medium truncate">{qty} Unit • {tanggal}</p>
+                              </div>
+                            </div>
+                            <span className="text-[10px] md:text-xs font-bold text-gray-800 shrink-0">{formatHarga}</span>
+                          </div>
+                        )
+                      })
+                    ) : (
+                      <div className="text-center py-6 text-[10px] md:text-xs text-gray-500 font-medium">
+                        Belum ada transaksi masuk.
+                      </div>
+                    )}
                   </div>
+
                   <button
                     onClick={() => onNavigate('laporan')}
                     className="w-full py-2.5 bg-gray-50 hover:bg-gray-100 text-[#5452F6] text-[10px] md:text-xs font-bold rounded-xl transition-colors mt-auto border border-gray-100"

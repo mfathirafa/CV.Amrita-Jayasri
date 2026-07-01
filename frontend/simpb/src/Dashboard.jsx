@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 
 import DateRangePickerModal from './DateRangePickerModal';
+import NotificationBell from './NotificationBell';
 import logoAmrita from './assets/Logo Amrita.png';
 
 const Dashboard = ({ onLogout, onNavigate }) => {
@@ -98,7 +99,31 @@ const Dashboard = ({ onLogout, onNavigate }) => {
   const stats = dashboardData?.statistik || {};
   const bulanIni = dashboardData?.bulan_ini || {};
   const stokKritisList = dashboardData?.stok_kritis || [];
-  const chartData = dashboardData?.grafik_7_hari || [];
+  let chartData = dashboardData?.grafik_7_hari || [];
+  let isWeekly = false;
+
+  // Maksimal 1 bulan untuk diproses chart
+  if (chartData.length > 31) {
+    chartData = chartData.slice(0, 31);
+  }
+
+  // Jika rentang lebih dari 14 hari, agregasi per minggu
+  if (chartData.length > 14) {
+    isWeekly = true;
+    const weeklyData = [];
+    for (let i = 0; i < chartData.length; i += 7) {
+      const weekChunk = chartData.slice(i, i + 7);
+      const totalMasuk = weekChunk.reduce((sum, d) => sum + Number(d.masuk || d.total_masuk || d.jumlah_masuk || 0), 0);
+      const totalKeluar = weekChunk.reduce((sum, d) => sum + Number(d.keluar || d.total_keluar || d.jumlah_keluar || 0), 0);
+      
+      weeklyData.push({
+        masuk: totalMasuk,
+        keluar: totalKeluar,
+        label: `Mg ${Math.floor(i/7) + 1}`
+      });
+    }
+    chartData = weeklyData;
+  }
   
   // === LOGIKA SKALA GRAFIK YANG LEBIH RAPI ===
   const allValues = chartData.flatMap(d => [
@@ -204,72 +229,7 @@ const Dashboard = ({ onLogout, onNavigate }) => {
             
             {/* ================= NOTIFIKASI BELL ================= */}
             <div className="relative">
-              <button 
-                onClick={() => {
-                  setIsNotifOpen(!isNotifOpen);
-                  if(isProfileOpen) setIsProfileOpen(false);
-                }}
-                className="relative text-gray-500 hover:text-gray-800 transition-colors p-1"
-              >
-                <Bell className="w-5 h-5" />
-                {stokKritisList.length > 0 && (
-                  <span className="absolute top-0.5 right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
-                )}
-              </button>
-
-              {/* DROPDOWN NOTIFIKASI */}
-              {isNotifOpen && (
-                <div className="absolute right-0 top-full mt-3 w-72 md:w-80 bg-white rounded-xl shadow-lg border border-gray-100 z-50 py-1 animate-in fade-in zoom-in-95">
-                  <div className="px-4 py-3 border-b border-gray-50 flex justify-between items-center">
-                    <p className="text-sm font-bold text-gray-800">Notifikasi</p>
-                    {stokKritisList.length > 0 && (
-                      <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded-full">
-                        {stokKritisList.length} Peringatan
-                      </span>
-                    )}
-                  </div>
-                  
-                  <div className="max-h-64 overflow-y-auto">
-                    {isLoading ? (
-                      <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-[#5452F6]" /></div>
-                    ) : stokKritisList.length === 0 ? (
-                      <div className="px-4 py-8 text-center flex flex-col items-center">
-                        <CheckCircle className="w-8 h-8 text-green-500 mb-2" />
-                        <p className="text-xs text-gray-500 font-medium">Semua stok dalam kondisi aman.</p>
-                      </div>
-                    ) : (
-                      stokKritisList.map((item) => (
-                        <div 
-                          key={item.id} 
-                          onClick={() => { setIsNotifOpen(false); onNavigate('monitoring-stok'); }}
-                          className="px-4 py-3 hover:bg-gray-50 border-b border-gray-50 last:border-0 transition-colors cursor-pointer group"
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="mt-0.5 p-1.5 bg-red-50 rounded-lg shrink-0 group-hover:bg-red-100 transition-colors">
-                              <AlertTriangle className="w-4 h-4 text-red-500" />
-                            </div>
-                            <div>
-                              <p className="text-[11px] md:text-xs font-bold text-gray-800 mb-1 leading-tight">{item.nama_barang}</p>
-                              <p className="text-[10px] text-gray-500">Stok tersisa: <span className="font-bold text-red-600">{item.stok} {item.satuan}</span> (Min: {item.stok_minimum})</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                  
-                  {stokKritisList.length > 0 && (
-                    <div className="px-4 py-2.5 border-t border-gray-50 text-center">
-                      <button 
-                        onClick={() => { setIsNotifOpen(false); onNavigate('monitoring-stok'); }}
-                        className="text-[11px] font-bold text-[#5452F6] hover:text-[#4341E3] transition-colors"
-                      >
-                        Lihat Semua Pemantauan
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
+              <NotificationBell onNavigate={onNavigate} />
             </div>
 
             <div className="h-6 w-px bg-gray-200 hidden md:block"></div>
@@ -388,8 +348,10 @@ const Dashboard = ({ onLogout, onNavigate }) => {
               <div className="bg-white rounded-[20px] p-4 md:p-6 shadow-sm border border-gray-100 w-full overflow-hidden">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-2">
                   <div>
-                    <h3 className="text-base md:text-lg font-bold text-gray-800">Tren Barang Masuk & Keluar</h3>
-                    <p className="text-[11px] md:text-xs text-gray-500">Data historis: {formatDate(dateRange.start)} - {formatDate(dateRange.end)}</p>
+                    <h3 className="text-base md:text-lg font-bold text-gray-800">Statistik Barang Masuk & Keluar</h3>
+                    <p className="text-[11px] md:text-xs text-gray-500">
+                      {isWeekly ? `Data per minggu: ${formatDate(dateRange.start)} - ${formatDate(dateRange.end)}` : `Data historis: ${formatDate(dateRange.start)} - ${formatDate(dateRange.end)}`}
+                    </p>
                   </div>
                   <div className="flex gap-3 md:gap-4 text-[10px] md:text-xs font-bold text-gray-500">
                     <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-[#5452F6]"></span> Masuk</div>
