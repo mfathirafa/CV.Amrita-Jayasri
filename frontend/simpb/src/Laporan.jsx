@@ -15,6 +15,7 @@ import autoTable from 'jspdf-autotable';
 
 // === IMPORT KOMPONEN MODAL & LOGO ===
 import ExportModal from './ExportModal';
+import NotificationBell from './NotificationBell';
 import logoAmrita from './assets/Logo Amrita.png';
 
 const Laporan = ({ onLogout, onNavigate }) => {
@@ -106,35 +107,61 @@ const Laporan = ({ onLogout, onNavigate }) => {
       
       const headers = { 'Accept': 'application/json', 'Authorization': `Bearer ${token}` };
       
-      // Menggunakan per_page=2000 untuk menarik data setahun penuh tanpa terpotong pagination backend
-      const params = `?start_date=${startDate}&end_date=${endDate}&per_page=2000`; 
+      const fetchAllPages = async (endpoint) => {
+        let allData = [];
+        let currentPage = 1;
+        let lastPage = 1;
+        let hasMore = true;
+        let totalItems = 0;
+
+        while (hasMore) {
+          const params = `?start_date=${startDate}&end_date=${endDate}&per_page=100&page=${currentPage}`; 
+          const res = await fetch(`${baseApi}${endpoint}${params}`, { headers });
+          const json = await res.json();
+          
+          if (res.ok || json.success) {
+            let arrayData = [];
+            if (Array.isArray(json.data)) arrayData = json.data;
+            else if (Array.isArray(json.data?.data)) arrayData = json.data.data;
+            
+            allData = [...allData, ...arrayData];
+            
+            if (currentPage === 1) {
+              totalItems = Array.isArray(json.data) ? allData.length : (json.data?.total || allData.length);
+            }
+
+            let extractedLastPage = 1;
+            if (json.data?.last_page) extractedLastPage = json.data.last_page;
+            else if (json.meta?.last_page) extractedLastPage = json.meta.last_page;
+
+            lastPage = Math.max(lastPage, extractedLastPage);
+
+            if (arrayData.length === 0 || currentPage >= lastPage) {
+              hasMore = false;
+            } else {
+              currentPage++;
+            }
+          } else {
+            hasMore = false;
+          }
+        }
+        return { data: allData, total: totalItems };
+      };
 
       let masukData = [];
       let keluarData = [];
       let totalItems = 0;
 
       if (activeTab === 'masuk' || activeTab === 'semua') {
-        const resMasuk = await fetch(`${baseApi}/laporan/transaksi-masuk${params}`, { headers });
-        const jsonMasuk = await resMasuk.json();
-        if (jsonMasuk.success) {
-          const arr = Array.isArray(jsonMasuk.data) ? jsonMasuk.data : (jsonMasuk.data?.data || []);
-          masukData = arr.map(item => ({ ...item, _type: 'masuk' }));
-          
-          if (jsonMasuk.data?.total) totalItems += jsonMasuk.data.total;
-          else totalItems += masukData.length;
-        }
+        const { data, total } = await fetchAllPages('/laporan/transaksi-masuk');
+        masukData = data.map(item => ({ ...item, _type: 'masuk' }));
+        totalItems += total;
       }
 
       if (activeTab === 'keluar' || activeTab === 'semua') {
-        const resKeluar = await fetch(`${baseApi}/laporan/transaksi-keluar${params}`, { headers });
-        const jsonKeluar = await resKeluar.json();
-        if (jsonKeluar.success) {
-          const arr = Array.isArray(jsonKeluar.data) ? jsonKeluar.data : (jsonKeluar.data?.data || []);
-          keluarData = arr.map(item => ({ ...item, _type: 'keluar' }));
-          
-          if (jsonKeluar.data?.total) totalItems += jsonKeluar.data.total;
-          else totalItems += keluarData.length;
-        }
+        const { data, total } = await fetchAllPages('/laporan/transaksi-keluar');
+        keluarData = data.map(item => ({ ...item, _type: 'keluar' }));
+        totalItems += total;
       }
 
       let combinedData = [...masukData, ...keluarData];
@@ -410,68 +437,7 @@ const Laporan = ({ onLogout, onNavigate }) => {
 
               {/* ================= NOTIFIKASI BELL ================= */}
               <div className="relative">
-                <button 
-                  onClick={() => setIsNotifOpen(!isNotifOpen)}
-                  className="relative text-gray-500 hover:text-gray-800 transition-colors p-1"
-                >
-                  <Bell className="w-5 h-5" />
-                  {stokKritisList.length > 0 && (
-                    <span className="absolute top-0.5 right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
-                  )}
-                </button>
-
-                {isNotifOpen && (
-                  <div className="absolute right-0 top-full mt-3 w-72 md:w-80 bg-white rounded-xl shadow-lg border border-gray-100 z-50 py-1 animate-in fade-in zoom-in-95">
-                    <div className="px-4 py-3 border-b border-gray-50 flex justify-between items-center">
-                      <p className="text-sm font-bold text-gray-800">Notifikasi</p>
-                      {stokKritisList.length > 0 && (
-                        <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded-full">
-                          {stokKritisList.length} Peringatan
-                        </span>
-                      )}
-                    </div>
-                    
-                    <div className="max-h-64 overflow-y-auto">
-                      {isNotifLoading ? (
-                        <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-[#5452F6]" /></div>
-                      ) : stokKritisList.length === 0 ? (
-                        <div className="px-4 py-8 text-center flex flex-col items-center">
-                          <CheckCircle className="w-8 h-8 text-green-500 mb-2" />
-                          <p className="text-xs text-gray-500 font-medium">Semua stok dalam kondisi aman.</p>
-                        </div>
-                      ) : (
-                        stokKritisList.map((item) => (
-                          <div 
-                            key={item.id} 
-                            onClick={() => { setIsNotifOpen(false); onNavigate('monitoring-stok'); }}
-                            className="px-4 py-3 hover:bg-gray-50 border-b border-gray-50 last:border-0 transition-colors cursor-pointer group"
-                          >
-                            <div className="flex items-start gap-3">
-                              <div className="mt-0.5 p-1.5 bg-red-50 rounded-lg shrink-0 group-hover:bg-red-100 transition-colors">
-                                <AlertTriangle className="w-4 h-4 text-red-500" />
-                              </div>
-                              <div>
-                                <p className="text-[11px] md:text-xs font-bold text-gray-800 mb-1 leading-tight">{item.nama_barang}</p>
-                                <p className="text-[10px] text-gray-500">Stok tersisa: <span className="font-bold text-red-600">{item.stok} {item.satuan}</span> (Min: {item.stok_minimum})</p>
-                              </div>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                    
-                    {stokKritisList.length > 0 && (
-                      <div className="px-4 py-2.5 border-t border-gray-50 text-center">
-                        <button 
-                          onClick={() => { setIsNotifOpen(false); onNavigate('monitoring-stok'); }}
-                          className="text-[11px] font-bold text-[#5452F6] hover:text-[#4341E3] transition-colors"
-                        >
-                          Lihat Semua Pemantauan
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
+                <NotificationBell onNavigate={onNavigate} />
               </div>
 
               <div className="h-6 w-px bg-gray-200 hidden md:block"></div>

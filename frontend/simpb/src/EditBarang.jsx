@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 
 import SuccessModal from './SuccessModal';
+import NotificationBell from './NotificationBell';
 
 const EditBarang = ({ onNavigate, onLogout, itemId }) => {
   // === STATE UNTUK MENU HP ===
@@ -266,10 +267,7 @@ const EditBarang = ({ onNavigate, onLogout, itemId }) => {
                 <input type="text" placeholder="Cari..." className="w-full pl-11 pr-4 py-2.5 bg-[#F4F7FC] border-transparent rounded-full text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] transition-all" />
               </div>
               
-              <button className="relative text-gray-500">
-                <Bell className="w-5 h-5" />
-                <span className="absolute -top-0.5 right-0.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-              </button>
+              <NotificationBell onNavigate={onNavigate} />
               <div className="h-6 w-px bg-gray-200 hidden sm:block"></div>
               <div className="flex items-center gap-2.5 cursor-pointer">
                 <CircleUser className="w-7 h-7 md:w-8 md:h-8 text-[#5452F6]" strokeWidth={1.5} />

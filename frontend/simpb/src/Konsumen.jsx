@@ -11,6 +11,7 @@ import TambahKonsumenModal from './TambahKonsumenModal';
 import EditKonsumenModal from './EditKonsumenModal';
 import DeleteConfirmModal from './DeleteConfirmModal';
 import logoAmrita from './assets/Logo Amrita.png';
+import NotificationBell from './NotificationBell';
 
 const Konsumen = ({ onNavigate, onLogout }) => {
   // === STATE UNTUK MENU HP ===
@@ -43,21 +44,47 @@ const Konsumen = ({ onNavigate, onLogout }) => {
         ? `${cleanApiUrl}/konsumen` 
         : `${cleanApiUrl}/api/konsumen`;
 
-      const response = await fetch(endpoint, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${token}`
+      const headers = {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${token}`
+      };
+
+      let allData = [];
+      let currentPage = 1;
+      let lastPage = 1;
+      let hasMore = true;
+
+      while (hasMore) {
+        const url = `${endpoint}?per_page=1000&page=${currentPage}`;
+        const response = await fetch(url, { method: 'GET', headers });
+        const data = await response.json();
+
+        if (response.ok || data.success) {
+          let arrayData = [];
+          if (Array.isArray(data)) arrayData = data;
+          else if (Array.isArray(data.data)) arrayData = data.data;
+          else if (data.data && Array.isArray(data.data.data)) arrayData = data.data.data;
+
+          allData = [...allData, ...arrayData];
+
+          let extractedLastPage = 1;
+          if (data.last_page) extractedLastPage = data.last_page;
+          else if (data.meta && data.meta.last_page) extractedLastPage = data.meta.last_page;
+          else if (data.data && data.data.last_page) extractedLastPage = data.data.last_page;
+
+          lastPage = Math.max(lastPage, extractedLastPage);
+
+          if (arrayData.length < 1000 || currentPage >= lastPage) {
+            hasMore = false;
+          } else {
+            currentPage++;
+          }
+        } else {
+          hasMore = false;
         }
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        setKonsumens(data.data || []);
-      } else {
-        console.error("Gagal mengambil data konsumen:", data);
       }
+      
+      setKonsumens(allData);
     } catch (error) {
       console.error("Error Fetching Konsumen:", error);
     } finally {
@@ -230,10 +257,7 @@ const Konsumen = ({ onNavigate, onLogout }) => {
                 <input type="text" placeholder="Cari konsumen..." className="w-full pl-11 pr-4 py-2.5 bg-[#F4F7FC] border-transparent rounded-full text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] focus:ring-1 focus:ring-[#5452F6] transition-all" />
               </div>
               
-              <button className="relative text-gray-500 hover:text-gray-800 transition-colors">
-                <Bell className="w-5 h-5" />
-                <span className="absolute -top-0.5 right-0.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-              </button>
+              <NotificationBell onNavigate={onNavigate || handleNavigation} />
               
               <div className="h-6 w-px bg-gray-200 hidden md:block"></div>
               

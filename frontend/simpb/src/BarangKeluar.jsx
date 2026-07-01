@@ -9,6 +9,7 @@ import {
 
 import SuccessTransactionModal from './SuccessTransactionModal';
 import logoAmrita from './assets/Logo Amrita.png';
+import NotificationBell from './NotificationBell';
 
 const BarangKeluar = ({ onLogout, onNavigate }) => {
   // === STATE UNTUK MENU HP ===
@@ -29,6 +30,8 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
   // State Form Konsumen (Penerima)
   const [isKonsumenBaru, setIsKonsumenBaru] = useState(false); // Mode toggle
   const [selectedKonsumenId, setSelectedKonsumenId] = useState(''); // Untuk konsumen lama
+  const [searchKonsumen, setSearchKonsumen] = useState(''); // Search konsumen
+  const [isKonsumenDropdownOpen, setIsKonsumenDropdownOpen] = useState(false); // Dropdown konsumen
   const [namaKonsumenBaru, setNamaKonsumenBaru] = useState(''); // Untuk konsumen baru
   const [alamatKonsumenBaru, setAlamatKonsumenBaru] = useState(''); // Untuk konsumen baru
   const [teleponKonsumenBaru, setTeleponKonsumenBaru] = useState(''); // Untuk konsumen baru
@@ -57,14 +60,49 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
         'Authorization': `Bearer ${token}`
       };
 
+      const fetchAllPages = async (endpoint) => {
+        let allData = [];
+        let currentPage = 1;
+        let lastPage = 1;
+        let hasMore = true;
+
+        while (hasMore) {
+          const url = `${endpoint}?per_page=1000&page=${currentPage}`;
+          const response = await fetch(url, { method: 'GET', headers });
+          const data = await response.json();
+
+          if (response.ok || data.success) {
+            let arrayData = [];
+            if (Array.isArray(data)) arrayData = data;
+            else if (Array.isArray(data.data)) arrayData = data.data;
+            else if (data.data && Array.isArray(data.data.data)) arrayData = data.data.data;
+
+            allData = [...allData, ...arrayData];
+
+            let extractedLastPage = 1;
+            if (data.last_page) extractedLastPage = data.last_page;
+            else if (data.meta && data.meta.last_page) extractedLastPage = data.meta.last_page;
+            else if (data.data && data.data.last_page) extractedLastPage = data.data.last_page;
+
+            lastPage = Math.max(lastPage, extractedLastPage);
+
+            if (arrayData.length < 1000 || currentPage >= lastPage) {
+              hasMore = false;
+            } else {
+              currentPage++;
+            }
+          } else {
+            hasMore = false;
+          }
+        }
+        return allData;
+      };
+
       // 1. Fetch Barang
       try {
         setIsLoadingBarang(true);
-        const resBarang = await fetch(`${baseApi}/barang`, { method: 'GET', headers });
-        const dataBarang = await resBarang.json();
-        if (resBarang.ok) {
-          setDaftarBarang(Array.isArray(dataBarang) ? dataBarang : (dataBarang.data || []));
-        }
+        const allBarang = await fetchAllPages(`${baseApi}/barang`);
+        setDaftarBarang(allBarang);
       } catch (error) {
         console.error("Error Fetching Barang:", error);
       } finally {
@@ -74,11 +112,8 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
       // 2. Fetch Konsumen (Untuk Dropdown Penerima)
       try {
         setIsLoadingKonsumen(true);
-        const resKonsumen = await fetch(`${baseApi}/konsumen`, { method: 'GET', headers });
-        const dataKonsumen = await resKonsumen.json();
-        if (resKonsumen.ok) {
-          setDaftarKonsumen(Array.isArray(dataKonsumen) ? dataKonsumen : (dataKonsumen.data || []));
-        }
+        const allKonsumen = await fetchAllPages(`${baseApi}/konsumen`);
+        setDaftarKonsumen(allKonsumen);
       } catch (error) {
         console.error("Error Fetching Konsumen:", error);
       } finally {
@@ -318,10 +353,7 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input type="text" placeholder="Cari transaksi..." className="w-full pl-11 pr-4 py-2.5 bg-[#F4F7FC] border-transparent rounded-full text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] focus:ring-1 focus:ring-[#5452F6] transition-all" />
               </div>
-              <button className="relative text-gray-500 hover:text-gray-800 transition-colors">
-                <Bell className="w-5 h-5" />
-                <span className="absolute -top-0.5 right-0.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-              </button>
+              <NotificationBell onNavigate={onNavigate || handleNavigation} />
               <div className="h-6 w-px bg-gray-200 hidden md:block"></div>
               <div className="relative">
                 <button
@@ -474,23 +506,85 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
                       </div>
                     ) : (
                       <div className="relative animate-in fade-in">
-                        <select 
-                          value={selectedKonsumenId}
-                          onChange={(e) => setSelectedKonsumenId(e.target.value)}
-                          className="w-full bg-[#F4F7FC] border border-gray-100 rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm text-gray-700 appearance-none focus:outline-none focus:border-[#5452F6]"
+                        <button
+                          type="button"
+                          onClick={() => setIsKonsumenDropdownOpen(!isKonsumenDropdownOpen)}
+                          className="w-full bg-[#F4F7FC] border border-gray-100 rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm text-left text-gray-700 focus:outline-none focus:border-[#5452F6] transition-all flex items-center justify-between"
                         >
-                          <option value="" disabled>Pilih Instansi / Konsumen Penerima...</option>
-                          {isLoadingKonsumen ? (
-                            <option disabled>Memuat data konsumen...</option>
-                          ) : (
-                            daftarKonsumen.map(konsumen => (
-                              <option key={konsumen.id} value={konsumen.id}>
-                                {konsumen.nama_konsumen}
-                              </option>
-                            ))
-                          )}
-                        </select>
-                        <ChevronDown className="absolute right-3 md:right-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 md:w-4 md:h-4 text-gray-400 pointer-events-none" />
+                          <span className={selectedKonsumenId ? 'text-gray-700 font-medium' : 'text-gray-400'}>
+                            {selectedKonsumenId
+                              ? (daftarKonsumen.find(k => k.id.toString() === selectedKonsumenId)?.nama_konsumen || 'Konsumen Terpilih')
+                              : 'Pilih Instansi / Konsumen Penerima...'}
+                          </span>
+                          <ChevronDown className={`w-3.5 h-3.5 md:w-4 md:h-4 text-gray-400 transition-transform ${isKonsumenDropdownOpen ? 'rotate-180' : ''}`} />
+                        </button>
+
+                        {isKonsumenDropdownOpen && (
+                          <>
+                            <div className="fixed inset-0 z-30" onClick={() => setIsKonsumenDropdownOpen(false)}></div>
+                            <div className="absolute z-40 top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden animate-in fade-in zoom-in-95">
+                              <div className="p-2 md:p-2.5 border-b border-gray-50">
+                                <div className="relative">
+                                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                                  <input
+                                    type="text"
+                                    placeholder="Cari instansi / konsumen..."
+                                    value={searchKonsumen}
+                                    onChange={(e) => setSearchKonsumen(e.target.value)}
+                                    className="w-full pl-9 pr-3 py-2 md:py-2.5 bg-[#F4F7FC] rounded-lg text-[11px] md:text-xs outline-none focus:bg-white focus:ring-1 focus:ring-[#5452F6] transition-all"
+                                    autoFocus
+                                  />
+                                </div>
+                              </div>
+                              <div className="max-h-48 md:max-h-56 overflow-y-auto">
+                                {isLoadingKonsumen ? (
+                                  <div className="px-4 py-6 text-center text-[10px] md:text-xs text-gray-500 font-medium flex items-center justify-center gap-2">
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Memuat data konsumen...
+                                  </div>
+                                ) : (
+                                  (() => {
+                                    const filtered = daftarKonsumen.filter(k => {
+                                      const nama = k.nama_konsumen || '';
+                                      const alamat = k.alamat || '';
+                                      const s = searchKonsumen.toLowerCase();
+                                      return nama.toLowerCase().includes(s) || alamat.toLowerCase().includes(s);
+                                    });
+                                    return filtered.length > 0 ? (
+                                      filtered.map(konsumen => (
+                                        <div
+                                          key={konsumen.id}
+                                          onClick={() => {
+                                            setSelectedKonsumenId(konsumen.id.toString());
+                                            setIsKonsumenDropdownOpen(false);
+                                            setSearchKonsumen('');
+                                          }}
+                                          className={`px-3 md:px-4 py-2.5 md:py-3 hover:bg-[#F0EFFF] cursor-pointer flex items-center justify-between border-b border-gray-50 last:border-0 transition-colors group gap-2 ${selectedKonsumenId === konsumen.id.toString() ? 'bg-[#F0EFFF]' : ''}`}
+                                        >
+                                          <div className="flex items-center gap-2.5 md:gap-3 min-w-0">
+                                            <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-purple-50 group-hover:bg-white flex items-center justify-center shrink-0 border border-purple-100 transition-colors">
+                                              <Users className="w-3.5 h-3.5 md:w-4 md:h-4 text-purple-400 group-hover:text-[#5452F6]" />
+                                            </div>
+                                            <div className="min-w-0">
+                                              <p className="text-[11px] md:text-xs font-bold text-gray-800 group-hover:text-[#5452F6] truncate">{konsumen.nama_konsumen}</p>
+                                              {konsumen.alamat && <p className="text-[9px] md:text-[10px] text-gray-400 font-medium mt-0.5 truncate">{konsumen.alamat}</p>}
+                                            </div>
+                                          </div>
+                                          {selectedKonsumenId === konsumen.id.toString() && (
+                                            <CheckCircle2 className="w-3.5 h-3.5 text-[#5452F6] shrink-0" />
+                                          )}
+                                        </div>
+                                      ))
+                                    ) : (
+                                      <div className="px-4 py-6 text-center text-[10px] md:text-xs text-gray-500 font-medium">
+                                        Konsumen tidak ditemukan.
+                                      </div>
+                                    );
+                                  })()
+                                )}
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </div>
                     )}
                   </div>
