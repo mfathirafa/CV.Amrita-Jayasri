@@ -20,6 +20,14 @@ const Dashboard = ({ onLogout, onNavigate }) => {
   const [dashboardData, setDashboardData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // === STATE UNTUK RENTANG TANGGAL (Default 7 Hari Terakhir) ===
+  const [dateRange, setDateRange] = useState(() => {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(end.getDate() - 6);
+    return { start, end };
+  });
+
   // === MEMANGGIL API DASHBOARD ===
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -32,7 +40,15 @@ const Dashboard = ({ onLogout, onNavigate }) => {
         // Pengecekan URL agar tidak menumpuk /api/api
         const baseApi = cleanApiUrl.endsWith('/api') ? cleanApiUrl : `${cleanApiUrl}/api`;
         
-        const response = await fetch(`${baseApi}/dashboard`, {
+        let apiUrl = `${baseApi}/dashboard`;
+        
+        if (dateRange.start && dateRange.end) {
+          const startStr = new Date(dateRange.start.getTime() - (dateRange.start.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+          const endStr = new Date(dateRange.end.getTime() - (dateRange.end.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+          apiUrl += `?start_date=${startStr}&end_date=${endStr}`;
+        }
+        
+        const response = await fetch(apiUrl, {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
@@ -55,7 +71,7 @@ const Dashboard = ({ onLogout, onNavigate }) => {
     };
 
     fetchDashboardData();
-  }, []);
+  }, [dateRange]);
 
   // === FUNGSI HELPER & FORMATTING ===
   const formatRupiah = (angka) => {
@@ -107,7 +123,7 @@ const Dashboard = ({ onLogout, onNavigate }) => {
   const txKeluar = (dashboardData?.transaksi_keluar_terbaru || []).map(t => ({ ...t, type: 'keluar', date: t.tanggal_keluar }));
   
   const combinedTx = [...txMasuk, ...txKeluar]
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
     .slice(0, 5);
 
   return (
@@ -373,7 +389,7 @@ const Dashboard = ({ onLogout, onNavigate }) => {
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-2">
                   <div>
                     <h3 className="text-base md:text-lg font-bold text-gray-800">Tren Barang Masuk & Keluar</h3>
-                    <p className="text-[11px] md:text-xs text-gray-500">Data historis 7 hari terakhir</p>
+                    <p className="text-[11px] md:text-xs text-gray-500">Data historis: {formatDate(dateRange.start)} - {formatDate(dateRange.end)}</p>
                   </div>
                   <div className="flex gap-3 md:gap-4 text-[10px] md:text-xs font-bold text-gray-500">
                     <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-[#5452F6]"></span> Masuk</div>
@@ -611,6 +627,9 @@ const Dashboard = ({ onLogout, onNavigate }) => {
       <DateRangePickerModal 
         isOpen={showDatePicker} 
         onClose={() => setShowDatePicker(false)} 
+        onApply={(range) => {
+          setDateRange({ start: range.start, end: range.end });
+        }}
       />
 
     </div>

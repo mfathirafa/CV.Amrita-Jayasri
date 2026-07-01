@@ -1,59 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { X, Calendar, ChevronLeft, ChevronRight, ArrowRight, Info, Check } from 'lucide-react';
 
-// === KOMPONEN MODAL KONFIRMASI (RESPONSIF) ===
-const ConfirmFilterModal = ({ isOpen, onClose, onConfirm, startDate, endDate }) => {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in">
-      <div className="bg-white rounded-[24px] w-full max-w-[360px] p-6 md:p-8 shadow-2xl animate-in zoom-in-95 text-left">
-        <h2 className="text-xl font-bold text-[#1E232C]">Konfirmasi Filter?</h2>
-        <p className="text-xs md:text-sm text-gray-500 mt-2">Terapkan filter untuk periode ini?</p>
-        
-        <div className="mt-6 mb-8">
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Rentang waktu dipilih</p>
-          <div className="bg-[#EEF2FF] rounded-2xl p-4 flex flex-col gap-2 border border-indigo-50">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                <Calendar className="w-4 h-4 text-[#5452F6]" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-[10px] font-bold text-[#5452F6] uppercase">Periode</span>
-                <span className="text-xs font-bold text-gray-800 leading-tight">
-                  {startDate} <br className="sm:hidden" /> — {endDate}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 py-3 text-sm font-bold text-gray-500 hover:bg-gray-50 rounded-xl transition-colors">
-            Batal
-          </button>
-          <button onClick={onConfirm} className="flex-1 py-3 bg-[#5452F6] hover:bg-[#4341E3] text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-200 transition-all active:scale-95">
-            Ya, Terapkan
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 // === KOMPONEN UTAMA KALENDER (RESPONSIF) ===
 const DateRangePickerModal = ({ isOpen, onClose, onApply }) => {
-  const [activeFilter, setActiveFilter] = useState('Minggu Ini');
+  const [activeFilter, setActiveFilter] = useState('7 Hari Terakhir');
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [baseDate, setBaseDate] = useState(new Date());
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
   useEffect(() => {
     if (isOpen && !startDate) {
-      handleQuickFilter('Minggu Ini');
+      handleQuickFilter('7 Hari Terakhir');
     }
   }, [isOpen]);
 
@@ -64,7 +24,13 @@ const DateRangePickerModal = ({ isOpen, onClose, onApply }) => {
     let start = new Date(now);
     let end = new Date(now);
 
-    if (filter === 'Minggu Ini') {
+    if (filter === 'Hari Ini') {
+      start = new Date(now);
+      end = new Date(now);
+    } else if (filter === '7 Hari Terakhir') {
+      start.setDate(now.getDate() - 6);
+      end = new Date(now);
+    } else if (filter === 'Minggu Ini') {
       const day = now.getDay();
       start.setDate(now.getDate() - day);
       end.setDate(start.getDate() + 6);
@@ -176,7 +142,7 @@ const DateRangePickerModal = ({ isOpen, onClose, onApply }) => {
             <div className="w-full md:w-[180px] border-b md:border-b-0 md:border-r border-gray-100 p-3 md:p-4 flex flex-row md:flex-col gap-2 bg-[#FAFBFC] overflow-x-auto scrollbar-hide shrink-0">
               <p className="hidden md:block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 px-2">Cepat</p>
               
-              {['Hari Ini', 'Minggu Ini', 'Bulan Ini', 'Tahun Ini'].map((item) => (
+              {['Hari Ini', '7 Hari Terakhir', 'Minggu Ini', 'Bulan Ini', 'Tahun Ini'].map((item) => (
                 <button 
                   key={item}
                   onClick={() => handleQuickFilter(item)}
@@ -254,7 +220,10 @@ const DateRangePickerModal = ({ isOpen, onClose, onApply }) => {
                 Batal
               </button>
               <button 
-                onClick={() => setShowConfirmModal(true)}
+                onClick={() => {
+                  if (onApply) onApply({ start: startDate, end: endDate || startDate, label: activeFilter });
+                  onClose();
+                }}
                 disabled={!startDate}
                 className="flex-[2] sm:flex-none px-6 py-2.5 bg-[#5452F6] hover:bg-[#4341E3] text-white rounded-xl text-xs font-bold shadow-lg shadow-indigo-500/20 disabled:opacity-50 transition-all active:scale-95"
               >
@@ -265,18 +234,6 @@ const DateRangePickerModal = ({ isOpen, onClose, onApply }) => {
 
         </div>
       </div>
-
-      <ConfirmFilterModal 
-        isOpen={showConfirmModal}
-        onClose={() => setShowConfirmModal(false)}
-        onConfirm={() => {
-          setShowConfirmModal(false);
-          onApply({ start: startDate, end: endDate || startDate, label: activeFilter });
-          onClose();
-        }}
-        startDate={formatDisplayDate(startDate)}
-        endDate={formatDisplayDate(endDate || startDate)}
-      />
     </>
   );
 };

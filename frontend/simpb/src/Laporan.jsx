@@ -106,35 +106,52 @@ const Laporan = ({ onLogout, onNavigate }) => {
       
       const headers = { 'Accept': 'application/json', 'Authorization': `Bearer ${token}` };
       
-      // Menggunakan per_page=2000 untuk menarik data setahun penuh tanpa terpotong pagination backend
-      const params = `?start_date=${startDate}&end_date=${endDate}&per_page=2000`; 
+      const fetchAllPages = async (endpoint) => {
+        const firstParams = `?start_date=${startDate}&end_date=${endDate}&per_page=500&page=1`; 
+        const res = await fetch(`${baseApi}${endpoint}${firstParams}`, { headers });
+        const json = await res.json();
+        
+        let allData = [];
+        let totalItems = 0;
+        
+        if (json.success) {
+          allData = Array.isArray(json.data) ? json.data : (json.data?.data || []);
+          totalItems = Array.isArray(json.data) ? allData.length : (json.data?.total || allData.length);
+          
+          if (!Array.isArray(json.data) && json.data?.last_page > 1) {
+            const lastPage = json.data.last_page;
+            const promises = [];
+            for (let page = 2; page <= lastPage; page++) {
+              const params = `?start_date=${startDate}&end_date=${endDate}&per_page=500&page=${page}`; 
+              promises.push(fetch(`${baseApi}${endpoint}${params}`, { headers }).then(r => r.json()));
+            }
+            
+            const results = await Promise.all(promises);
+            results.forEach(resJson => {
+              if (resJson.success) {
+                const arr = Array.isArray(resJson.data) ? resJson.data : (resJson.data?.data || []);
+                allData = [...allData, ...arr];
+              }
+            });
+          }
+        }
+        return { data: allData, total: totalItems };
+      };
 
       let masukData = [];
       let keluarData = [];
       let totalItems = 0;
 
       if (activeTab === 'masuk' || activeTab === 'semua') {
-        const resMasuk = await fetch(`${baseApi}/laporan/transaksi-masuk${params}`, { headers });
-        const jsonMasuk = await resMasuk.json();
-        if (jsonMasuk.success) {
-          const arr = Array.isArray(jsonMasuk.data) ? jsonMasuk.data : (jsonMasuk.data?.data || []);
-          masukData = arr.map(item => ({ ...item, _type: 'masuk' }));
-          
-          if (jsonMasuk.data?.total) totalItems += jsonMasuk.data.total;
-          else totalItems += masukData.length;
-        }
+        const { data, total } = await fetchAllPages('/laporan/transaksi-masuk');
+        masukData = data.map(item => ({ ...item, _type: 'masuk' }));
+        totalItems += total;
       }
 
       if (activeTab === 'keluar' || activeTab === 'semua') {
-        const resKeluar = await fetch(`${baseApi}/laporan/transaksi-keluar${params}`, { headers });
-        const jsonKeluar = await resKeluar.json();
-        if (jsonKeluar.success) {
-          const arr = Array.isArray(jsonKeluar.data) ? jsonKeluar.data : (jsonKeluar.data?.data || []);
-          keluarData = arr.map(item => ({ ...item, _type: 'keluar' }));
-          
-          if (jsonKeluar.data?.total) totalItems += jsonKeluar.data.total;
-          else totalItems += keluarData.length;
-        }
+        const { data, total } = await fetchAllPages('/laporan/transaksi-keluar');
+        keluarData = data.map(item => ({ ...item, _type: 'keluar' }));
+        totalItems += total;
       }
 
       let combinedData = [...masukData, ...keluarData];

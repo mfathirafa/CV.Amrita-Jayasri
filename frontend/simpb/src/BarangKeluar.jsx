@@ -57,14 +57,49 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
         'Authorization': `Bearer ${token}`
       };
 
+      const fetchAllPages = async (endpoint) => {
+        let allData = [];
+        let currentPage = 1;
+        let lastPage = 1;
+        let hasMore = true;
+
+        while (hasMore) {
+          const url = `${endpoint}?per_page=1000&page=${currentPage}`;
+          const response = await fetch(url, { method: 'GET', headers });
+          const data = await response.json();
+
+          if (response.ok || data.success) {
+            let arrayData = [];
+            if (Array.isArray(data)) arrayData = data;
+            else if (Array.isArray(data.data)) arrayData = data.data;
+            else if (data.data && Array.isArray(data.data.data)) arrayData = data.data.data;
+
+            allData = [...allData, ...arrayData];
+
+            let extractedLastPage = 1;
+            if (data.last_page) extractedLastPage = data.last_page;
+            else if (data.meta && data.meta.last_page) extractedLastPage = data.meta.last_page;
+            else if (data.data && data.data.last_page) extractedLastPage = data.data.last_page;
+
+            lastPage = Math.max(lastPage, extractedLastPage);
+
+            if (arrayData.length < 1000 || currentPage >= lastPage) {
+              hasMore = false;
+            } else {
+              currentPage++;
+            }
+          } else {
+            hasMore = false;
+          }
+        }
+        return allData;
+      };
+
       // 1. Fetch Barang
       try {
         setIsLoadingBarang(true);
-        const resBarang = await fetch(`${baseApi}/barang`, { method: 'GET', headers });
-        const dataBarang = await resBarang.json();
-        if (resBarang.ok) {
-          setDaftarBarang(Array.isArray(dataBarang) ? dataBarang : (dataBarang.data || []));
-        }
+        const allBarang = await fetchAllPages(`${baseApi}/barang`);
+        setDaftarBarang(allBarang);
       } catch (error) {
         console.error("Error Fetching Barang:", error);
       } finally {
@@ -74,11 +109,8 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
       // 2. Fetch Konsumen (Untuk Dropdown Penerima)
       try {
         setIsLoadingKonsumen(true);
-        const resKonsumen = await fetch(`${baseApi}/konsumen`, { method: 'GET', headers });
-        const dataKonsumen = await resKonsumen.json();
-        if (resKonsumen.ok) {
-          setDaftarKonsumen(Array.isArray(dataKonsumen) ? dataKonsumen : (dataKonsumen.data || []));
-        }
+        const allKonsumen = await fetchAllPages(`${baseApi}/konsumen`);
+        setDaftarKonsumen(allKonsumen);
       } catch (error) {
         console.error("Error Fetching Konsumen:", error);
       } finally {
