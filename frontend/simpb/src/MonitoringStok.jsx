@@ -417,9 +417,9 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
             <p className="text-[10px] md:text-[11px] font-bold text-gray-400 uppercase tracking-widest">RINGKASAN STATUS INVENTARIS REAL-TIME</p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
+          <div className="flex overflow-x-auto sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8 pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:pb-0 snap-x snap-mandatory scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {/* Total SKU */}
-            <div className="bg-white p-4 md:p-5 rounded-[20px] md:rounded-[24px] shadow-sm border border-gray-100 flex flex-col h-32 md:h-40 relative">
+            <div className="bg-white p-4 md:p-5 rounded-[20px] md:rounded-[24px] shadow-sm border border-gray-100 flex flex-col h-32 md:h-40 relative min-w-[200px] sm:min-w-0 snap-center shrink-0">
               <div className="flex justify-between items-start">
                 <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600">
                   <Package className="w-4 h-4 md:w-5 md:h-5" />
@@ -432,7 +432,7 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
             </div>
 
             {/* STOK RENDAH */}
-            <div className="bg-white p-4 md:p-5 rounded-[20px] md:rounded-[24px] shadow-sm border border-gray-100 flex flex-col h-32 md:h-40 relative">
+            <div className="bg-white p-4 md:p-5 rounded-[20px] md:rounded-[24px] shadow-sm border border-gray-100 flex flex-col h-32 md:h-40 relative min-w-[200px] sm:min-w-0 snap-center shrink-0">
               <div className="flex justify-between items-start">
                 <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-red-50 flex items-center justify-center text-red-500">
                   <AlertTriangle className="w-4 h-4 md:w-5 md:h-5" />
@@ -448,7 +448,7 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
             </div>
 
             {/* HABIS */}
-            <div className="bg-white p-4 md:p-5 rounded-[20px] md:rounded-[24px] shadow-sm border border-gray-100 flex flex-col h-32 md:h-40 relative">
+            <div className="bg-white p-4 md:p-5 rounded-[20px] md:rounded-[24px] shadow-sm border border-gray-100 flex flex-col h-32 md:h-40 relative min-w-[200px] sm:min-w-0 snap-center shrink-0">
               <div className="flex justify-between items-start">
                 <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600">
                   <ShoppingCart className="w-4 h-4 md:w-5 md:h-5" />
@@ -461,7 +461,7 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
             </div>
 
             {/* NILAI STOK */}
-            <div className="bg-gradient-to-br from-[#5452F6] to-[#7C3AED] p-4 md:p-5 rounded-[20px] md:rounded-[24px] shadow-md text-white flex flex-col h-32 md:h-40 relative overflow-hidden">
+            <div className="bg-gradient-to-br from-[#5452F6] to-[#7C3AED] p-4 md:p-5 rounded-[20px] md:rounded-[24px] shadow-md text-white flex flex-col h-32 md:h-40 relative overflow-hidden min-w-[200px] sm:min-w-0 snap-center shrink-0">
               <div className="flex justify-between items-start z-10">
                 <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-white/20 flex items-center justify-center">
                   <Coins className="w-4 h-4 md:w-5 h-5" />

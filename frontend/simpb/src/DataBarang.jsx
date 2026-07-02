@@ -436,9 +436,9 @@ const DataBarang = ({ onNavigate, onLogout }) => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
+            <div className="flex overflow-x-auto sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8 pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:pb-0 snap-x snap-mandatory scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               {stats.map((stat, index) => (
-                <div key={index} className="bg-white rounded-[20px] p-4 md:p-5 shadow-sm border border-gray-100 flex flex-col justify-between h-28 md:h-32 relative overflow-hidden hover:shadow-md transition-shadow">
+                <div key={index} className="bg-white rounded-[20px] p-4 md:p-5 shadow-sm border border-gray-100 flex flex-col justify-between h-28 md:h-32 relative overflow-hidden hover:shadow-md transition-shadow min-w-[200px] sm:min-w-0 snap-center shrink-0">
                   <div className={`absolute -right-4 -top-4 w-20 h-20 md:w-24 md:h-24 rounded-full opacity-20 ${stat.color.split(' ')[0]}`}></div>
                   <div className="flex justify-between items-start">
                     <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center ${stat.color}`}>

@@ -323,7 +323,7 @@ const Pemasok = ({ onNavigate, onLogout }) => {
           {/* ================= AREA CONTENT ================= */}
           <div className="flex-1 overflow-y-auto p-4 md:p-8 pb-12 w-full">
 
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6 md:mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-4 md:mb-8">
               <div>
                 <h1 className="text-xl md:text-2xl font-bold text-gray-800">Direktori Supplier</h1>
                 <p className="text-xs md:text-sm text-gray-500 mt-1">Kelola dan pantau jaringan kemitraan strategis Anda.</p>
@@ -332,30 +332,42 @@ const Pemasok = ({ onNavigate, onLogout }) => {
               <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                 <button
                   onClick={() => setIsAddModalOpen(true)}
-                  className="flex justify-center items-center gap-2 px-4 md:px-5 py-2.5 bg-[#5452F6] hover:bg-[#4341E3] text-white rounded-xl text-sm font-semibold transition-colors shadow-lg shadow-indigo-500/30 w-full sm:w-auto"
+                  className="flex justify-center items-center gap-2 px-4 md:px-5 py-2.5 bg-[#5452F6] hover:bg-[#4341E3] text-white rounded-xl text-sm font-semibold transition-colors shadow-lg shadow-indigo-500/30 w-full sm:w-auto shrink-0"
                 >
                   <Plus className="w-4 h-4" /> Tambah Supplier
                 </button>
               </div>
             </div>
 
+            {/* Mobile Search Bar */}
+            <div className="relative w-full md:hidden mb-6">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Cari nama atau alamat supplier..."
+                className="w-full pl-11 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#5452F6] focus:ring-1 focus:ring-[#5452F6] transition-all shadow-sm"
+              />
+            </div>
+
             {/* Statistik */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
-              <div className="bg-[#FAEDFF] p-4 md:p-5 rounded-[20px] shadow-sm flex flex-col justify-between h-28 md:h-32">
+            <div className="flex overflow-x-auto sm:grid sm:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8 pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:pb-0 snap-x snap-mandatory scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              <div className="bg-[#FAEDFF] p-4 md:p-5 rounded-[20px] shadow-sm flex flex-col justify-between h-28 md:h-32 min-w-[200px] sm:min-w-0 snap-center shrink-0">
                 <p className="text-[10px] md:text-[11px] font-bold text-gray-400 uppercase tracking-wider">TOTAL MITRA</p>
                 <div className="flex items-baseline gap-2">
                   <h3 className="text-2xl md:text-3xl font-bold text-gray-800">{isLoading ? '...' : suppliers.length}</h3>
                 </div>
               </div>
 
-              <div className="bg-[#EEF2FF] p-4 md:p-5 rounded-[20px] shadow-sm flex flex-col justify-between h-28 md:h-32">
+              <div className="bg-[#EEF2FF] p-4 md:p-5 rounded-[20px] shadow-sm flex flex-col justify-between h-28 md:h-32 min-w-[200px] sm:min-w-0 snap-center shrink-0">
                 <p className="text-[10px] md:text-[11px] font-bold text-gray-400 uppercase tracking-wider">KONTRAK AKTIF</p>
                 <div className="flex items-baseline gap-2">
                   <h3 className="text-2xl md:text-3xl font-bold text-gray-800">{isLoading ? '...' : suppliers.length}</h3>
                 </div>
               </div>
 
-              <div className="bg-[#ECFDF5] p-4 md:p-5 rounded-[20px] shadow-sm flex flex-col justify-between h-28 md:h-32">
+              <div className="bg-[#ECFDF5] p-4 md:p-5 rounded-[20px] shadow-sm flex flex-col justify-between h-28 md:h-32 min-w-[200px] sm:min-w-0 snap-center shrink-0">
                 <p className="text-[10px] md:text-[11px] font-bold text-gray-400 uppercase tracking-wider">RATING KUALITAS</p>
                 <div className="flex items-baseline gap-2">
                   <h3 className="text-2xl md:text-3xl font-bold text-gray-800">98%</h3>

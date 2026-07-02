@@ -288,8 +288,8 @@ const Dashboard = ({ onLogout, onNavigate }) => {
           </div>
 
           {/* ================= 4 KARTU STATISTIK ATAS ================= */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6">
-            <div className="bg-[#FAEDFF] p-4 md:p-5 rounded-[20px] shadow-sm flex flex-col relative overflow-hidden">
+          <div className="flex overflow-x-auto sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:pb-0 snap-x snap-mandatory scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <div className="bg-[#FAEDFF] p-4 md:p-5 rounded-[20px] shadow-sm flex flex-col relative overflow-hidden min-w-[200px] sm:min-w-0 snap-center shrink-0">
               <div className="flex justify-between items-start mb-3 md:mb-4">
                 <div className="w-8 h-8 md:w-10 md:h-10 bg-[#A855F7] text-white rounded-lg flex items-center justify-center"><Box className="w-4 h-4 md:w-5 md:h-5" /></div>
               </div>
@@ -298,7 +298,7 @@ const Dashboard = ({ onLogout, onNavigate }) => {
               <div className="w-12 md:w-16 h-1.5 bg-[#5452F6] rounded-full mt-2"></div>
             </div>
 
-            <div className="bg-[#EEF2FF] p-4 md:p-5 rounded-[20px] shadow-sm flex flex-col">
+            <div className="bg-[#EEF2FF] p-4 md:p-5 rounded-[20px] shadow-sm flex flex-col min-w-[200px] sm:min-w-0 snap-center shrink-0">
               <div className="flex justify-between items-start mb-3 md:mb-4">
                 <div className="w-8 h-8 md:w-10 md:h-10 bg-[#5452F6] opacity-80 text-white rounded-lg flex items-center justify-center"><ArrowDownRight className="w-4 h-4 md:w-5 md:h-5" /></div>
               </div>
@@ -310,7 +310,7 @@ const Dashboard = ({ onLogout, onNavigate }) => {
               </div>
             </div>
 
-            <div className="bg-[#ECFDF5] p-4 md:p-5 rounded-[20px] shadow-sm flex flex-col">
+            <div className="bg-[#ECFDF5] p-4 md:p-5 rounded-[20px] shadow-sm flex flex-col min-w-[200px] sm:min-w-0 snap-center shrink-0">
               <div className="flex justify-between items-start mb-3 md:mb-4">
                 <div className="w-8 h-8 md:w-10 md:h-10 bg-[#10B981] text-white rounded-lg flex items-center justify-center"><ArrowUpRight className="w-4 h-4 md:w-5 md:h-5" /></div>
               </div>
@@ -322,7 +322,7 @@ const Dashboard = ({ onLogout, onNavigate }) => {
               </div>
             </div>
 
-            <div className="bg-[#FEF2F2] p-4 md:p-5 rounded-[20px] shadow-sm flex flex-col border border-red-50">
+            <div className="bg-[#FEF2F2] p-4 md:p-5 rounded-[20px] shadow-sm flex flex-col border border-red-50 min-w-[200px] sm:min-w-0 snap-center shrink-0">
               <div className="flex justify-between items-start mb-3 md:mb-4">
                 <div className="w-8 h-8 md:w-10 md:h-10 bg-[#EF4444] text-white rounded-lg flex items-center justify-center"><AlertTriangle className="w-4 h-4 md:w-5 md:h-5" /></div>
                 {stats.total_stok_kritis > 0 && (
