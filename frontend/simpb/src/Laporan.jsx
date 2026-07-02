@@ -395,8 +395,8 @@ const Laporan = ({ onLogout, onNavigate }) => {
       const cleanApiUrl = rawApiUrl.replace(/\/$/, '');
       const baseApi = cleanApiUrl.endsWith('/api') ? cleanApiUrl : `${cleanApiUrl}/api`;
       const endpoint = itemToDelete.type === 'masuk'
-        ? `${baseApi}/barang-masuk/${itemToDelete.id}`
-        : `${baseApi}/barang-keluar/${itemToDelete.id}`;
+        ? `${baseApi}/transaksi-masuk/${itemToDelete.id}`
+        : `${baseApi}/transaksi-keluar/${itemToDelete.id}`;
 
       const response = await fetch(endpoint, {
         method: 'DELETE',
