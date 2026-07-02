@@ -341,14 +341,7 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
             </div>
 
             <div className="flex items-center gap-4 md:gap-6">
-              <div className="relative w-72 hidden md:block">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Cari stok alat tulis..."
-                  className="w-full pl-11 pr-4 py-2.5 bg-[#F4F7FC] border-transparent rounded-full text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] transition-all"
-                />
-              </div>
+
               <NotificationBell onNavigate={onNavigate} />
               <div className="h-6 w-px bg-gray-200 hidden md:block"></div>
               <div className="relative">

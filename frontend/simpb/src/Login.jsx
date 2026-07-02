@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { 
-  Mail, 
-  Lock, 
-  EyeOff, 
-  Eye, 
-  AlertCircle, 
-  ArrowRight, 
+import {
+  Mail,
+  Lock,
+  EyeOff,
+  Eye,
+  AlertCircle,
+  ArrowRight,
   ShieldCheck,
   Loader2
 } from 'lucide-react';
@@ -45,7 +45,7 @@ const Login = ({ onLogin, onNavigate }) => {
       if (result.success) {
         localStorage.setItem('token', result.data.token);
         localStorage.setItem('user', JSON.stringify(result.data.user));
-        
+
         if (onLogin) {
           onLogin(result.data.user);
         }
@@ -64,12 +64,12 @@ const Login = ({ onLogin, onNavigate }) => {
       <div className="absolute inset-0 z-0 bg-gradient-to-br from-blue-50/50 to-white/20 pointer-events-none"></div>
 
       <div className="bg-white rounded-[24px] md:rounded-[30px] shadow-xl w-full max-w-[95%] sm:max-w-[420px] p-6 md:p-10 z-10 border border-gray-100 transition-all duration-300">
-        
+
         <div className="flex flex-col items-center mb-6 md:mb-10">
-          <img 
-            src={logoAmrita} 
-            alt="Logo CV Amrita Jayasri" 
-            className="w-14 h-14 md:w-20 md:h-20 object-contain mb-4 transform transition-transform hover:scale-105 drop-shadow-md" 
+          <img
+            src={logoAmrita}
+            alt="Logo CV Amrita Jayasri"
+            className="w-14 h-14 md:w-20 md:h-20 object-contain mb-4 transform transition-transform hover:scale-105 drop-shadow-md"
           />
           <h1 className="text-[#1E232C] font-bold text-xl md:text-2xl mb-1">SIMPB</h1>
           <p className="text-gray-400 text-[10px] md:text-xs font-bold tracking-[0.2em] uppercase">CV. AMRITA JAYASRI</p>
@@ -83,12 +83,12 @@ const Login = ({ onLogin, onNavigate }) => {
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <Mail className="h-4 w-4 md:h-5 md:w-5 text-gray-400 group-focus-within:text-[#5452F6] transition-colors" />
               </div>
-              <input 
-                type="email" 
+              <input
+                type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Masukan Alamat Email" 
+                placeholder="Masukan Alamat Email"
                 className="w-full pl-11 pr-4 py-3 bg-[#F2F4F7] border border-transparent rounded-xl text-xs md:text-sm focus:bg-white focus:border-[#5452F6] focus:ring-4 focus:ring-[#5452F6]/5 outline-none transition-all"
               />
             </div>
@@ -98,30 +98,21 @@ const Login = ({ onLogin, onNavigate }) => {
           <div className="space-y-1.5 md:space-y-2">
             <div className="flex justify-between items-center px-1">
               <label className="text-xs md:text-sm font-bold text-[#1E232C]">Kata Sandi</label>
-              
-              {/* === TOMBOL LUPA PASSWORD LANGSUNG PINDAH PAGE === */}
-              <button 
-                type="button" 
-                onClick={() => onNavigate && onNavigate('reset-password')}
-                className="text-[10px] md:text-xs font-extrabold text-[#5452F6] hover:text-[#3B39D1] transition-colors disabled:opacity-50"
-              >
-                Lupa Password?
-              </button>
 
             </div>
             <div className="relative group">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <Lock className="h-4 w-4 md:h-5 md:w-5 text-gray-400 group-focus-within:text-[#5452F6] transition-colors" />
               </div>
-              <input 
-                type={showPassword ? "text" : "password"} 
+              <input
+                type={showPassword ? "text" : "password"}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Masukkan Kata Sandi" 
+                placeholder="Masukkan Kata Sandi"
                 className="w-full pl-11 pr-11 py-3 bg-[#F2F4F7] border border-transparent rounded-xl text-xs md:text-sm focus:bg-white focus:border-[#5452F6] focus:ring-4 focus:ring-[#5452F6]/5 outline-none transition-all"
               />
-              <button 
+              <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
@@ -140,8 +131,8 @@ const Login = ({ onLogin, onNavigate }) => {
           )}
 
           {/* Submit Button */}
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={isLoading}
             className="w-full bg-[#5452F6] hover:bg-[#4341E3] disabled:bg-gray-400 text-white font-bold py-3.5 md:py-4 rounded-xl transition-all flex items-center justify-center gap-2 mt-4 shadow-lg shadow-indigo-100 active:scale-[0.98]"
           >

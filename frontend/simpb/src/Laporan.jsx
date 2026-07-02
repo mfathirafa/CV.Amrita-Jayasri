@@ -503,24 +503,24 @@ const Laporan = ({ onLogout, onNavigate }) => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-8 mb-4 md:mb-6">
                   <div>
                     <label className="text-[9px] md:text-[10px] font-black text-gray-800 uppercase tracking-widest mb-2 md:mb-4 block">Rentang Tanggal</label>
-                    <div className="flex items-center gap-2">
-                      <div className="relative flex-1">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                      <div className="relative w-full sm:flex-1">
                         <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
                         <input 
                           type="date" 
                           value={startDate}
                           onChange={(e) => setStartDate(e.target.value)}
-                          className="w-full pl-8 pr-1 py-2.5 md:py-3 bg-[#F4F7FC] border-transparent rounded-xl text-[10px] font-bold text-gray-600 focus:bg-white focus:border-[#5452F6] transition-colors" 
+                          className="w-full pl-8 pr-1 py-2.5 md:py-3 bg-[#F4F7FC] border-transparent rounded-xl text-[10px] md:text-[11px] font-bold text-gray-600 focus:bg-white focus:border-[#5452F6] transition-colors" 
                         />
                       </div>
-                      <span className="text-gray-300">-</span>
-                      <div className="relative flex-1">
+                      <span className="text-gray-300 hidden sm:block">-</span>
+                      <div className="relative w-full sm:flex-1">
                         <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
                         <input 
                           type="date" 
                           value={endDate}
                           onChange={(e) => setEndDate(e.target.value)}
-                          className="w-full pl-8 pr-1 py-2.5 md:py-3 bg-[#F4F7FC] border-transparent rounded-xl text-[10px] font-bold text-gray-600 focus:bg-white focus:border-[#5452F6] transition-colors" 
+                          className="w-full pl-8 pr-1 py-2.5 md:py-3 bg-[#F4F7FC] border-transparent rounded-xl text-[10px] md:text-[11px] font-bold text-gray-600 focus:bg-white focus:border-[#5452F6] transition-colors" 
                         />
                       </div>
                     </div>

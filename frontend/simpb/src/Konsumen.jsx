@@ -289,7 +289,7 @@ const Konsumen = ({ onNavigate, onLogout }) => {
 
           <div className="flex-1 overflow-y-auto p-4 md:p-8 pb-12 w-full">
             
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6 md:mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-4 md:mb-8">
               <div>
                 <h1 className="text-xl md:text-2xl font-bold text-gray-800">Direktori Konsumen</h1>
                 <p className="text-xs md:text-sm text-gray-500 mt-1">Kelola dan pantau jaringan kemitraan strategis Anda.</p>
@@ -297,15 +297,21 @@ const Konsumen = ({ onNavigate, onLogout }) => {
               
               <button 
                 onClick={() => setIsAddModalOpen(true)}
-                className="flex items-center justify-center gap-2 px-4 md:px-5 py-2.5 bg-[#5452F6] hover:bg-[#4341E3] text-white rounded-xl text-sm font-semibold transition-colors shadow-lg shadow-indigo-500/30 w-full sm:w-auto"
+                className="flex items-center justify-center gap-2 px-4 md:px-5 py-2.5 bg-[#5452F6] hover:bg-[#4341E3] text-white rounded-xl text-sm font-semibold transition-colors shadow-lg shadow-indigo-500/30 w-full sm:w-auto shrink-0"
               >
                 <Plus className="w-4 h-4" /> Tambah Konsumen
               </button>
             </div>
 
+            {/* Mobile Search Bar */}
+            <div className="relative w-full md:hidden mb-6">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input type="text" placeholder="Cari konsumen..." className="w-full pl-11 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#5452F6] focus:ring-1 focus:ring-[#5452F6] transition-all shadow-sm" />
+            </div>
+
             {/* Statistik */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
-              <div className="bg-[#FAEDFF] p-4 md:p-5 rounded-[20px] shadow-sm flex items-start gap-4 h-28 md:h-32">
+            <div className="flex overflow-x-auto sm:grid sm:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8 pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:pb-0 snap-x snap-mandatory scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              <div className="bg-[#FAEDFF] p-4 md:p-5 rounded-[20px] shadow-sm flex items-start gap-4 h-28 md:h-32 min-w-[200px] sm:min-w-0 snap-center shrink-0">
                 <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-white/60 flex items-center justify-center flex-shrink-0">
                   <Users className="w-4 h-4 md:w-5 md:h-5 text-[#A855F7]" />
                 </div>
@@ -315,7 +321,7 @@ const Konsumen = ({ onNavigate, onLogout }) => {
                 </div>
               </div>
 
-              <div className="bg-[#EEF2FF] p-4 md:p-5 rounded-[20px] shadow-sm flex items-start gap-4 h-28 md:h-32 relative overflow-hidden">
+              <div className="bg-[#EEF2FF] p-4 md:p-5 rounded-[20px] shadow-sm flex items-start gap-4 h-28 md:h-32 relative overflow-hidden min-w-[200px] sm:min-w-0 snap-center shrink-0">
                 <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-white/60 flex items-center justify-center flex-shrink-0 relative z-10">
                   <Bookmark className="w-4 h-4 md:w-5 md:h-5 text-[#5452F6]" />
                 </div>
@@ -325,7 +331,7 @@ const Konsumen = ({ onNavigate, onLogout }) => {
                 </div>
               </div>
 
-              <div className="bg-[#ECFDF5] p-4 md:p-5 rounded-[20px] shadow-sm flex items-start gap-4 h-28 md:h-32 relative overflow-hidden">
+              <div className="bg-[#ECFDF5] p-4 md:p-5 rounded-[20px] shadow-sm flex items-start gap-4 h-28 md:h-32 relative overflow-hidden min-w-[200px] sm:min-w-0 snap-center shrink-0">
                 <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-white/60 flex items-center justify-center flex-shrink-0 relative z-10">
                   <Star className="w-4 h-4 md:w-5 md:h-5 text-[#10B981]" />
                 </div>
