@@ -143,6 +143,51 @@ class TransaksiMasukController extends Controller
         }
     }
 
+    // DELETE /api/transaksi-masuk/{id}
+    public function destroy($id)
+    {
+        $transaksi = TransaksiMasuk::find($id);
+
+        if (!$transaksi) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Transaksi tidak ditemukan.',
+            ], 404);
+        }
+
+        DB::beginTransaction();
+
+        try {
+            // Rollback stok: kurangi kembali stok yang sudah ditambahkan
+            $barang = Barang::find($transaksi->barang_id);
+            if ($barang) {
+                $barang->stok -= $transaksi->jumlah;
+                if ($barang->stok < 0) $barang->stok = 0;
+                $barang->save();
+            }
+
+            $transaksi->delete();
+
+            DB::commit();
+
+            \Illuminate\Support\Facades\Cache::forget('dashboard_data');
+            \Illuminate\Support\Facades\Cache::forget('stok_rendah');
+            \Illuminate\Support\Facades\Cache::forget('notifikasi_stok');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Transaksi masuk berhasil dihapus. Stok barang telah dikembalikan.',
+            ], 200);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat menghapus transaksi.',
+            ], 500);
+        }
+    }
+
     // GET /api/transaksi-masuk/{id}
     public function show($id)
     {

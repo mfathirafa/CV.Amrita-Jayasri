@@ -146,6 +146,50 @@ class TransaksiKeluarController extends Controller
         }
     }
 
+    // DELETE /api/transaksi-keluar/{id}
+    public function destroy($id)
+    {
+        $transaksi = TransaksiKeluar::find($id);
+
+        if (!$transaksi) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Transaksi tidak ditemukan.',
+            ], 404);
+        }
+
+        DB::beginTransaction();
+
+        try {
+            // Rollback stok: kembalikan stok yang sudah dikurangi
+            $barang = Barang::find($transaksi->barang_id);
+            if ($barang) {
+                $barang->stok += $transaksi->jumlah;
+                $barang->save();
+            }
+
+            $transaksi->delete();
+
+            DB::commit();
+
+            \Illuminate\Support\Facades\Cache::forget('dashboard_data');
+            \Illuminate\Support\Facades\Cache::forget('stok_rendah');
+            \Illuminate\Support\Facades\Cache::forget('notifikasi_stok');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Transaksi keluar berhasil dihapus. Stok barang telah dikembalikan.',
+            ], 200);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat menghapus transaksi.',
+            ], 500);
+        }
+    }
+
     // GET /api/transaksi-keluar/{id}
     public function show($id)
     {

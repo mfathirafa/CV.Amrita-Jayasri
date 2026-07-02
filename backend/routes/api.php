@@ -51,14 +51,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/konsumen/{id}', [KonsumenController::class, 'destroy']);
 
     // Transaksi Masuk
-        Route::get('/transaksi-masuk',       [TransaksiMasukController::class, 'index']);
-        Route::post('/transaksi-masuk',      [TransaksiMasukController::class, 'store']);
-        Route::get('/transaksi-masuk/{id}',  [TransaksiMasukController::class, 'show']);
+        Route::get('/transaksi-masuk',          [TransaksiMasukController::class, 'index']);
+        Route::post('/transaksi-masuk',         [TransaksiMasukController::class, 'store']);
+        Route::get('/transaksi-masuk/{id}',     [TransaksiMasukController::class, 'show']);
+        Route::delete('/transaksi-masuk/{id}',  [TransaksiMasukController::class, 'destroy']);
 
     // Transaksi Keluar
-        Route::get('/transaksi-keluar',      [TransaksiKeluarController::class, 'index']);
-        Route::post('/transaksi-keluar',     [TransaksiKeluarController::class, 'store']);
-        Route::get('/transaksi-keluar/{id}', [TransaksiKeluarController::class, 'show']);
+        Route::get('/transaksi-keluar',         [TransaksiKeluarController::class, 'index']);
+        Route::post('/transaksi-keluar',        [TransaksiKeluarController::class, 'store']);
+        Route::get('/transaksi-keluar/{id}',    [TransaksiKeluarController::class, 'show']);
+        Route::delete('/transaksi-keluar/{id}', [TransaksiKeluarController::class, 'destroy']);
 
     // Stok & Notifikasi
         Route::get('/stok',          [StokController::class, 'index']);
