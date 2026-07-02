@@ -10,8 +10,7 @@ import {
 import DeleteConfirmModal from './DeleteConfirmModal';
 import NotificationBell from './NotificationBell';
 import logoAmrita from './assets/Logo Amrita.png';
-
-
+import { decodeEntity } from './utils';
 const DataBarang = ({ onNavigate, onLogout }) => {
   // --- STATES ---
   const [activeCategory, setActiveCategory] = useState('Semua Barang');
@@ -238,13 +237,13 @@ const DataBarang = ({ onNavigate, onLogout }) => {
   };
 
   const filteredData = tableData.filter((item) => {
-    const dbCategory = String(item.kategori || '').replace(/&amp;/g, '&').trim().toLowerCase();
+    const dbCategory = decodeEntity(item.kategori).trim().toLowerCase();
     const selectedCategory = activeCategory.trim().toLowerCase();
 
     const matchCategory = activeCategory === 'Semua Barang' || dbCategory === selectedCategory;
 
     const searchLower = searchQuery.toLowerCase().trim();
-    const namaBarangLower = String(item.nama_barang || '').toLowerCase();
+    const namaBarangLower = decodeEntity(item.nama_barang).toLowerCase();
     const idRefLower = String(item.id_referensi || `BRG-${item.id}`).toLowerCase();
 
     const matchSearch = searchLower === '' || namaBarangLower.includes(searchLower) || idRefLower.includes(searchLower);
@@ -528,7 +527,7 @@ const DataBarang = ({ onNavigate, onLogout }) => {
                                   {item.foto_url || item.gambar ? (
                                     <img
                                       src={getImageUrl(item.foto_url || item.gambar)}
-                                      alt={item.nama_barang}
+                                      alt={decodeEntity(item.nama_barang)}
                                       className="w-full h-full object-cover relative z-10"
                                       onError={(e) => {
                                         e.target.style.opacity = '0';
@@ -540,13 +539,13 @@ const DataBarang = ({ onNavigate, onLogout }) => {
                                   </div>
                                 </div>
                                 <div>
-                                  <p className="font-bold text-gray-800 text-xs md:text-sm">{item.nama_barang}</p>
+                                  <p className="font-bold text-gray-800 text-xs md:text-sm">{decodeEntity(item.nama_barang)}</p>
                                   <p className="text-[9px] md:text-[11px] text-gray-400 mt-0.5 font-medium">ID: {item.id_referensi || `BRG-${item.id}`}</p>
                                 </div>
                               </div>
                             </td>
                             <td className="py-3 md:py-4 px-4 md:px-6 text-xs md:text-sm text-gray-600 font-medium">
-                              {String(item.kategori || '').replace(/&amp;/g, '&')}
+                              {decodeEntity(item.kategori)}
                             </td>
                             <td className="py-3 md:py-4 px-4 md:px-6 text-xs md:text-sm font-bold text-gray-800">{formatRupiah(item.harga)}</td>
                             <td className="py-3 md:py-4 px-4 md:px-6 text-xs md:text-sm font-bold text-center text-gray-800">
@@ -569,7 +568,7 @@ const DataBarang = ({ onNavigate, onLogout }) => {
                                 </button>
 
                                 <button
-                                  onClick={() => openDeleteModal(item.id, item.nama_barang)}
+                                  onClick={() => openDeleteModal(item.id, decodeEntity(item.nama_barang))}
                                   title="Hapus Barang"
                                   className="p-1.5 md:p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                                 >

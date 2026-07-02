@@ -6,7 +6,7 @@ import {
   BarChart2, Search, Bell, CircleUser, 
   Calendar, FileText, Download, FileSpreadsheet, 
   ChevronDown, Filter, Loader2, ArrowUpDown, Menu, X,
-  AlertTriangle, CheckCircle
+  AlertTriangle, CheckCircle, Trash2
 } from 'lucide-react';
 
 // === IMPORT LIBRARY PDF (CARA PALING STABIL) ===
@@ -15,6 +15,7 @@ import autoTable from 'jspdf-autotable';
 
 // === IMPORT KOMPONEN MODAL & LOGO ===
 import ExportModal from './ExportModal';
+import DeleteConfirmModal from './DeleteConfirmModal';
 import NotificationBell from './NotificationBell';
 import logoAmrita from './assets/Logo Amrita.png';
 
@@ -44,6 +45,11 @@ const Laporan = ({ onLogout, onNavigate }) => {
   // === MODAL EKSPOR STATES ===
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [initialExportFormat, setInitialExportFormat] = useState('excel');
+
+  // === MODAL HAPUS STATES ===
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState({ id: null, type: null, label: '' });
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // --- FUNGSI FORMATTING ---
   const formatRupiah = (angka) => {
@@ -213,8 +219,17 @@ const Laporan = ({ onLogout, onNavigate }) => {
       return fullId.includes(searchLower) || namaBarang.includes(searchLower) || entitas.includes(searchLower);
     })
     .sort((a, b) => {
-      if (sortOrder === 'terbaru') return new Date(b.created_at) - new Date(a.created_at);
-      if (sortOrder === 'terlama') return new Date(a.created_at) - new Date(b.created_at);
+      const dateA = new Date(a._type === 'masuk' ? a.tanggal_masuk : a.tanggal_keluar);
+      const dateB = new Date(b._type === 'masuk' ? b.tanggal_masuk : b.tanggal_keluar);
+      
+      if (sortOrder === 'terbaru') {
+        if (dateB.getTime() !== dateA.getTime()) return dateB - dateA;
+        return new Date(b.created_at) - new Date(a.created_at);
+      }
+      if (sortOrder === 'terlama') {
+        if (dateA.getTime() !== dateB.getTime()) return dateA - dateB;
+        return new Date(a.created_at) - new Date(b.created_at);
+      }
       
       const totalA = a.jumlah * parseFloat(a._type === 'masuk' ? a.harga_beli : a.harga_jual || 0);
       const totalB = b.jumlah * parseFloat(b._type === 'masuk' ? b.harga_beli : b.harga_jual || 0);
@@ -356,6 +371,50 @@ const Laporan = ({ onLogout, onNavigate }) => {
   const handleNavigation = (path) => {
     setIsMobileMenuOpen(false);
     onNavigate(path);
+  };
+
+  // === FUNGSI HAPUS TRANSAKSI ===
+  const openDeleteModal = (item) => {
+    const isMasuk = item._type === 'masuk';
+    const label = `#${isMasuk ? 'M' : 'K'}-${String(item.id).padStart(4, '0')} (${item.barang?.nama_barang || '-'})`;
+    setItemToDelete({ id: item.id, type: item._type, label });
+    setIsDeleteModalOpen(true);
+  };
+
+  const executeDeleteTransaksi = async () => {
+    if (!itemToDelete.id || !itemToDelete.type) return;
+    setIsDeleting(true);
+    try {
+      const token = localStorage.getItem('token');
+      const rawApiUrl = import.meta.env.VITE_API_URL || 'https://cvamritajayasri.my.id/api';
+      const cleanApiUrl = rawApiUrl.replace(/\/$/, '');
+      const baseApi = cleanApiUrl.endsWith('/api') ? cleanApiUrl : `${cleanApiUrl}/api`;
+      const endpoint = itemToDelete.type === 'masuk'
+        ? `${baseApi}/barang-masuk/${itemToDelete.id}`
+        : `${baseApi}/barang-keluar/${itemToDelete.id}`;
+
+      const response = await fetch(endpoint, {
+        method: 'DELETE',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        setLaporanData(prev => prev.filter(i => !(i.id === itemToDelete.id && i._type === itemToDelete.type)));
+        setIsDeleteModalOpen(false);
+        setItemToDelete({ id: null, type: null, label: '' });
+      } else {
+        const errData = await response.json();
+        alert(`Gagal menghapus transaksi: ${errData.message || 'Server error'}`);
+      }
+    } catch (error) {
+      console.error('Error Deleting Transaksi:', error);
+      alert('Terjadi kesalahan jaringan.');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const getSortLabel = () => {
@@ -621,6 +680,7 @@ const Laporan = ({ onLogout, onNavigate }) => {
                         <th className="py-4 md:py-5 px-4 md:px-6 text-center whitespace-nowrap">Tipe</th>
                         <th className="py-4 md:py-5 px-4 md:px-6 text-center whitespace-nowrap">Jumlah</th>
                         <th className="py-4 md:py-5 px-4 md:px-8 text-right whitespace-nowrap">Total Nilai</th>
+                        <th className="py-4 md:py-5 px-4 md:px-6 text-center whitespace-nowrap">Aksi</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
@@ -647,6 +707,15 @@ const Laporan = ({ onLogout, onNavigate }) => {
                               <p className="text-[8px] md:text-[10px] text-gray-400 font-medium truncate max-w-[120px] mx-auto">{isMasuk ? item.supplier?.nama_supplier : (item.nama_instansi || 'Umum')}</p>
                             </td>
                             <td className="py-4 md:py-5 px-4 md:px-8 text-right font-black text-gray-800 text-[10px] md:text-sm whitespace-nowrap">{formatRupiah(item.jumlah * parseFloat(isMasuk ? item.harga_beli : item.harga_jual || 0))}</td>
+                            <td className="py-4 md:py-5 px-4 md:px-6 text-center">
+                              <button
+                                onClick={() => openDeleteModal(item)}
+                                title="Hapus Transaksi"
+                                className="inline-flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-700 transition-colors"
+                              >
+                                <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                              </button>
+                            </td>
                           </tr>
                         );
                       })}
@@ -693,6 +762,14 @@ const Laporan = ({ onLogout, onNavigate }) => {
         onClose={() => setIsExportModalOpen(false)} 
         onExport={handleExecuteExport}
         initialFormat={initialExportFormat}
+      />
+
+      <DeleteConfirmModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => { if (!isDeleting) setIsDeleteModalOpen(false); }}
+        onConfirm={executeDeleteTransaksi}
+        itemName={itemToDelete.label}
+        isDeleting={isDeleting}
       />
     </>
   );
