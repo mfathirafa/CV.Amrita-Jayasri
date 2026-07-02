@@ -17,7 +17,7 @@ class LaporanController extends Controller
             'end_date'   => 'required|date|after_or_equal:start_date',
         ]);
 
-        $perPage = min((int) $request->get('per_page', 50), 500);
+        $perPage = min((int) $request->get('per_page', 50), 10000);
 
         $query = TransaksiMasuk::with(['barang', 'supplier', 'user'])
             ->whereBetween('tanggal_masuk', [$request->start_date, $request->end_date])
@@ -61,7 +61,7 @@ class LaporanController extends Controller
             'end_date'   => 'required|date|after_or_equal:start_date',
         ]);
 
-        $perPage = min((int) $request->get('per_page', 50), 500);
+        $perPage = min((int) $request->get('per_page', 50), 10000);
 
         $query = TransaksiKeluar::with(['barang', 'user', 'konsumen'])
             ->whereBetween('tanggal_keluar', [$request->start_date, $request->end_date]);
@@ -104,7 +104,7 @@ class LaporanController extends Controller
     // GET /api/laporan/stok
     public function stok(Request $request)
     {
-        $perPage = min((int) $request->get('per_page', 50), 500);
+        $perPage = min((int) $request->get('per_page', 50), 100000000);
 
         $query = Barang::select(
             'id', 'id_referensi', 'nama_barang',
