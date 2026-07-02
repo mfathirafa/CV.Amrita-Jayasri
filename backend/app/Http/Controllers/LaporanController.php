@@ -104,7 +104,7 @@ class LaporanController extends Controller
     // GET /api/laporan/stok
     public function stok(Request $request)
     {
-        $perPage = min((int) $request->get('per_page', 50), 100000000);
+        $perPage = min((int) $request->get('per_page', 50), 100000000000000000);
 
         $query = Barang::select(
             'id', 'id_referensi', 'nama_barang',

@@ -193,16 +193,6 @@ class BarangController extends Controller
             ], 404);
         }
 
-        $adaTransaksiMasuk  = $barang->transaksiMasuk()->count() > 0;
-        $adaTransaksiKeluar = $barang->transaksiKeluar()->count() > 0;
-
-        if ($adaTransaksiMasuk || $adaTransaksiKeluar) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Barang tidak dapat dihapus karena masih memiliki riwayat transaksi.',
-            ], 409);
-        }
-
         $barang->delete();
 
         return response()->json([
