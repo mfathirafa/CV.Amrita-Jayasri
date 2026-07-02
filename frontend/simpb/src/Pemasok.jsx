@@ -370,7 +370,7 @@ const Pemasok = ({ onNavigate, onLogout }) => {
               <div className="bg-[#ECFDF5] p-4 md:p-5 rounded-[20px] shadow-sm flex flex-col justify-between h-28 md:h-32 min-w-[200px] sm:min-w-0 snap-center shrink-0">
                 <p className="text-[10px] md:text-[11px] font-bold text-gray-400 uppercase tracking-wider">RATING KUALITAS</p>
                 <div className="flex items-baseline gap-2">
-                  <h3 className="text-2xl md:text-3xl font-bold text-gray-800">98%</h3>
+                  <h3 className="text-2xl md:text-3xl font-bold text-gray-800">100%</h3>
                 </div>
               </div>
             </div>

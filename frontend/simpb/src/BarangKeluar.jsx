@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  LayoutDashboard, Box, Truck, Users, ArrowDownRight, 
-  ArrowUpRight, Activity, BarChart2, ArrowDownLeft, 
+import {
+  LayoutDashboard, Box, Truck, Users, ArrowDownRight,
+  ArrowUpRight, Activity, BarChart2, ArrowDownLeft,
   Search, Bell, CircleUser, ChevronDown, CalendarDays,
   Package, PenTool, Zap, CheckCircle2, ChevronLeft, ChevronRight, Loader2, Plus,
-  Menu, X 
+  Menu, X
 } from 'lucide-react';
 
 import SuccessTransactionModal from './SuccessTransactionModal';
@@ -20,13 +20,13 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [searchBarang, setSearchBarang] = useState('');
   const [selectedBarang, setSelectedBarang] = useState(null);
-  
+
   // State Form Barang
   const [jumlah, setJumlah] = useState('');
   const [hargaSatuan, setHargaSatuan] = useState('');
   const [tanggalKeluar, setTanggalKeluar] = useState('');
   const [keterangan, setKeterangan] = useState('');
-  
+
   // State Form Konsumen (Penerima)
   const [isKonsumenBaru, setIsKonsumenBaru] = useState(false); // Mode toggle
   const [selectedKonsumenId, setSelectedKonsumenId] = useState(''); // Untuk konsumen lama
@@ -35,7 +35,7 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
   const [namaKonsumenBaru, setNamaKonsumenBaru] = useState(''); // Untuk konsumen baru
   const [alamatKonsumenBaru, setAlamatKonsumenBaru] = useState(''); // Untuk konsumen baru
   const [teleponKonsumenBaru, setTeleponKonsumenBaru] = useState(''); // Untuk konsumen baru
-  
+
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lastTransactionData, setLastTransactionData] = useState(null);
@@ -43,7 +43,7 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
   // === STATE UNTUK DATA API ===
   const [daftarBarang, setDaftarBarang] = useState([]);
   const [isLoadingBarang, setIsLoadingBarang] = useState(true);
-  
+
   const [daftarKonsumen, setDaftarKonsumen] = useState([]);
   const [isLoadingKonsumen, setIsLoadingKonsumen] = useState(true);
 
@@ -52,9 +52,9 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
     const fetchMasterData = async () => {
       const token = localStorage.getItem('token');
       const rawApiUrl = import.meta.env.VITE_API_URL || 'https://cvamritajayasri.my.id/api';
-      const cleanApiUrl = rawApiUrl.replace(/\/$/, ""); 
+      const cleanApiUrl = rawApiUrl.replace(/\/$/, "");
       const baseApi = cleanApiUrl.endsWith('/api') ? cleanApiUrl : `${cleanApiUrl}/api`;
-      
+
       const headers = {
         'Accept': 'application/json',
         'Authorization': `Bearer ${token}`
@@ -122,7 +122,7 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
     };
 
     fetchMasterData();
-    
+
     const today = new Date().toISOString().split('T')[0];
     setTanggalKeluar(today);
   }, []);
@@ -139,7 +139,7 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
     setIsDropdownOpen(false);
     setSearchBarang('');
     if (item.harga) {
-        setHargaSatuan(Math.floor(Number(item.harga)).toString());
+      setHargaSatuan(Math.floor(Number(item.harga)).toString());
     }
   };
 
@@ -153,99 +153,99 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
   const handleKonfirmasiPengiriman = async () => {
     // Validasi Umum
     if (!selectedBarang || !jumlah || !hargaSatuan || !tanggalKeluar) {
-        alert("Mohon lengkapi data barang, jumlah, harga, dan tanggal.");
-        return;
+      alert("Mohon lengkapi data barang, jumlah, harga, dan tanggal.");
+      return;
     }
 
     // Validasi Konsumen
     if (isKonsumenBaru && (!namaKonsumenBaru || !alamatKonsumenBaru || !teleponKonsumenBaru)) {
-        alert("Mohon lengkapi form data Konsumen Baru (Nama, Alamat, Telepon).");
-        return;
+      alert("Mohon lengkapi form data Konsumen Baru (Nama, Alamat, Telepon).");
+      return;
     }
     if (!isKonsumenBaru && !selectedKonsumenId) {
-        alert("Mohon pilih Konsumen Penerima dari daftar.");
-        return;
+      alert("Mohon pilih Konsumen Penerima dari daftar.");
+      return;
     }
 
     // Validasi Stok
     if (Number(jumlah) > selectedBarang.stok) {
-        alert("Peringatan: Jumlah barang keluar melebihi stok yang ada di gudang!");
-        return;
+      alert("Peringatan: Jumlah barang keluar melebihi stok yang ada di gudang!");
+      return;
     }
 
     // Susun Payload Dasar
     const payload = {
-        barang_id: selectedBarang.id,
-        jumlah: Number(jumlah),
-        harga_jual: Number(hargaSatuan),
-        tanggal_keluar: tanggalKeluar,
+      barang_id: selectedBarang.id,
+      jumlah: Number(jumlah),
+      harga_jual: Number(hargaSatuan),
+      tanggal_keluar: tanggalKeluar,
     };
 
     // Tambahkan Payload Konsumen (Pilih Mode: Baru atau Lama)
     if (isKonsumenBaru) {
-        payload.nama_konsumen = namaKonsumenBaru;
-        payload.alamat_konsumen = alamatKonsumenBaru;
-        payload.telepon_konsumen = teleponKonsumenBaru;
+      payload.nama_konsumen = namaKonsumenBaru;
+      payload.alamat_konsumen = alamatKonsumenBaru;
+      payload.telepon_konsumen = teleponKonsumenBaru;
     } else {
-        const konsumenTerpilih = daftarKonsumen.find(k => k.id.toString() === selectedKonsumenId);
-        payload.konsumen_id = Number(selectedKonsumenId);
-        payload.nama_instansi = konsumenTerpilih ? konsumenTerpilih.nama_konsumen : "Umum";
+      const konsumenTerpilih = daftarKonsumen.find(k => k.id.toString() === selectedKonsumenId);
+      payload.konsumen_id = Number(selectedKonsumenId);
+      payload.nama_instansi = konsumenTerpilih ? konsumenTerpilih.nama_konsumen : "Umum";
     }
 
     // Opsional Keterangan
     if (keterangan) {
-        payload.keterangan = keterangan;
+      payload.keterangan = keterangan;
     }
 
     try {
-        setIsSubmitting(true);
-        const token = localStorage.getItem('token');
-        const rawApiUrl = import.meta.env.VITE_API_URL || 'https://cvamritajayasri.my.id/api';
-        const cleanApiUrl = rawApiUrl.replace(/\/$/, ""); 
-        const baseApi = cleanApiUrl.endsWith('/api') ? cleanApiUrl : `${cleanApiUrl}/api`;
+      setIsSubmitting(true);
+      const token = localStorage.getItem('token');
+      const rawApiUrl = import.meta.env.VITE_API_URL || 'https://cvamritajayasri.my.id/api';
+      const cleanApiUrl = rawApiUrl.replace(/\/$/, "");
+      const baseApi = cleanApiUrl.endsWith('/api') ? cleanApiUrl : `${cleanApiUrl}/api`;
 
-        // URL DIUPDATE MENJADI /transaksi-keluar
-        const response = await fetch(`${baseApi}/transaksi-keluar`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(payload)
+      // URL DIUPDATE MENJADI /transaksi-keluar
+      const response = await fetch(`${baseApi}/transaksi-keluar`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const json = await response.json();
+
+      if (response.ok && json.success) {
+        // Capture data transaksi SEBELUM form direset
+        setLastTransactionData({
+          id: '#OUT-' + (json.data?.id || Math.floor(10000 + Math.random() * 90000)),
+          barang: selectedBarang ? selectedBarang.nama_barang : '-',
+          jumlah: jumlah || '0'
         });
-
-        const json = await response.json();
-
-        if (response.ok && json.success) {
-            // Capture data transaksi SEBELUM form direset
-            setLastTransactionData({
-                id: '#OUT-' + (json.data?.id || Math.floor(10000 + Math.random() * 90000)),
-                barang: selectedBarang ? selectedBarang.nama_barang : '-',
-                jumlah: jumlah || '0'
-            });
-            setIsSuccessModalOpen(true);
-            handleBatalkanDraft(); // Reset form setelah sukses
-        } else {
-            alert(`Gagal: ${json.message || "Terjadi kesalahan saat menyimpan transaksi"}`);
-        }
+        setIsSuccessModalOpen(true);
+        handleBatalkanDraft(); // Reset form setelah sukses
+      } else {
+        alert(`Gagal: ${json.message || "Terjadi kesalahan saat menyimpan transaksi"}`);
+      }
     } catch (error) {
-        console.error("Error submitting transaksi:", error);
-        alert("Terjadi kesalahan koneksi jaringan.");
+      console.error("Error submitting transaksi:", error);
+      alert("Terjadi kesalahan koneksi jaringan.");
     } finally {
-        setIsSubmitting(false);
+      setIsSubmitting(false);
     }
   };
 
   const handleBatalkanDraft = () => {
-      setSelectedBarang(null);
-      setJumlah('');
-      setHargaSatuan('');
-      setSelectedKonsumenId('');
-      setNamaKonsumenBaru('');
-      setAlamatKonsumenBaru('');
-      setTeleponKonsumenBaru('');
-      setKeterangan('');
+    setSelectedBarang(null);
+    setJumlah('');
+    setHargaSatuan('');
+    setSelectedKonsumenId('');
+    setNamaKonsumenBaru('');
+    setAlamatKonsumenBaru('');
+    setTeleponKonsumenBaru('');
+    setKeterangan('');
   };
 
   const currentStok = selectedBarang ? selectedBarang.stok : 0;
@@ -271,10 +271,10 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
   return (
     <>
       <div className="flex h-screen bg-[#F8F9FA] font-sans overflow-hidden">
-        
+
         {/* ================= MOBILE OVERLAY ================= */}
         {isMobileMenuOpen && (
-          <div 
+          <div
             className="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity"
             onClick={() => setIsMobileMenuOpen(false)}
           />
@@ -290,7 +290,7 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
               </div>
               <div>
                 <h1 className="text-[#5452F6] font-bold text-[13px] leading-tight tracking-wide uppercase">
-                  CV. AMRITA<br/>JAYASRI
+                  CV. AMRITA<br />JAYASRI
                 </h1>
                 <p className="text-gray-400 font-medium text-[10px] mt-0.5">Sistem Inventaris ATK</p>
               </div>
@@ -300,7 +300,7 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
               <X className="w-6 h-6" />
             </button>
           </div>
-          
+
           <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto mt-2 scrollbar-hide">
             <button onClick={() => handleNavigation('dashboard')} className="w-full flex items-center gap-3 px-4 py-3 text-gray-500 hover:bg-gray-50 hover:text-gray-800 rounded-xl font-medium text-sm transition-colors text-left">
               <LayoutDashboard className="w-5 h-5" /> Dashboard
@@ -337,7 +337,7 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
 
         {/* ================= MAIN CONTENT ================= */}
         <main className="flex-1 flex flex-col overflow-hidden relative w-full">
-          
+
           {/* === HEADER RESPONSIF === */}
           <header className="h-16 md:h-20 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between px-4 md:px-8 z-10 sticky top-0 shrink-0">
             <div className="flex items-center gap-3">
@@ -347,7 +347,7 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
               <h2 className="font-bold text-[#1E232C] text-sm md:text-base hidden sm:block">SIMPB - CV. Amrita Jayasri</h2>
               <h2 className="font-bold text-[#1E232C] text-sm sm:hidden">SIMPB</h2>
             </div>
-            
+
             <div className="flex items-center gap-4 md:gap-6">
               <NotificationBell onNavigate={onNavigate || handleNavigation} />
               <div className="h-6 w-px bg-gray-200 hidden md:block"></div>
@@ -394,21 +394,21 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
                   <div>
                     <label className="block text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5 md:mb-2">Pilih Barang (ATK)</label>
                     <div className="relative">
-                      <div 
+                      <div
                         onClick={() => !isLoadingBarang && setIsDropdownOpen(!isDropdownOpen)}
                         className={`w-full px-3 md:px-4 py-2.5 md:py-3 bg-[#F4F7FC] border ${isDropdownOpen ? 'border-[#5452F6] ring-1 ring-[#5452F6]' : 'border-gray-100'} rounded-xl text-xs md:text-sm flex justify-between items-center ${isLoadingBarang ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'} transition-all`}
                       >
                         {isLoadingBarang ? (
-                            <div className="flex items-center text-gray-500">
-                                <Loader2 className="w-3.5 h-3.5 md:w-4 md:h-4 animate-spin mr-2" /> Memuat data...
-                            </div>
+                          <div className="flex items-center text-gray-500">
+                            <Loader2 className="w-3.5 h-3.5 md:w-4 md:h-4 animate-spin mr-2" /> Memuat data...
+                          </div>
                         ) : (
-                            <>
-                                <span className={selectedBarang ? 'text-gray-800 font-semibold truncate pr-2' : 'text-gray-500'}>
-                                  {selectedBarang ? selectedBarang.nama_barang : 'Pilih barang...'}
-                                </span>
-                                <ChevronDown className={`w-3.5 h-3.5 md:w-4 md:h-4 text-gray-400 transition-transform shrink-0 ${isDropdownOpen ? 'rotate-180' : ''}`} />
-                            </>
+                          <>
+                            <span className={selectedBarang ? 'text-gray-800 font-semibold truncate pr-2' : 'text-gray-500'}>
+                              {selectedBarang ? selectedBarang.nama_barang : 'Pilih barang...'}
+                            </span>
+                            <ChevronDown className={`w-3.5 h-3.5 md:w-4 md:h-4 text-gray-400 transition-transform shrink-0 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                          </>
                         )}
                       </div>
 
@@ -419,9 +419,9 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
                             <div className="p-2 md:p-3 border-b border-gray-50 bg-gray-50/50">
                               <div className="relative">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 md:w-4 md:h-4 text-gray-400" />
-                                <input 
-                                  type="text" 
-                                  placeholder="Cari nama barang atau SKU..." 
+                                <input
+                                  type="text"
+                                  placeholder="Cari nama barang atau SKU..."
                                   value={searchBarang}
                                   onChange={(e) => setSearchBarang(e.target.value)}
                                   className="w-full pl-8 md:pl-9 pr-3 py-2 md:py-2.5 bg-white border border-gray-200 rounded-lg text-[10px] md:text-xs focus:outline-none focus:border-[#5452F6] transition-colors"
@@ -432,7 +432,7 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
                             <div className="max-h-48 md:max-h-56 overflow-y-auto">
                               {filteredBarang.length > 0 ? (
                                 filteredBarang.map((item) => (
-                                  <div 
+                                  <div
                                     key={item.id}
                                     onClick={() => handleSelectBarang(item)}
                                     className="px-3 md:px-4 py-2.5 md:py-3 hover:bg-[#F0EFFF] cursor-pointer flex flex-col md:flex-row items-start md:items-center justify-between border-b border-gray-50 last:border-0 transition-colors group gap-2 md:gap-0"
@@ -468,7 +468,7 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
                   <div>
                     <div className="flex justify-between items-center mb-1.5 md:mb-2">
                       <label className="block text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wider">Penerima (Konsumen)</label>
-                      <button 
+                      <button
                         onClick={() => setIsKonsumenBaru(!isKonsumenBaru)}
                         className="text-[9px] md:text-[10px] font-bold text-[#5452F6] hover:underline uppercase flex items-center gap-1"
                       >
@@ -478,23 +478,23 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
 
                     {isKonsumenBaru ? (
                       <div className="p-3 md:p-4 bg-[#F0EFFF]/50 border border-indigo-100 rounded-xl space-y-2.5 md:space-y-3 animate-in fade-in">
-                        <input 
-                          type="text" 
-                          placeholder="Nama Instansi / Konsumen..." 
+                        <input
+                          type="text"
+                          placeholder="Nama Instansi / Konsumen..."
                           value={namaKonsumenBaru}
                           onChange={(e) => setNamaKonsumenBaru(e.target.value)}
                           className="w-full bg-white border border-gray-200 rounded-lg px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm focus:outline-none focus:border-[#5452F6]"
                         />
-                        <input 
-                          type="text" 
-                          placeholder="Alamat Lengkap..." 
+                        <input
+                          type="text"
+                          placeholder="Alamat Lengkap..."
                           value={alamatKonsumenBaru}
                           onChange={(e) => setAlamatKonsumenBaru(e.target.value)}
                           className="w-full bg-white border border-gray-200 rounded-lg px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm focus:outline-none focus:border-[#5452F6]"
                         />
-                        <input 
-                          type="tel" 
-                          placeholder="Nomor Telepon..." 
+                        <input
+                          type="tel"
+                          placeholder="Nomor Telepon..."
                           value={teleponKonsumenBaru}
                           onChange={(e) => setTeleponKonsumenBaru(e.target.value)}
                           className="w-full bg-white border border-gray-200 rounded-lg px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm focus:outline-none focus:border-[#5452F6]"
@@ -589,12 +589,12 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
                     <div>
                       <label className="block text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5 md:mb-2">Jumlah</label>
                       <div className={`flex items-center bg-[#F4F7FC] border ${selectedBarang && !isStokCukup ? 'border-red-300 ring-1 ring-red-300' : 'border-gray-100'} rounded-xl px-3 md:px-4 py-2.5 md:py-3 focus-within:ring-1 focus-within:ring-[#5452F6] focus-within:bg-white transition-colors`}>
-                        <input 
-                          type="number" 
+                        <input
+                          type="number"
                           value={jumlah}
                           onChange={(e) => setJumlah(e.target.value)}
-                          className={`bg-transparent w-full text-xs md:text-sm font-semibold outline-none min-w-0 ${selectedBarang && !isStokCukup ? 'text-red-500' : 'text-gray-800'}`} 
-                          placeholder="0" 
+                          className={`bg-transparent w-full text-xs md:text-sm font-semibold outline-none min-w-0 ${selectedBarang && !isStokCukup ? 'text-red-500' : 'text-gray-800'}`}
+                          placeholder="0"
                         />
                         <span className="text-[9px] md:text-[10px] font-bold text-gray-400 ml-2 uppercase shrink-0">
                           {selectedBarang ? selectedBarang.satuan : 'UNIT'}
@@ -610,12 +610,12 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
                       <label className="block text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5 md:mb-2">Harga Satuan</label>
                       <div className="flex items-center bg-[#F4F7FC] border border-gray-100 rounded-xl px-3 md:px-4 py-2.5 md:py-3 focus-within:ring-1 focus-within:ring-[#5452F6] focus-within:bg-white transition-colors">
                         <span className="text-[10px] font-bold text-gray-400 mr-2 shrink-0">IDR</span>
-                        <input 
-                          type="number" 
+                        <input
+                          type="number"
                           value={hargaSatuan}
                           onChange={(e) => setHargaSatuan(e.target.value)}
-                          className="bg-transparent w-full text-xs md:text-sm font-semibold outline-none text-gray-800 min-w-0" 
-                          placeholder="0" 
+                          className="bg-transparent w-full text-xs md:text-sm font-semibold outline-none text-gray-800 min-w-0"
+                          placeholder="0"
                         />
                       </div>
                     </div>
@@ -625,36 +625,35 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
                     <div>
                       <label className="block text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5 md:mb-2">Tanggal Keluar</label>
                       <div className="relative">
-                        <input 
-                          type="date" 
+                        <input
+                          type="date"
                           value={tanggalKeluar}
                           onChange={(e) => setTanggalKeluar(e.target.value)}
-                          className="w-full bg-[#F4F7FC] border border-gray-100 rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm text-gray-700 focus:outline-none focus:border-[#5452F6] focus:bg-white transition-colors" 
+                          className="w-full bg-[#F4F7FC] border border-gray-100 rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm text-gray-700 focus:outline-none focus:border-[#5452F6] focus:bg-white transition-colors"
                         />
                       </div>
                     </div>
                     <div>
                       <label className="block text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5 md:mb-2">Keterangan (Opsional)</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         value={keterangan}
                         onChange={(e) => setKeterangan(e.target.value)}
-                        placeholder="Catatan pengiriman..." 
-                        className="w-full bg-[#F4F7FC] border border-gray-100 rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm text-gray-700 focus:outline-none focus:border-[#5452F6] focus:bg-white transition-colors" 
+                        placeholder="Catatan pengiriman..."
+                        className="w-full bg-[#F4F7FC] border border-gray-100 rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm text-gray-700 focus:outline-none focus:border-[#5452F6] focus:bg-white transition-colors"
                       />
                     </div>
                   </div>
 
                   <div className="flex flex-col sm:flex-row items-center justify-between pt-4 border-t border-gray-50 mt-4 gap-4 sm:gap-0">
                     <button onClick={handleBatalkanDraft} className="text-gray-400 text-xs md:text-sm font-bold hover:text-gray-600 transition-colors w-full sm:w-auto text-center">Batalkan Draft</button>
-                    <button 
+                    <button
                       onClick={handleKonfirmasiPengiriman}
                       disabled={!selectedBarang || !isStokCukup || isSubmitting}
-                      className={`flex items-center justify-center gap-2 px-6 md:px-8 py-2.5 md:py-3 rounded-xl font-bold text-xs md:text-sm transition-all w-full sm:w-auto ${
-                        !selectedBarang || !isStokCukup || isSubmitting
-                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                      className={`flex items-center justify-center gap-2 px-6 md:px-8 py-2.5 md:py-3 rounded-xl font-bold text-xs md:text-sm transition-all w-full sm:w-auto ${!selectedBarang || !isStokCukup || isSubmitting
+                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                           : 'bg-[#5452F6] text-white shadow-lg shadow-indigo-500/30 hover:bg-[#4341E3]'
-                      }`}
+                        }`}
                     >
                       {isSubmitting ? (
                         <><Loader2 className="w-3.5 h-3.5 md:w-4 md:h-4 animate-spin" /> Memproses...</>
@@ -668,7 +667,7 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
 
               {/* Sidebar Kanan Content */}
               <div className="space-y-6 md:space-y-8">
-                
+
                 {/* Status Inventaris Dinamis */}
                 <div className="bg-white rounded-[20px] p-4 md:p-6 shadow-sm border border-gray-100">
                   <div className="flex justify-between items-start mb-4 md:mb-6">
@@ -696,10 +695,10 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
                     </div>
                     <div className="w-full h-1.5 md:h-2 bg-gray-100 rounded-full overflow-hidden flex">
                       {selectedBarang && isStokCukup && (
-                         <>
-                            <div className="h-full bg-gray-300 transition-all duration-500" style={{ width: `${100 - persentaseKeluar}%` }}></div>
-                            <div className="h-full bg-red-400 transition-all duration-500" style={{ width: `${persentaseKeluar}%` }}></div>
-                         </>
+                        <>
+                          <div className="h-full bg-gray-300 transition-all duration-500" style={{ width: `${100 - persentaseKeluar}%` }}></div>
+                          <div className="h-full bg-red-400 transition-all duration-500" style={{ width: `${persentaseKeluar}%` }}></div>
+                        </>
                       )}
                     </div>
                   </div>
@@ -727,7 +726,7 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
         </main>
       </div>
 
-      <SuccessTransactionModal 
+      <SuccessTransactionModal
         isOpen={isSuccessModalOpen}
         onClose={() => setIsSuccessModalOpen(false)}
         onNavigate={onNavigate}

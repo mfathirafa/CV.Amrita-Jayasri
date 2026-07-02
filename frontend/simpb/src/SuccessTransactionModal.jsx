@@ -31,7 +31,7 @@ const SuccessTransactionModal = ({ isOpen, onClose, onNavigate, transactionData 
           </div>
           <div className="flex justify-between items-center">
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">JUMLAH</span>
-            <span className="text-xs font-bold text-gray-800">{transactionData?.jumlah || '0'} Unit</span>
+            <span className="text-xs font-bold text-gray-800">{transactionData?.jumlah || '0'} {transactionData?.satuan || 'Unit'}</span>
           </div>
         </div>
 
