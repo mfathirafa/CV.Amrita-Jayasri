@@ -38,12 +38,14 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
 
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [savedTransactionData, setSavedTransactionData] = useState(null);
 
   // === STATE UNTUK DATA API ===
   const [daftarBarang, setDaftarBarang] = useState([]);
   const [daftarPemasok, setDaftarPemasok] = useState([]);
   const [transaksiTerbaru, setTransaksiTerbaru] = useState([]); // State Transaksi Terbaru
   const [isLoading, setIsLoading] = useState(true);
+  const [volumeHarian, setVolumeHarian] = useState(0);
 
   // === AMBIL DATA MASTER BARANG, PEMASOK & TRANSAKSI DARI API ===
   useEffect(() => {
@@ -126,6 +128,13 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
         // Set tanggal default ke hari ini
         const today = new Date().toISOString().split('T')[0];
         setTanggalMasuk(today);
+
+        // Hitung volume harian dari transaksi hari ini
+        const volumeHariIni = allTransaksi.filter(t => {
+          const tDate = (t.tanggal_masuk || t.created_at || '').split('T')[0];
+          return tDate === today;
+        }).reduce((acc, curr) => acc + (curr.jumlah || 0), 0);
+        setVolumeHarian(volumeHariIni);
 
       } catch (error) {
         console.error("Error Fetching Data:", error);
@@ -237,9 +246,17 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
 
       // 4. Handle Respons
       if (response.ok && json.success) {
+        // Simpan data transaksi sebelum form direset
+        setSavedTransactionData({
+          id: '#TRX-' + (json.data?.id || Math.floor(10000 + Math.random() * 90000)),
+          barang: String(selectedBarang.nama_barang || '').replace(/&amp;/g, '&').replace(/&#039;/g, "'").replace(/&quot;/g, '"'),
+          jumlah: jumlah,
+          satuan: selectedBarang.satuan || 'Unit'
+        });
+
         setIsSuccessModalOpen(true);
 
-        // Bersihkan form setelah sukses
+        // Bersihkan form setelah data transaksi disimpan
         setSelectedBarang(null);
         setPemasokId('');
         setSelectedPemasokObj(null);
@@ -386,8 +403,7 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
                 <div>
                   <p className="text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">VOLUME HARIAN</p>
                   <div className="flex items-end gap-2">
-                    <h3 className="text-xl md:text-2xl font-bold text-gray-800 leading-none">124</h3>
-                    <span className="text-[10px] md:text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">+12%</span>
+                    <h3 className="text-xl md:text-2xl font-bold text-gray-800 leading-none">{volumeHarian}</h3>
                   </div>
                 </div>
               </div>
@@ -589,7 +605,7 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
                           onChange={(e) => setJumlah(e.target.value)}
                           className="bg-transparent text-xs md:text-sm font-semibold text-gray-800 focus:outline-none flex-grow min-w-0"
                         />
-                        <span className="text-[10px] md:text-xs font-bold text-gray-400 uppercase ml-2 tracking-wider shrink-0">UNIT</span>
+                        <span className="text-[10px] md:text-xs font-bold text-gray-400 uppercase ml-2 tracking-wider shrink-0">{selectedBarang && selectedBarang.satuan ? selectedBarang.satuan : 'UNIT'}</span>
                       </div>
                     </div>
                     {/* Harga Beli */}
@@ -741,11 +757,7 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
         isOpen={isSuccessModalOpen}
         onClose={() => setIsSuccessModalOpen(false)}
         onNavigate={onNavigate}
-        transactionData={{
-          id: '#TRX-' + Math.floor(10000 + Math.random() * 90000),
-          barang: selectedBarang ? String(selectedBarang.nama_barang || '').replace(/&amp;/g, '&').replace(/&#039;/g, "'").replace(/&quot;/g, '"') : 'Belum dipilih',
-          jumlah: jumlah || '0'
-        }}
+        transactionData={savedTransactionData}
       />
     </>
   );

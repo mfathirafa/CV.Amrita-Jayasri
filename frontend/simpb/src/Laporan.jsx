@@ -19,6 +19,11 @@ import DeleteConfirmModal from './DeleteConfirmModal';
 import NotificationBell from './NotificationBell';
 import logoAmrita from './assets/Logo Amrita.png';
 
+const decodeHtml = (text) => {
+  if (!text) return text;
+  return String(text).replace(/&amp;/g, '&').replace(/&#039;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+};
+
 const Laporan = ({ onLogout, onNavigate }) => {
   // === STATES ===
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -281,10 +286,10 @@ const Laporan = ({ onLogout, onNavigate }) => {
           "Tanggal": formatDate(isMasuk ? item.tanggal_masuk : item.tanggal_keluar),
           "Waktu": formatTime(item.created_at),
           "Tipe Transaksi": isMasuk ? 'Barang Masuk' : 'Barang Keluar',
-          "Nama Produk": item.barang?.nama_barang || '-',
+          "Nama Produk": decodeHtml(item.barang?.nama_barang || '-'),
           "SKU Produk": item.barang?.id_referensi || '-',
           "Kuantitas": item.jumlah,
-          "Entitas (Supplier/Konsumen)": isMasuk ? (item.supplier?.nama_supplier || '-') : (item.nama_instansi || 'Umum'),
+          "Entitas (Supplier/Konsumen)": isMasuk ? decodeHtml(item.supplier?.nama_supplier || '-') : decodeHtml(item.nama_instansi || 'Umum'),
           "Total Nilai (Rp)": item.jumlah * parseFloat(isMasuk ? item.harga_beli : item.harga_jual || 0)
         };
       });
@@ -344,9 +349,9 @@ const Laporan = ({ onLogout, onNavigate }) => {
           `#${isMasuk ? 'M' : 'K'}-${String(item.id).padStart(4, '0')}`,
           `${formatDate(isMasuk ? item.tanggal_masuk : item.tanggal_keluar)} \n(${formatTime(item.created_at)})`,
           isMasuk ? 'Masuk' : 'Keluar',
-          `${item.barang?.nama_barang || '-'} \n(SKU: ${item.barang?.id_referensi || '-'})`,
+          `${decodeHtml(item.barang?.nama_barang || '-')} \n(SKU: ${item.barang?.id_referensi || '-'})`,
           `${isMasuk ? '+' : '-'} ${item.jumlah}`,
-          isMasuk ? (item.supplier?.nama_supplier || '-') : (item.nama_instansi || 'Umum'),
+          isMasuk ? decodeHtml(item.supplier?.nama_supplier || '-') : decodeHtml(item.nama_instansi || 'Umum'),
           formatRupiah(item.jumlah * parseFloat(isMasuk ? item.harga_beli : item.harga_jual || 0))
         ];
       });
@@ -390,8 +395,8 @@ const Laporan = ({ onLogout, onNavigate }) => {
       const cleanApiUrl = rawApiUrl.replace(/\/$/, '');
       const baseApi = cleanApiUrl.endsWith('/api') ? cleanApiUrl : `${cleanApiUrl}/api`;
       const endpoint = itemToDelete.type === 'masuk'
-        ? `${baseApi}/barang-masuk/${itemToDelete.id}`
-        : `${baseApi}/barang-keluar/${itemToDelete.id}`;
+        ? `${baseApi}/transaksi-masuk/${itemToDelete.id}`
+        : `${baseApi}/transaksi-keluar/${itemToDelete.id}`;
 
       const response = await fetch(endpoint, {
         method: 'DELETE',
@@ -694,7 +699,7 @@ const Laporan = ({ onLogout, onNavigate }) => {
                               <p className="text-[9px] md:text-[10px] text-gray-400 font-medium">{formatTime(item.created_at)}</p>
                             </td>
                             <td className="py-4 md:py-5 px-4 md:px-6">
-                              <p className="text-[10px] md:text-xs font-black text-gray-800 truncate max-w-[150px] md:max-w-[200px]">{item.barang?.nama_barang || '-'}</p>
+                              <p className="text-[10px] md:text-xs font-black text-gray-800 truncate max-w-[150px] md:max-w-[200px]">{decodeHtml(item.barang?.nama_barang || '-')}</p>
                               <p className="text-[9px] md:text-[10px] text-gray-400 font-medium uppercase truncate max-w-[150px]">SKU: {item.barang?.id_referensi || '-'}</p>
                             </td>
                             <td className="py-4 md:py-5 px-4 md:px-6 text-center">
@@ -703,8 +708,8 @@ const Laporan = ({ onLogout, onNavigate }) => {
                               </span>
                             </td>
                             <td className="py-4 md:py-5 px-4 md:px-6 text-center">
-                              <p className="text-[10px] md:text-xs font-black text-gray-800">{isMasuk ? '+' : '-'} {item.jumlah} Unit</p>
-                              <p className="text-[8px] md:text-[10px] text-gray-400 font-medium truncate max-w-[120px] mx-auto">{isMasuk ? item.supplier?.nama_supplier : (item.nama_instansi || 'Umum')}</p>
+                              <p className="text-[10px] md:text-xs font-black text-gray-800">{isMasuk ? '+' : '-'} {item.jumlah} {item.barang?.satuan || 'Unit'}</p>
+                              <p className="text-[8px] md:text-[10px] text-gray-400 font-medium truncate max-w-[120px] mx-auto">{isMasuk ? decodeHtml(item.supplier?.nama_supplier) : decodeHtml(item.nama_instansi || 'Umum')}</p>
                             </td>
                             <td className="py-4 md:py-5 px-4 md:px-8 text-right font-black text-gray-800 text-[10px] md:text-sm whitespace-nowrap">{formatRupiah(item.jumlah * parseFloat(isMasuk ? item.harga_beli : item.harga_jual || 0))}</td>
                             <td className="py-4 md:py-5 px-4 md:px-6 text-center">

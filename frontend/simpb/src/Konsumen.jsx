@@ -336,7 +336,7 @@ const Konsumen = ({ onNavigate, onLogout }) => {
                   <Star className="w-4 h-4 md:w-5 md:h-5 text-[#10B981]" />
                 </div>
                 <div className="relative z-10">
-                  <h3 className="text-xl md:text-2xl font-bold text-gray-800">98%</h3>
+                  <h3 className="text-xl md:text-2xl font-bold text-gray-800">100%</h3>
                   <p className="text-[9px] md:text-[11px] font-bold text-gray-400 uppercase tracking-wider mt-1">RATING KUALITAS</p>
                 </div>
               </div>

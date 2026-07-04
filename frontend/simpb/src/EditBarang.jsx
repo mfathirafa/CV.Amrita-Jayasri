@@ -11,6 +11,7 @@ import {
 
 import SuccessModal from './SuccessModal';
 import NotificationBell from './NotificationBell';
+import logoAmrita from './assets/Logo Amrita.png';
 
 const EditBarang = ({ onNavigate, onLogout, itemId }) => {
   // === STATE UNTUK MENU HP ===
@@ -24,6 +25,10 @@ const EditBarang = ({ onNavigate, onLogout, itemId }) => {
   const [stok, setStok] = useState('');
   const [ambangBatas, setAmbangBatas] = useState('');
   const [idReferensi, setIdReferensi] = useState('MEMUAT...');
+  
+  // STATE TAMBAHAN UNTUK INPUT MANUAL
+  const [isCustomKategori, setIsCustomKategori] = useState(false);
+  const [isCustomSatuan, setIsCustomSatuan] = useState(false);
   
   // STATE UNTUK FILE FOTO & PREVIEW
   const [foto, setFoto] = useState(null);
@@ -75,6 +80,16 @@ const EditBarang = ({ onNavigate, onLogout, itemId }) => {
           setAmbangBatas(item.stok_minimum || '');
           setIdReferensi(item.id_referensi || `BRG-${item.id}`);
           
+          const predefinedKategori = ["Kertas & Media", "Alat Tulis", "Tinta & Toner", "Arsip & Penyimpanan", "Aksesoris Meja", "Buku & Jurnal"];
+          if (item.kategori && !predefinedKategori.includes(item.kategori)) {
+            setIsCustomKategori(true);
+          }
+          
+          const predefinedSatuan = ["Rim", "Box", "Pcs", "Pack", "Lusin", "Unit"];
+          if (item.satuan && !predefinedSatuan.includes(item.satuan)) {
+            setIsCustomSatuan(true);
+          }
+
           if (item.foto_url) {
             setPreviewFoto(item.foto_url);
           }
@@ -199,8 +214,8 @@ const EditBarang = ({ onNavigate, onLogout, itemId }) => {
         <aside className={`fixed inset-y-0 left-0 z-50 w-[260px] bg-white border-r border-gray-100 flex flex-col shrink-0 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
           <div className="p-6 flex justify-between items-center">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-[#5452F6] rounded-xl flex items-center justify-center shrink-0 shadow-sm shadow-indigo-100">
-                <Box className="w-6 h-6 text-white" strokeWidth={2} />
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 overflow-hidden bg-gray-50">
+                <img src={logoAmrita} alt="Logo" className="w-full h-full object-contain" />
               </div>
               <div>
                 <h1 className="text-[#5452F6] font-bold text-[13px] leading-tight tracking-wide uppercase">
@@ -353,109 +368,237 @@ const EditBarang = ({ onNavigate, onLogout, itemId }) => {
                       value={namaBarang}
                       onChange={(e) => setNamaBarang(e.target.value)}
                       disabled={isSaving}
-                      placeholder="Nama barang..." 
-                      className="w-full px-4 py-2.5 md:py-3 bg-[#F4F7FC] border-transparent rounded-xl text-xs md:text-sm focus:bg-white focus:border-[#5452F6] transition-all"
+                      placeholder="Contoh: Kertas A3 80gr" 
+                      className="w-full px-3 md:px-4 py-2.5 md:py-3 bg-[#F4F7FC] border-transparent rounded-xl text-xs md:text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] focus:ring-1 focus:ring-[#5452F6] transition-all disabled:opacity-60"
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                  {/* Grid 3 Kolom untuk Kategori, Satuan, Harga */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                    
+                    {/* KOLOM KATEGORI */}
                     <div>
                       <label className="block text-xs font-bold text-gray-800 mb-1.5 md:mb-2">Kategori <span className="text-red-500">*</span></label>
-                      <div className="relative">
-                        <select 
-                          value={kategori}
-                          onChange={(e) => setKategori(e.target.value)}
-                          className="w-full px-4 py-2.5 md:py-3 bg-[#F4F7FC] border-transparent rounded-xl text-xs md:text-sm appearance-none cursor-pointer"
-                        >
-                          <option value="" disabled>Pilih Kategori</option>
-                          <option value="Kertas & Media">Kertas & Media</option>
-                          <option value="Alat Tulis">Alat Tulis</option>
-                          <option value="Tinta & Toner">Tinta & Toner</option>
-                          <option value="Arsip & Penyimpanan">Arsip & Penyimpanan</option>
-                          <option value="Aksesoris Meja">Aksesoris Meja</option>
-                          <option value="Buku & Jurnal">Buku & Jurnal</option>
-                        </select>
-                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      </div>
+                      {isCustomKategori ? (
+                        <div className="relative flex items-center">
+                          <input 
+                            type="text"
+                            value={kategori}
+                            onChange={(e) => setKategori(e.target.value)}
+                            disabled={isSaving}
+                            placeholder="Ketik kategori baru..."
+                            className="w-full pl-3 pr-10 md:pl-4 md:pr-10 py-2.5 md:py-3 bg-[#F4F7FC] border-transparent rounded-xl text-xs md:text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] focus:ring-1 focus:ring-[#5452F6] transition-all disabled:opacity-60"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => { setIsCustomKategori(false); setKategori(''); }}
+                            className="absolute right-2 md:right-3 p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Batal input manual"
+                          >
+                            <X className="w-4 h-4 md:w-5 md:h-5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="relative">
+                          <select 
+                            value={kategori}
+                            onChange={(e) => {
+                              if (e.target.value === 'custom') {
+                                setIsCustomKategori(true);
+                                setKategori('');
+                              } else {
+                                setKategori(e.target.value);
+                              }
+                            }}
+                            disabled={isSaving}
+                            className="w-full px-3 md:px-4 py-2.5 md:py-3 bg-[#F4F7FC] border-transparent rounded-xl text-xs md:text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] focus:ring-1 focus:ring-[#5452F6] appearance-none cursor-pointer disabled:opacity-60"
+                          >
+                            <option value="" disabled>Pilih Kategori</option>
+                            <option value="Kertas & Media">Kertas & Media</option>
+                            <option value="Alat Tulis">Alat Tulis</option>
+                            <option value="Tinta & Toner">Tinta & Toner</option>
+                            <option value="Arsip & Penyimpanan">Arsip & Penyimpanan</option>
+                            <option value="Aksesoris Meja">Aksesoris Meja</option>
+                            <option value="Buku & Jurnal">Buku & Jurnal</option>
+                            <option value="custom" className="font-bold text-[#5452F6]">+ Tambah Manual...</option>
+                          </select>
+                          <ChevronDown className="absolute right-3 md:right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                        </div>
+                      )}
                     </div>
 
+                    {/* KOLOM SATUAN */}
                     <div>
                       <label className="block text-xs font-bold text-gray-800 mb-1.5 md:mb-2">Satuan <span className="text-red-500">*</span></label>
-                      <div className="relative">
-                        <select 
-                          value={satuan}
-                          onChange={(e) => setSatuan(e.target.value)}
-                          className="w-full px-4 py-2.5 md:py-3 bg-[#F4F7FC] border-transparent rounded-xl text-xs md:text-sm appearance-none cursor-pointer"
-                        >
-                          <option value="" disabled>Pilih Satuan</option>
-                          <option value="Rim">Rim</option>
-                          <option value="Box">Box</option>
-                          <option value="Pcs">Pcs</option>
-                          <option value="Pack">Pack</option>
-                          <option value="Lusin">Lusin</option>
-                        </select>
-                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      </div>
+                      {isCustomSatuan ? (
+                        <div className="relative flex items-center">
+                          <input 
+                            type="text"
+                            value={satuan}
+                            onChange={(e) => setSatuan(e.target.value)}
+                            disabled={isSaving}
+                            placeholder="Ketik satuan baru..."
+                            className="w-full pl-3 pr-10 md:pl-4 md:pr-10 py-2.5 md:py-3 bg-[#F4F7FC] border-transparent rounded-xl text-xs md:text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] focus:ring-1 focus:ring-[#5452F6] transition-all disabled:opacity-60"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => { setIsCustomSatuan(false); setSatuan(''); }}
+                            className="absolute right-2 md:right-3 p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Batal input manual"
+                          >
+                            <X className="w-4 h-4 md:w-5 md:h-5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="relative">
+                          <select 
+                            value={satuan}
+                            onChange={(e) => {
+                              if (e.target.value === 'custom') {
+                                setIsCustomSatuan(true);
+                                setSatuan('');
+                              } else {
+                                setSatuan(e.target.value);
+                              }
+                            }}
+                            disabled={isSaving}
+                            className="w-full px-3 md:px-4 py-2.5 md:py-3 bg-[#F4F7FC] border-transparent rounded-xl text-xs md:text-sm focus:outline-none focus:bg-white focus:border-[#5452F6] focus:ring-1 focus:ring-[#5452F6] appearance-none cursor-pointer disabled:opacity-60"
+                          >
+                            <option value="" disabled>Pilih Satuan</option>
+                            <option value="Rim">Rim</option>
+                            <option value="Box">Box</option>
+                            <option value="Pcs">Pcs</option>
+                            <option value="Pack">Pack</option>
+                            <option value="Lusin">Lusin</option>
+                            <option value="Unit">Unit</option>
+                            <option value="custom" className="font-bold text-[#5452F6]">+ Tambah Manual...</option>
+                          </select>
+                          <ChevronDown className="absolute right-3 md:right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                        </div>
+                      )}
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-gray-800 mb-1.5 md:mb-2">Harga <span className="text-red-500">*</span></label>
-                      <div className="flex items-center bg-[#F4F7FC] px-4 py-2.5 md:py-3 rounded-xl focus-within:bg-white focus-within:ring-1 focus-within:ring-[#5452F6]">
+                      <label className="block text-xs font-bold text-gray-800 mb-1.5 md:mb-2">Harga / {satuan || 'Satuan'} <span className="text-red-500">*</span></label>
+                      <div className="flex items-center bg-[#F4F7FC] px-3 md:px-4 py-2.5 md:py-3 rounded-xl focus-within:bg-white focus-within:ring-1 focus-within:ring-[#5452F6]">
                         <span className="text-xs md:text-sm text-gray-400 font-bold mr-2">Rp</span>
-                        <input type="number" value={harga} onChange={(e) => setHarga(e.target.value)} className="bg-transparent w-full text-xs md:text-sm outline-none" placeholder="0" />
+                        <input 
+                          type="number" 
+                          value={harga}
+                          onChange={(e) => setHarga(e.target.value)}
+                          disabled={isSaving}
+                          placeholder="55000" 
+                          className="bg-transparent w-full text-xs md:text-sm outline-none disabled:opacity-60" 
+                        />
                       </div>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 p-4 md:p-6 bg-[#F4F7FC]/50 rounded-2xl border border-gray-50">
                     <div>
-                      <label className="block text-xs font-bold text-gray-800 mb-1.5 md:mb-2">Stok Saat Ini <span className="text-red-500">*</span></label>
-                      <div className="flex items-center bg-white border border-gray-100 rounded-xl overflow-hidden focus-within:ring-1 focus-within:ring-[#5452F6]">
-                        <input type="number" value={stok} onChange={(e) => setStok(e.target.value)} className="flex-1 px-4 py-2.5 md:py-3 text-xs md:text-sm outline-none" placeholder="0" />
-                        <div className="bg-gray-100 px-3 md:px-4 py-2.5 md:py-3 text-[9px] md:text-[10px] font-bold text-gray-500 uppercase">{satuan || 'UNIT'}</div>
+                      <div className="flex items-center gap-2 mb-1.5 md:mb-2">
+                        <label className="text-xs font-bold text-gray-800">Stok Saat Ini <span className="text-red-500">*</span></label>
                       </div>
+                      <div className="flex items-center bg-white border border-gray-100 rounded-xl overflow-hidden focus-within:ring-1 focus-within:ring-[#5452F6]">
+                        <input 
+                          type="number" 
+                          value={stok}
+                          onChange={(e) => setStok(e.target.value)}
+                          disabled={isSaving}
+                          placeholder="500" 
+                          className="flex-1 px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm outline-none disabled:bg-gray-50" 
+                        />
+                        <div className="bg-gray-100 px-3 md:px-4 py-2.5 md:py-3 text-[9px] md:text-[10px] font-bold text-gray-500 uppercase tracking-widest">{satuan || 'UNIT'}</div>
+                      </div>
+                      <p className="text-[9px] md:text-[10px] text-gray-400 mt-1.5 md:mt-2">Jumlah fisik saat ini di gudang.</p>
                     </div>
                     <div>
-                      <div className="flex items-center gap-2 mb-1.5 md:mb-2 text-[#D97706]">
-                        <AlertTriangle className="w-3.5 h-3.5" />
-                        <label className="text-xs font-bold">Ambang Minimum <span className="text-red-500">*</span></label>
+                      <div className="flex items-center gap-1.5 md:gap-2 mb-1.5 md:mb-2 text-[#D97706]">
+                        <AlertTriangle className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                        <label className="text-xs font-bold">Batas Minimum <span className="text-red-500">*</span></label>
                       </div>
                       <div className="flex items-center bg-white border border-gray-100 rounded-xl overflow-hidden focus-within:ring-1 focus-within:ring-[#D97706]">
-                        <input type="number" value={ambangBatas} onChange={(e) => setAmbangBatas(e.target.value)} className="flex-1 px-4 py-2.5 md:py-3 text-xs md:text-sm outline-none text-[#D97706] font-bold" placeholder="0" />
-                        <div className="bg-orange-50 px-3 md:px-4 py-2.5 md:py-3 text-[9px] md:text-[10px] font-bold text-orange-600 border-l border-orange-100 uppercase">{satuan || 'UNIT'}</div>
+                        <input 
+                          type="number" 
+                          value={ambangBatas}
+                          onChange={(e) => setAmbangBatas(e.target.value)}
+                          disabled={isSaving}
+                          placeholder="50" 
+                          className="flex-1 px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm outline-none text-[#D97706] font-bold disabled:bg-gray-50" 
+                        />
+                        <div className="bg-orange-50 px-3 md:px-4 py-2.5 md:py-3 text-[9px] md:text-[10px] font-bold text-orange-600 border-l border-orange-100 uppercase tracking-widest">{satuan || 'UNIT'}</div>
                       </div>
+                      <p className="text-[9px] md:text-[10px] text-[#D97706] mt-1.5 md:mt-2 font-medium">Peringatan stok akan muncul jika di bawah angka ini.</p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="mt-8 md:mt-12 pt-6 md:pt-8 border-t border-gray-50 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-2 text-gray-400">
-                  <Info className="w-3.5 h-3.5" />
-                  <p className="text-[10px] md:text-[11px] font-medium">Data akan tercatat dalam riwayat log sistem.</p>
+              {/* Form Footer Action */}
+              <div className="mt-8 md:mt-12 pt-6 md:pt-8 border-t border-gray-50 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="flex items-start md:items-center gap-2 text-gray-400 w-full md:w-auto">
+                  <Info className="w-4 h-4 mt-0.5 md:mt-0 shrink-0" />
+                  <p className="text-[10px] md:text-[11px] font-medium text-left">Pastikan data yang dimasukkan sudah sesuai dengan manifest fisik gudang.</p>
                 </div>
-                <div className="flex items-center gap-3 w-full sm:w-auto">
+                
+                {/* Button Group: Stack on mobile, inline on desktop */}
+                <div className="flex flex-col sm:flex-row items-center gap-3 md:gap-4 w-full md:w-auto mt-4 md:mt-0">
                   <button 
                     onClick={() => onNavigate('data-barang')}
                     disabled={isSaving}
-                    className="flex-1 sm:flex-none px-6 md:px-8 py-2.5 md:py-3 text-xs md:text-sm font-bold text-gray-500 hover:bg-gray-100 rounded-xl transition-colors disabled:opacity-50"
+                    className="w-full sm:w-auto px-6 md:px-8 py-2.5 md:py-3 text-xs md:text-sm font-bold text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition-colors disabled:opacity-50 text-center"
                   >
                     Batal
                   </button>
                   <button 
                     onClick={handleSimpan}
                     disabled={isSaving || isFetchingData}
-                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 md:px-8 py-2.5 md:py-3 bg-[#5452F6] hover:bg-[#4341E3] text-white rounded-xl text-xs md:text-sm font-bold shadow-lg shadow-indigo-500/30 transition-all disabled:bg-indigo-300"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 md:px-8 py-2.5 md:py-3 bg-[#5452F6] hover:bg-[#4341E3] text-white rounded-xl text-xs md:text-sm font-bold shadow-lg shadow-indigo-500/30 transition-all disabled:bg-indigo-300 disabled:shadow-none"
                   >
-                    {isSaving ? <Loader2 className="w-3.5 h-3.5 md:w-4 md:h-4 animate-spin" /> : <Save className="w-3.5 h-3.5 md:w-4 md:h-4" />}
-                    {isSaving ? 'Menyimpan...' : 'Simpan'}
+                    {isSaving ? (
+                      <><Loader2 className="w-3.5 h-3.5 md:w-4 md:h-4 animate-spin" /> Memproses...</>
+                    ) : (
+                      <><Save className="w-3.5 h-3.5 md:w-4 md:h-4" /> Simpan Perubahan</>
+                    )}
                   </button>
                 </div>
               </div>
             </div>
 
-            <div className="mt-8 md:mt-12 text-center px-4">
+            {/* Bottom Info Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+              <div className="bg-white p-4 md:p-5 rounded-2xl border border-gray-100 flex items-start gap-3 md:gap-4 hover:shadow-md transition-shadow cursor-default">
+                <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
+                  <RotateCcw className="w-4 h-4 md:w-5 md:h-5 text-[#5452F6]" />
+                </div>
+                <div>
+                  <h4 className="text-xs md:text-sm font-bold text-gray-800">Riwayat Perubahan</h4>
+                  <p className="text-[9px] md:text-[10px] text-gray-500 mt-1 md:mt-1.5 leading-relaxed">Lacak setiap modifikasi data barang ini untuk audit internal.</p>
+                </div>
+              </div>
+
+              <div className="bg-white p-4 md:p-5 rounded-2xl border border-gray-100 flex items-start gap-3 md:gap-4 hover:shadow-md transition-shadow cursor-default">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+                  <QrCode className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
+                </div>
+                <div>
+                  <h4 className="text-xs md:text-sm font-bold text-gray-800">QR Otomatis</h4>
+                  <p className="text-[9px] md:text-[10px] text-gray-500 mt-1 md:mt-1.5 leading-relaxed">Sistem akan otomatis mencetak label QR untuk inventarisasi fisik.</p>
+                </div>
+              </div>
+
+              <div className="bg-white p-4 md:p-5 rounded-2xl border border-gray-100 flex items-start gap-3 md:gap-4 hover:shadow-md transition-shadow cursor-default">
+                <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
+                  <ShieldCheck className="w-4 h-4 md:w-5 md:h-5 text-red-500" />
+                </div>
+                <div>
+                  <h4 className="text-xs md:text-sm font-bold text-gray-800">Validasi Sistem</h4>
+                  <p className="text-[9px] md:text-[10px] text-gray-500 mt-1 md:mt-1.5 leading-relaxed">Pengecekan duplikasi nama dan nomor seri secara real-time.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 md:mt-12 text-center">
               <p className="text-[8px] md:text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-loose">
                 © 2026 CV. AMRITA JAYASRI • MANAJEMEN INVENTARIS BERKINERJA TINGGI
               </p>
