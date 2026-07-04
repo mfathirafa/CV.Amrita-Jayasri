@@ -119,13 +119,6 @@ class KonsumenController extends Controller
             ], 404);
         }
 
-        if ($konsumen->transaksiKeluar()->count() > 0) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Konsumen tidak dapat dihapus karena masih memiliki riwayat transaksi.',
-            ], 409);
-        }
-
         $konsumen->delete();
 
         return response()->json([
