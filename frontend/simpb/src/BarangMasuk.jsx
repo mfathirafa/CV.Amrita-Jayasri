@@ -38,6 +38,7 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
 
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [savedTransactionData, setSavedTransactionData] = useState(null);
 
   // === STATE UNTUK DATA API ===
   const [daftarBarang, setDaftarBarang] = useState([]);
@@ -245,9 +246,17 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
 
       // 4. Handle Respons
       if (response.ok && json.success) {
+        // Simpan data transaksi sebelum form direset
+        setSavedTransactionData({
+          id: '#TRX-' + (json.data?.id || Math.floor(10000 + Math.random() * 90000)),
+          barang: String(selectedBarang.nama_barang || '').replace(/&amp;/g, '&').replace(/&#039;/g, "'").replace(/&quot;/g, '"'),
+          jumlah: jumlah,
+          satuan: selectedBarang.satuan || 'Unit'
+        });
+
         setIsSuccessModalOpen(true);
 
-        // Bersihkan form setelah sukses
+        // Bersihkan form setelah data transaksi disimpan
         setSelectedBarang(null);
         setPemasokId('');
         setSelectedPemasokObj(null);
@@ -748,11 +757,7 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
         isOpen={isSuccessModalOpen}
         onClose={() => setIsSuccessModalOpen(false)}
         onNavigate={onNavigate}
-        transactionData={{
-          id: '#TRX-' + Math.floor(10000 + Math.random() * 90000),
-          barang: selectedBarang ? String(selectedBarang.nama_barang || '').replace(/&amp;/g, '&').replace(/&#039;/g, "'").replace(/&quot;/g, '"') : 'Belum dipilih',
-          jumlah: jumlah || '0'
-        }}
+        transactionData={savedTransactionData}
       />
     </>
   );
