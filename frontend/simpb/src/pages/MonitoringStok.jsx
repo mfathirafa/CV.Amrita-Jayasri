@@ -14,8 +14,8 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 // === IMPORT LOGO ===
-import logoAmrita from './assets/Logo Amrita.png';
-import NotificationBell from './NotificationBell';
+import logoAmrita from '../assets/Logo Amrita.png';
+import NotificationBell from '../components/NotificationBell';
 
 const MonitoringStok = ({ onLogout, onNavigate }) => {
   // === STATE UNTUK MENU HP ===

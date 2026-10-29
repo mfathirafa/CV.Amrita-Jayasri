@@ -7,10 +7,10 @@ import {
   Menu, X, CheckCircle, ArrowDown, ArrowUp, ArrowUpDown, ChevronsLeft, ChevronsRight
 } from 'lucide-react';
 
-import DeleteConfirmModal from './DeleteConfirmModal';
-import NotificationBell from './NotificationBell';
-import logoAmrita from './assets/Logo Amrita.png';
-import { decodeEntity } from './utils';
+import DeleteConfirmModal from '../components/modals/DeleteConfirmModal';
+import NotificationBell from '../components/NotificationBell';
+import logoAmrita from '../assets/Logo Amrita.png';
+import { decodeEntity } from '../utils/utils';
 const DataBarang = ({ onNavigate, onLogout }) => {
   // --- STATES ---
   const [activeCategory, setActiveCategory] = useState('Semua Barang');

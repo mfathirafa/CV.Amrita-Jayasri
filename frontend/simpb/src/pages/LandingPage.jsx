@@ -5,7 +5,7 @@ import {
   Check, Menu, X, ArrowRight, Headphones, ChevronRight 
 } from 'lucide-react';
 
-import logoAmrita from './assets/Logo Amrita.png';
+import logoAmrita from '../assets/Logo Amrita.png';
 
 const LandingPage = ({ onNavigate }) => {
   const [isScrolled, setIsScrolled] = useState(false);

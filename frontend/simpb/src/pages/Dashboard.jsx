@@ -7,9 +7,9 @@ import {
   Menu, X, CheckCircle // <-- DIPERBAIKI: Menambahkan CheckCircle ke dalam import
 } from 'lucide-react';
 
-import DateRangePickerModal from './DateRangePickerModal';
-import NotificationBell from './NotificationBell';
-import logoAmrita from './assets/Logo Amrita.png';
+import DateRangePickerModal from '../components/modals/DateRangePickerModal';
+import NotificationBell from '../components/NotificationBell';
+import logoAmrita from '../assets/Logo Amrita.png';
 
 const Dashboard = ({ onLogout, onNavigate }) => {
   const [showDatePicker, setShowDatePicker] = useState(false);

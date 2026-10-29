@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import LandingPage from './LandingPage'; // <-- 1. IMPORT LANDING PAGE
-import Login from './Login';
-import Dashboard from './Dashboard'; 
-import DataBarang from './DataBarang'; 
-import Pemasok from './Pemasok'; 
-import Konsumen from './Konsumen'; 
-import BarangMasuk from './BarangMasuk'; 
-import BarangKeluar from './BarangKeluar'; 
-import MonitoringStok from './MonitoringStok';
-import TambahBarang from './TambahBarang';
-import EditBarang from './EditBarang'; 
-import Laporan from './Laporan';
-import LogoutModal from './LogoutModal'; 
+import LandingPage from './pages/LandingPage'; // <-- 1. IMPORT LANDING PAGE
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard'; 
+import DataBarang from './pages/DataBarang'; 
+import Pemasok from './pages/Pemasok'; 
+import Konsumen from './pages/Konsumen'; 
+import BarangMasuk from './pages/BarangMasuk'; 
+import BarangKeluar from './pages/BarangKeluar'; 
+import MonitoringStok from './pages/MonitoringStok';
+import TambahBarang from './pages/TambahBarang';
+import EditBarang from './pages/EditBarang'; 
+import Laporan from './pages/Laporan';
+import LogoutModal from './components/modals/LogoutModal'; 
 
 const App = () => {
   // === 2. UBAH DEFAULT STATE MENJADI 'landing' ===

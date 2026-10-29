@@ -14,10 +14,10 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 // === IMPORT KOMPONEN MODAL & LOGO ===
-import ExportModal from './ExportModal';
-import DeleteConfirmModal from './DeleteConfirmModal';
-import NotificationBell from './NotificationBell';
-import logoAmrita from './assets/Logo Amrita.png';
+import ExportModal from '../components/modals/ExportModal';
+import DeleteConfirmModal from '../components/modals/DeleteConfirmModal';
+import NotificationBell from '../components/NotificationBell';
+import logoAmrita from '../assets/Logo Amrita.png';
 
 const decodeHtml = (text) => {
   if (!text) return text;

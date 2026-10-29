@@ -10,7 +10,7 @@ import {
   Loader2
 } from 'lucide-react';
 
-import logoAmrita from './assets/Logo Amrita.png';
+import logoAmrita from '../assets/Logo Amrita.png';
 
 // === DITAMBAHKAN PROP onNavigate DISINI ===
 const Login = ({ onLogin, onNavigate }) => {

@@ -7,11 +7,11 @@ import {
   ArrowDownLeft, Phone, Loader2, Menu, X, Bookmark, Star
 } from 'lucide-react';
 
-import TambahKonsumenModal from './TambahKonsumenModal';
-import EditKonsumenModal from './EditKonsumenModal';
-import DeleteConfirmModal from './DeleteConfirmModal';
-import logoAmrita from './assets/Logo Amrita.png';
-import NotificationBell from './NotificationBell';
+import TambahKonsumenModal from '../components/modals/TambahKonsumenModal';
+import EditKonsumenModal from '../components/modals/EditKonsumenModal';
+import DeleteConfirmModal from '../components/modals/DeleteConfirmModal';
+import logoAmrita from '../assets/Logo Amrita.png';
+import NotificationBell from '../components/NotificationBell';
 
 const Konsumen = ({ onNavigate, onLogout }) => {
   // === STATE UNTUK MENU HP ===

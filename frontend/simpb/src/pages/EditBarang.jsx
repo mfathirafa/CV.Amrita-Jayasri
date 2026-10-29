@@ -9,9 +9,9 @@ import {
   Menu // <-- Tambah icon Menu
 } from 'lucide-react';
 
-import SuccessModal from './SuccessModal';
-import NotificationBell from './NotificationBell';
-import logoAmrita from './assets/Logo Amrita.png';
+import SuccessModal from '../components/modals/SuccessModal';
+import NotificationBell from '../components/NotificationBell';
+import logoAmrita from '../assets/Logo Amrita.png';
 
 const EditBarang = ({ onNavigate, onLogout, itemId }) => {
   // === STATE UNTUK MENU HP ===

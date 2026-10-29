@@ -8,9 +8,9 @@ import {
   AlertTriangle, AlertCircle, Loader2, X, Menu, CheckCircle 
 } from 'lucide-react';
 
-import SuccessModal from './SuccessModal';
-import NotificationBell from './NotificationBell';
-import logoAmrita from './assets/Logo Amrita.png';
+import SuccessModal from '../components/modals/SuccessModal';
+import NotificationBell from '../components/NotificationBell';
+import logoAmrita from '../assets/Logo Amrita.png';
 
 const TambahBarang = ({ onNavigate, onLogout }) => {
   // 1. STATE UNTUK FORM INPUT

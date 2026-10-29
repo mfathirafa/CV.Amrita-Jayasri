@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 
 // === IMPORT GAMBAR LOGO ===
-import logoAmrita from './assets/Logo Amrita.png';
+import logoAmrita from '../assets/Logo Amrita.png';
 
 const ResetPassword = ({ onNavigate }) => {
   const [showPassword, setShowPassword] = useState(false);

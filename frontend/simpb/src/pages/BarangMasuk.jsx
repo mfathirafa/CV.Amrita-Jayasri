@@ -7,9 +7,9 @@ import {
   Menu, X
 } from 'lucide-react';
 
-import SuccessTransactionModal from './SuccessTransactionModal';
-import NotificationBell from './NotificationBell';
-import logoAmrita from './assets/Logo Amrita.png';
+import SuccessTransactionModal from '../components/modals/SuccessTransactionModal';
+import NotificationBell from '../components/NotificationBell';
+import logoAmrita from '../assets/Logo Amrita.png';
 
 const BarangMasuk = ({ onNavigate, onLogout }) => {
   // === STATE UNTUK MENU HP ===
