@@ -216,5 +216,8 @@ Saat database pertama kali di-seed (`AdminSeeder`), akun pengguna default beriku
 Dikembangkan oleh tim pengembang **CV. Amrita Jayasri**:
 * **Muhammad Fathi Rafa** ([@mfathirafa](https://github.com/mfathirafa))
 * **Bagus Eduardo** ([@eduardobagus](https://github.com/eduardobagus))
+* **Muhammad Mahrus Ali** ([@Alialkhozini](https://github.com/Alialkhozini))
+* **Reza Irawan** ([@RejaIrawan](https://github.com/RejaIrawan))
+* **Fajar Budiawan** ([@FajarBudiawan](https://github.com/FajarBudiawan))
 
 Projek ini berlisensi di bawah [MIT License](backend/LICENSE).
