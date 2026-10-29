@@ -9,12 +9,10 @@ return new class extends Migration
     public function up(): void
     {
         // === transaksi_masuk ===
+        // Drop FK lama (gunakan nama eksplisit agar kompatibel MySQL & PostgreSQL)
         Schema::table('transaksi_masuk', function (Blueprint $table) {
-            // Drop foreign key lama
-            $table->dropForeign(['barang_id']);
-            // Ubah kolom jadi nullable
+            $table->dropForeign('transaksi_masuk_barang_id_foreign');
             $table->unsignedBigInteger('barang_id')->nullable()->change();
-            // Tambah foreign key baru dengan nullOnDelete
             $table->foreign('barang_id')
                   ->references('id')->on('barang')
                   ->nullOnDelete();
@@ -22,7 +20,7 @@ return new class extends Migration
 
         // === transaksi_keluar ===
         Schema::table('transaksi_keluar', function (Blueprint $table) {
-            $table->dropForeign(['barang_id']);
+            $table->dropForeign('transaksi_keluar_barang_id_foreign');
             $table->unsignedBigInteger('barang_id')->nullable()->change();
             $table->foreign('barang_id')
                   ->references('id')->on('barang')
@@ -34,7 +32,7 @@ return new class extends Migration
     {
         // Revert: kembalikan ke restrictOnDelete (tidak nullable)
         Schema::table('transaksi_masuk', function (Blueprint $table) {
-            $table->dropForeign(['barang_id']);
+            $table->dropForeign('transaksi_masuk_barang_id_foreign');
             $table->unsignedBigInteger('barang_id')->nullable(false)->change();
             $table->foreign('barang_id')
                   ->references('id')->on('barang')
@@ -42,7 +40,7 @@ return new class extends Migration
         });
 
         Schema::table('transaksi_keluar', function (Blueprint $table) {
-            $table->dropForeign(['barang_id']);
+            $table->dropForeign('transaksi_keluar_barang_id_foreign');
             $table->unsignedBigInteger('barang_id')->nullable(false)->change();
             $table->foreign('barang_id')
                   ->references('id')->on('barang')
