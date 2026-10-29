@@ -4,14 +4,17 @@ import {
   ArrowDownRight, ArrowUpRight, Activity, 
   BarChart2, Bell, Plus, 
   Calendar, AlertTriangle, TrendingUp, AlertCircle, CircleUser, Loader2,
-  Menu, X, CheckCircle // <-- DIPERBAIKI: Menambahkan CheckCircle ke dalam import
+  Menu, X, CheckCircle, Eye // <-- DIPERBAIKI: Menambahkan CheckCircle & Eye ke dalam import
 } from 'lucide-react';
 
 import DateRangePickerModal from '../components/modals/DateRangePickerModal';
 import NotificationBell from '../components/NotificationBell';
+import UserProfileMenu from '../components/UserProfileMenu';
 import logoAmrita from '../assets/Logo Amrita.png';
+import { isUserAdmin } from '../utils/utils';
 
-const Dashboard = ({ onLogout, onNavigate }) => {
+const Dashboard = ({ onLogout, onNavigate, user }) => {
+  const isAdmin = isUserAdmin(user);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -235,37 +238,32 @@ const Dashboard = ({ onLogout, onNavigate }) => {
             <div className="h-6 w-px bg-gray-200 hidden md:block"></div>
             
             {/* ================= PROFILE MENU ================= */}
-            <div className="relative">
-              <button
-                onClick={() => {
-                  setIsProfileOpen(!isProfileOpen);
-                  if(isNotifOpen) setIsNotifOpen(false);
-                }}
-                className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
-              >
-                <CircleUser className="w-7 h-7 md:w-8 md:h-8 text-[#5452F6]" strokeWidth={1.5} />
-                <span className="text-sm font-semibold text-[#1E232C] hidden md:block">Administrator</span>
-              </button>
-              {isProfileOpen && (
-                <div className="absolute right-0 top-full mt-3 w-44 bg-white rounded-xl shadow-lg border border-gray-100 z-50 py-1 animate-in fade-in zoom-in-95">
-                  <div className="px-4 py-2.5 border-b border-gray-100">
-                    <p className="text-xs font-bold text-gray-800">Administrator</p>
-                    <p className="text-[10px] text-gray-400 truncate">admin@amrita.com</p>
-                  </div>
-                  <button
-                    onClick={() => { setIsProfileOpen(false); onLogout && onLogout(); }}
-                    className="w-full text-left px-4 py-2.5 text-xs font-semibold text-red-500 hover:bg-red-50 transition-colors rounded-b-xl"
-                  >
-                    Keluar
-                  </button>
-                </div>
-              )}
-            </div>
+            <UserProfileMenu user={user} onLogout={onLogout} />
           </div>
         </header>
 
         <div className="flex-1 overflow-y-auto p-4 md:p-8 pb-12 w-full">
           
+          {/* BANNER NOTIFIKASI READ-ONLY KHUSUS PENGUNJUNG */}
+          {!isAdmin && (
+            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between gap-4 animate-in fade-in">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0 text-amber-700">
+                  <Eye className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-xs md:text-sm font-bold text-amber-900">Mode Pengunjung (Read-Only) Aktif</p>
+                  <p className="text-[11px] md:text-xs text-amber-700 mt-0.5">
+                    Anda dapat meninjau seluruh data stok, statistik, dan riwayat transaksi. Fitur penambahan, modifikasi, dan penghapusan data dikunci khusus Akun Admin.
+                  </p>
+                </div>
+              </div>
+              <span className="hidden sm:inline-flex px-3 py-1 bg-amber-200/80 text-amber-900 rounded-full text-[11px] font-bold shrink-0">
+                Akses Tamu
+              </span>
+            </div>
+          )}
+
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 md:mb-8">
             <div>
               <h1 className="text-xl md:text-2xl font-bold text-gray-800">Ringkasan Dashboard</h1>
@@ -278,12 +276,20 @@ const Dashboard = ({ onLogout, onNavigate }) => {
               >
                 <Calendar className="w-4 h-4 text-[#5452F6]" /> <span className="hidden sm:inline">Rentang Tanggal</span>
               </button>
-              <button onClick={() => onNavigate('barang-masuk')} className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2.5 bg-[#5452F6] hover:bg-[#4341E3] rounded-xl text-xs md:text-sm font-semibold text-white transition-colors shadow-lg shadow-indigo-500/30">
-                <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Transaksi Masuk</span><span className="sm:hidden">Masuk</span>
-              </button>
-              <button onClick={() => onNavigate('barang-keluar')} className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2.5 bg-[#5452F6] hover:bg-[#4341E3] rounded-xl text-xs md:text-sm font-semibold text-white transition-colors shadow-lg shadow-indigo-500/30">
-                <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Transaksi Keluar</span><span className="sm:hidden">Keluar</span>
-              </button>
+              {isAdmin ? (
+                <>
+                  <button onClick={() => onNavigate('barang-masuk')} className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2.5 bg-[#5452F6] hover:bg-[#4341E3] rounded-xl text-xs md:text-sm font-semibold text-white transition-colors shadow-lg shadow-indigo-500/30">
+                    <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Transaksi Masuk</span><span className="sm:hidden">Masuk</span>
+                  </button>
+                  <button onClick={() => onNavigate('barang-keluar')} className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2.5 bg-[#5452F6] hover:bg-[#4341E3] rounded-xl text-xs md:text-sm font-semibold text-white transition-colors shadow-lg shadow-indigo-500/30">
+                    <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Transaksi Keluar</span><span className="sm:hidden">Keluar</span>
+                  </button>
+                </>
+              ) : (
+                <button onClick={() => onNavigate('data-barang')} className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2.5 bg-[#5452F6] hover:bg-[#4341E3] rounded-xl text-xs md:text-sm font-semibold text-white transition-colors shadow-lg shadow-indigo-500/30">
+                  <Box className="w-4 h-4" /> <span>Lihat Data Barang</span>
+                </button>
+              )}
             </div>
           </div>
 

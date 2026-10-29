@@ -17,6 +17,7 @@ class AdminSeeder extends Seeder
                 'name'      => 'Admin Amrita',
                 'password'  => Hash::make('password123'),
                 'is_active' => 1,
+                'role'      => 'admin',
             ]
         );
 
@@ -27,6 +28,7 @@ class AdminSeeder extends Seeder
                 'name'      => 'Muhammad Fathi Rafa',
                 'password'  => Hash::make('password123'),
                 'is_active' => 1,
+                'role'      => 'admin',
             ]
         );
 
@@ -37,6 +39,7 @@ class AdminSeeder extends Seeder
                 'name'      => 'Staff Gudang',
                 'password'  => Hash::make('password123'),
                 'is_active' => 1,
+                'role'      => 'admin',
             ]
         );
 
@@ -47,9 +50,21 @@ class AdminSeeder extends Seeder
                 'name'      => 'Manager Amrita',
                 'password'  => Hash::make('password123'),
                 'is_active' => 1,
+                'role'      => 'admin',
             ]
         );
 
-        $this->command->info('Admin seeder selesai! 4 user berhasil dibuat.');
+        // User Pengunjung (Viewer - Read Only)
+        User::updateOrCreate(
+            ['email' => 'pengunjung@amrita.com'],
+            [
+                'name'      => 'Tamu Pengunjung',
+                'password'  => Hash::make('password123'),
+                'is_active' => 1,
+                'role'      => 'viewer',
+            ]
+        );
+
+        $this->command->info('Admin seeder selesai! Akun admin & pengunjung (viewer) berhasil dibuat.');
     }
 }

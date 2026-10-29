@@ -11,9 +11,10 @@ import {
 
 import SuccessModal from '../components/modals/SuccessModal';
 import NotificationBell from '../components/NotificationBell';
+import UserProfileMenu from '../components/UserProfileMenu';
 import logoAmrita from '../assets/Logo Amrita.png';
 
-const EditBarang = ({ onNavigate, onLogout, itemId }) => {
+const EditBarang = ({ onNavigate, onLogout, itemId, user }) => {
   // === STATE UNTUK MENU HP ===
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -284,10 +285,7 @@ const EditBarang = ({ onNavigate, onLogout, itemId }) => {
               
               <NotificationBell onNavigate={onNavigate} />
               <div className="h-6 w-px bg-gray-200 hidden sm:block"></div>
-              <div className="flex items-center gap-2.5 cursor-pointer">
-                <CircleUser className="w-7 h-7 md:w-8 md:h-8 text-[#5452F6]" strokeWidth={1.5} />
-                <span className="text-sm font-semibold text-[#1E232C] hidden lg:block">Admin</span>
-              </div>
+              <UserProfileMenu user={user} onLogout={onLogout} />
             </div>
           </header>
 

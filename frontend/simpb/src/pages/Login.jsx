@@ -7,7 +7,9 @@ import {
   AlertCircle,
   ArrowRight,
   ShieldCheck,
-  Loader2
+  Loader2,
+  Shield,
+  UserCheck
 } from 'lucide-react';
 
 import logoAmrita from '../assets/Logo Amrita.png';
@@ -59,23 +61,31 @@ const Login = ({ onLogin, onNavigate }) => {
     }
   };
 
+  const handleQuickLogin = (quickEmail, quickPassword) => {
+    setEmail(quickEmail);
+    setPassword(quickPassword);
+    setError('');
+  };
+
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-[#F4F7FC] p-4 md:p-6 relative overflow-x-hidden text-left">
       <div className="absolute inset-0 z-0 bg-gradient-to-br from-blue-50/50 to-white/20 pointer-events-none"></div>
 
       <div className="bg-white rounded-[24px] md:rounded-[30px] shadow-xl w-full max-w-[95%] sm:max-w-[420px] p-6 md:p-10 z-10 border border-gray-100 transition-all duration-300">
 
-        <div className="flex flex-col items-center mb-6 md:mb-10">
+        <div className="flex flex-col items-center mb-6 md:mb-8">
           <img
             src={logoAmrita}
             alt="Logo CV Amrita Jayasri"
-            className="w-14 h-14 md:w-20 md:h-20 object-contain mb-4 transform transition-transform hover:scale-105 drop-shadow-md"
+            className="w-14 h-14 md:w-20 md:h-20 object-contain mb-4 transform transition-transform hover:scale-105 drop-shadow-md cursor-pointer"
+            onClick={() => onNavigate && onNavigate('landing')}
+            title="Kembali ke Beranda"
           />
           <h1 className="text-[#1E232C] font-bold text-xl md:text-2xl mb-1">SIMPB</h1>
           <p className="text-gray-400 text-[10px] md:text-xs font-bold tracking-[0.2em] uppercase">CV. AMRITA JAYASRI</p>
         </div>
 
-        <form className="space-y-4 md:space-y-6" onSubmit={handleSubmit}>
+        <form className="space-y-4 md:space-y-5" onSubmit={handleSubmit}>
           {/* Email Input */}
           <div className="space-y-1.5 md:space-y-2">
             <label className="text-xs md:text-sm font-bold text-[#1E232C] ml-1">Alamat Email</label>
@@ -98,7 +108,6 @@ const Login = ({ onLogin, onNavigate }) => {
           <div className="space-y-1.5 md:space-y-2">
             <div className="flex justify-between items-center px-1">
               <label className="text-xs md:text-sm font-bold text-[#1E232C]">Kata Sandi</label>
-
             </div>
             <div className="relative group">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -118,6 +127,29 @@ const Login = ({ onLogin, onNavigate }) => {
                 className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
               >
                 {showPassword ? <Eye className="h-4 w-4 md:h-5 md:w-5" /> : <EyeOff className="h-4 w-4 md:h-5 md:w-5" />}
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Demo Credentials */}
+          <div className="pt-1 pb-1">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Pilih Akun Cepat:</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => handleQuickLogin('admin@amrita.com', 'password123')}
+                className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-semibold bg-indigo-50/80 hover:bg-indigo-100 text-[#5452F6] border border-indigo-100 transition-colors"
+              >
+                <Shield className="w-3.5 h-3.5" /> Admin
+              </button>
+              <button
+                type="button"
+                onClick={() => handleQuickLogin('pengunjung@amrita.com', 'password123')}
+                className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-semibold bg-amber-50/80 hover:bg-amber-100 text-amber-700 border border-amber-200 transition-colors"
+              >
+                <UserCheck className="w-3.5 h-3.5" /> Pengunjung
               </button>
             </div>
           </div>
@@ -150,14 +182,18 @@ const Login = ({ onLogin, onNavigate }) => {
           </button>
         </form>
 
-        <div className="mt-8 pt-6 border-t border-gray-50 flex justify-center">
-          <p className="text-[10px] md:text-xs text-gray-400 font-bold uppercase tracking-widest">
-            Secure Access Portal • v2.4.0
-          </p>
+        <div className="mt-6 pt-5 border-t border-gray-50 flex justify-between items-center text-[10px] md:text-xs text-gray-400">
+          <button
+            onClick={() => onNavigate && onNavigate('landing')}
+            className="font-semibold text-gray-500 hover:text-[#5452F6] transition-colors"
+          >
+            ← Kembali ke Beranda
+          </button>
+          <span className="font-bold uppercase tracking-widest text-[9px]">v2.4.0</span>
         </div>
       </div>
 
-      <div className="mt-10 flex flex-col sm:flex-row gap-4 sm:gap-8 items-center text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest z-10">
+      <div className="mt-8 flex flex-col sm:flex-row gap-4 sm:gap-8 items-center text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest z-10">
         <div className="flex items-center gap-2.5">
           <div className={`w-2 h-2 rounded-full ${isLoading ? 'bg-orange-400 animate-pulse' : 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]'}`}></div>
           {isLoading ? 'Connecting...' : 'System Online'}

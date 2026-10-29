@@ -6,3 +6,17 @@ export const decodeEntity = (text) => {
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>');
 };
+
+export const getCurrentUser = () => {
+  try {
+    const raw = localStorage.getItem('user');
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+};
+
+export const isUserAdmin = (user) => {
+  const currentUser = user || getCurrentUser();
+  return currentUser?.role === 'admin';
+};

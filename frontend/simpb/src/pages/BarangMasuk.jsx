@@ -4,14 +4,17 @@ import {
   ArrowUpRight, Activity, BarChart2, ArrowDownLeft,
   Search, Bell, CircleUser, ChevronDown, CalendarDays,
   Package, PenTool, Zap, CheckCircle2, ChevronLeft, ChevronRight, Loader2, Plus,
-  Menu, X
+  Menu, X, Eye
 } from 'lucide-react';
 
 import SuccessTransactionModal from '../components/modals/SuccessTransactionModal';
 import NotificationBell from '../components/NotificationBell';
+import UserProfileMenu from '../components/UserProfileMenu';
 import logoAmrita from '../assets/Logo Amrita.png';
+import { isUserAdmin } from '../utils/utils';
 
-const BarangMasuk = ({ onNavigate, onLogout }) => {
+const BarangMasuk = ({ onNavigate, onLogout, user }) => {
+  const isAdmin = isUserAdmin(user);
   // === STATE UNTUK MENU HP ===
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -361,29 +364,7 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
 
               <NotificationBell onNavigate={onNavigate} />
               <div className="h-6 w-px bg-gray-200 hidden md:block"></div>
-              <div className="relative">
-                <button
-                  onClick={() => setIsProfileOpen(prev => !prev)}
-                  className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
-                >
-                  <CircleUser className="w-7 h-7 md:w-8 md:h-8 text-[#5452F6]" strokeWidth={1.5} />
-                  <span className="text-sm font-semibold text-[#1E232C] hidden md:block">Administrator</span>
-                </button>
-                {isProfileOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-44 bg-white rounded-xl shadow-lg border border-gray-100 z-50 py-1 animate-in fade-in zoom-in-95">
-                    <div className="px-4 py-2.5 border-b border-gray-100">
-                      <p className="text-xs font-bold text-gray-800">Administrator</p>
-                      <p className="text-[10px] text-gray-400 truncate">admin@amrita.com</p>
-                    </div>
-                    <button
-                      onClick={() => { setIsProfileOpen(false); onLogout && onLogout(); }}
-                      className="w-full text-left px-4 py-2.5 text-xs font-semibold text-red-500 hover:bg-red-50 transition-colors rounded-b-xl"
-                    >
-                      Keluar
-                    </button>
-                  </div>
-                )}
-              </div>
+              <UserProfileMenu user={user} onLogout={onLogout} />
             </div>
           </header>
 
@@ -414,6 +395,16 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
               {/* KOLOM FORM KIRI */}
               <div className="lg:col-span-2 space-y-6 md:space-y-8">
                 <div className="bg-white rounded-[20px] p-4 md:p-8 shadow-sm border border-gray-100 flex flex-col relative">
+                  {!isAdmin && (
+                    <div className="mb-4 p-3.5 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-2.5 text-amber-800 text-xs">
+                      <Eye className="w-4 h-4 shrink-0 text-amber-600" />
+                      <div>
+                        <p className="font-bold">Mode Pengunjung (Read-Only)</p>
+                        <p className="text-[11px] text-amber-700 mt-0.5">Pencatatan transaksi masuk baru hanya dapat dilakukan oleh akun Administrator.</p>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex justify-between items-center mb-4 md:mb-6">
                     <h3 className="text-sm md:text-base font-bold text-gray-800">Detail Transaksi</h3>
                     <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-gray-300" />
@@ -638,17 +629,23 @@ const BarangMasuk = ({ onNavigate, onLogout }) => {
                   </div>
 
                   {/* Tombol Simpan */}
-                  <button
-                    onClick={handleSimpanTransaksi}
-                    disabled={isSubmitting}
-                    className="w-full py-3 md:py-3.5 bg-[#5452F6] hover:bg-[#4341E3] text-white rounded-xl text-xs md:text-sm font-bold transition-all shadow-lg shadow-indigo-500/30 flex justify-center items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed mt-auto"
-                  >
-                    {isSubmitting ? (
-                      <><Loader2 className="w-3.5 h-3.5 md:w-4 md:h-4 animate-spin" /> Menyimpan...</>
-                    ) : (
-                      "Simpan Transaksi"
-                    )}
-                  </button>
+                  {isAdmin ? (
+                    <button
+                      onClick={handleSimpanTransaksi}
+                      disabled={isSubmitting}
+                      className="w-full py-3 md:py-3.5 bg-[#5452F6] hover:bg-[#4341E3] text-white rounded-xl text-xs md:text-sm font-bold transition-all shadow-lg shadow-indigo-500/30 flex justify-center items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed mt-auto"
+                    >
+                      {isSubmitting ? (
+                        <><Loader2 className="w-3.5 h-3.5 md:w-4 md:h-4 animate-spin" /> Menyimpan...</>
+                      ) : (
+                        "Simpan Transaksi"
+                      )}
+                    </button>
+                  ) : (
+                    <div className="w-full py-3.5 text-center bg-gray-100 text-gray-400 rounded-xl text-xs font-semibold border border-gray-200 mt-auto flex items-center justify-center gap-2">
+                      <Eye className="w-4 h-4 text-gray-400" /> Akses Simpan Terbatas (Admin Only)
+                    </div>
+                  )}
                 </div>
               </div>
 

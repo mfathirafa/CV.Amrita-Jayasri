@@ -1,0 +1,10 @@
+# Brain / scratch tools
+brain/
+
+# Env production backups
+frontend/simpb/.env.production
+backend/.env.production
+
+# OS
+Thumbs.db
+.DS_Store

@@ -10,9 +10,10 @@ import {
 
 import SuccessModal from '../components/modals/SuccessModal';
 import NotificationBell from '../components/NotificationBell';
+import UserProfileMenu from '../components/UserProfileMenu';
 import logoAmrita from '../assets/Logo Amrita.png';
 
-const TambahBarang = ({ onNavigate, onLogout }) => {
+const TambahBarang = ({ onNavigate, onLogout, user }) => {
   // 1. STATE UNTUK FORM INPUT
   const [namaBarang, setNamaBarang] = useState('');
   const [kategori, setKategori] = useState('');
@@ -262,10 +263,7 @@ const TambahBarang = ({ onNavigate, onLogout }) => {
             </div>
 
             <div className="h-6 w-px bg-gray-200 hidden md:block"></div>
-            <div className="flex items-center gap-2.5 cursor-pointer">
-              <CircleUser className="w-7 h-7 md:w-8 md:h-8 text-[#5452F6]" strokeWidth={1.5} />
-              <span className="text-sm font-semibold text-[#1E232C] hidden md:block">Administrator</span>
-            </div>
+            <UserProfileMenu user={user} onLogout={onLogout} />
           </div>
         </header>
 

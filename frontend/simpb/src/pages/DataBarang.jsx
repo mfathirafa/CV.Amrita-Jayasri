@@ -4,14 +4,17 @@ import {
   LayoutDashboard, Box, Users, Truck, ArrowDownRight,
   ArrowUpRight, Activity, BarChart2, AlertTriangle,
   Banknote, History, ChevronLeft, ChevronRight, CircleUser, FileText, Loader2,
-  Menu, X, CheckCircle, ArrowDown, ArrowUp, ArrowUpDown, ChevronsLeft, ChevronsRight
+  Menu, X, CheckCircle, ArrowDown, ArrowUp, ArrowUpDown, ChevronsLeft, ChevronsRight, Eye
 } from 'lucide-react';
 
 import DeleteConfirmModal from '../components/modals/DeleteConfirmModal';
 import NotificationBell from '../components/NotificationBell';
+import UserProfileMenu from '../components/UserProfileMenu';
 import logoAmrita from '../assets/Logo Amrita.png';
-import { decodeEntity } from '../utils/utils';
-const DataBarang = ({ onNavigate, onLogout }) => {
+import { decodeEntity, isUserAdmin } from '../utils/utils';
+
+const DataBarang = ({ onNavigate, onLogout, user }) => {
+  const isAdmin = isUserAdmin(user);
   // --- STATES ---
   const [activeCategory, setActiveCategory] = useState('Semua Barang');
   const [searchQuery, setSearchQuery] = useState('');
@@ -382,29 +385,7 @@ const DataBarang = ({ onNavigate, onLogout }) => {
               </div>
 
               <div className="h-6 w-px bg-gray-200 hidden md:block"></div>
-              <div className="relative">
-                <button
-                  onClick={() => setIsProfileOpen(prev => !prev)}
-                  className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
-                >
-                  <CircleUser className="w-7 h-7 md:w-8 md:h-8 text-[#5452F6]" strokeWidth={1.5} />
-                  <span className="text-sm font-semibold text-[#1E232C] hidden md:block">Administrator</span>
-                </button>
-                {isProfileOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-44 bg-white rounded-xl shadow-lg border border-gray-100 z-50 py-1 animate-in fade-in zoom-in-95">
-                    <div className="px-4 py-2.5 border-b border-gray-100">
-                      <p className="text-xs font-bold text-gray-800">Administrator</p>
-                      <p className="text-[10px] text-gray-400 truncate">admin@amrita.com</p>
-                    </div>
-                    <button
-                      onClick={() => { setIsProfileOpen(false); onLogout && onLogout(); }}
-                      className="w-full text-left px-4 py-2.5 text-xs font-semibold text-red-500 hover:bg-red-50 transition-colors rounded-b-xl"
-                    >
-                      Keluar
-                    </button>
-                  </div>
-                )}
-              </div>
+              <UserProfileMenu user={user} onLogout={onLogout} />
             </div>
           </header>
 
@@ -427,12 +408,18 @@ const DataBarang = ({ onNavigate, onLogout }) => {
                   />
                 </div>
 
-                <button
-                  onClick={() => onNavigate('tambah-barang')}
-                  className="flex justify-center items-center gap-2 px-4 py-2.5 bg-[#5452F6] hover:bg-[#4341E3] text-white rounded-xl text-sm font-semibold transition-colors shadow-lg shadow-indigo-500/30"
-                >
-                  <Plus className="w-4 h-4" /> Tambah Barang
-                </button>
+                {isAdmin ? (
+                  <button
+                    onClick={() => onNavigate('tambah-barang')}
+                    className="flex justify-center items-center gap-2 px-4 py-2.5 bg-[#5452F6] hover:bg-[#4341E3] text-white rounded-xl text-sm font-semibold transition-colors shadow-lg shadow-indigo-500/30"
+                  >
+                    <Plus className="w-4 h-4" /> Tambah Barang
+                  </button>
+                ) : (
+                  <div className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 bg-amber-50 border border-amber-200 text-amber-700 rounded-xl text-xs font-semibold">
+                    <Eye className="w-4 h-4 text-amber-600" /> Mode Baca (Read-Only)
+                  </div>
+                )}
               </div>
             </div>
 
@@ -512,7 +499,7 @@ const DataBarang = ({ onNavigate, onLogout }) => {
                         <th className="py-3 md:py-4 px-4 md:px-6 text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wider text-center">Stok</th>
                         <th className="py-3 md:py-4 px-4 md:px-6 text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wider text-center">Stok Min.</th>
                         <th className="py-3 md:py-4 px-4 md:px-6 text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wider text-center">Status</th>
-                        <th className="py-3 md:py-4 px-4 md:px-6 text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wider text-right">Aksi</th>
+                        {isAdmin && <th className="py-3 md:py-4 px-4 md:px-6 text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wider text-right">Aksi</th>}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
@@ -557,25 +544,27 @@ const DataBarang = ({ onNavigate, onLogout }) => {
                                 {status.label}
                               </span>
                             </td>
-                            <td className="py-3 md:py-4 px-4 md:px-6 text-right">
-                              <div className="flex items-center justify-end gap-1.5 md:gap-2">
-                                <button
-                                  onClick={() => onNavigate('edit-barang', item.id)}
-                                  title="Edit Barang"
-                                  className="p-1.5 md:p-2 text-[#5452F6] hover:bg-indigo-50 rounded-lg transition-colors"
-                                >
-                                  <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                                </button>
+                            {isAdmin && (
+                              <td className="py-3 md:py-4 px-4 md:px-6 text-right">
+                                <div className="flex items-center justify-end gap-1.5 md:gap-2">
+                                  <button
+                                    onClick={() => onNavigate('edit-barang', item.id)}
+                                    title="Edit Barang"
+                                    className="p-1.5 md:p-2 text-[#5452F6] hover:bg-indigo-50 rounded-lg transition-colors"
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                  </button>
 
-                                <button
-                                  onClick={() => openDeleteModal(item.id, decodeEntity(item.nama_barang))}
-                                  title="Hapus Barang"
-                                  className="p-1.5 md:p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                                </button>
-                              </div>
-                            </td>
+                                  <button
+                                    onClick={() => openDeleteModal(item.id, decodeEntity(item.nama_barang))}
+                                    title="Hapus Barang"
+                                    className="p-1.5 md:p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            )}
                           </tr>
                         );
                       })}

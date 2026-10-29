@@ -4,14 +4,17 @@ import {
   ArrowUpRight, Activity, BarChart2, ArrowDownLeft,
   Search, Bell, CircleUser, ChevronDown, CalendarDays,
   Package, PenTool, Zap, CheckCircle2, ChevronLeft, ChevronRight, Loader2, Plus,
-  Menu, X
+  Menu, X, Eye
 } from 'lucide-react';
 
 import SuccessTransactionModal from '../components/modals/SuccessTransactionModal';
+import UserProfileMenu from '../components/UserProfileMenu';
 import logoAmrita from '../assets/Logo Amrita.png';
 import NotificationBell from '../components/NotificationBell';
+import { isUserAdmin } from '../utils/utils';
 
-const BarangKeluar = ({ onLogout, onNavigate }) => {
+const BarangKeluar = ({ onLogout, onNavigate, user }) => {
+  const isAdmin = isUserAdmin(user);
   // === STATE UNTUK MENU HP ===
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -351,29 +354,7 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
             <div className="flex items-center gap-4 md:gap-6">
               <NotificationBell onNavigate={onNavigate || handleNavigation} />
               <div className="h-6 w-px bg-gray-200 hidden md:block"></div>
-              <div className="relative">
-                <button
-                  onClick={() => setIsProfileOpen(prev => !prev)}
-                  className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
-                >
-                  <CircleUser className="w-7 h-7 md:w-8 md:h-8 text-[#5452F6]" strokeWidth={1.5} />
-                  <span className="text-sm font-semibold text-[#1E232C] hidden md:block">Administrator</span>
-                </button>
-                {isProfileOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-44 bg-white rounded-xl shadow-lg border border-gray-100 z-50 py-1 animate-in fade-in zoom-in-95">
-                    <div className="px-4 py-2.5 border-b border-gray-100">
-                      <p className="text-xs font-bold text-gray-800">Administrator</p>
-                      <p className="text-[10px] text-gray-400 truncate">admin@amrita.com</p>
-                    </div>
-                    <button
-                      onClick={() => { setIsProfileOpen(false); onLogout && onLogout(); }}
-                      className="w-full text-left px-4 py-2.5 text-xs font-semibold text-red-500 hover:bg-red-50 transition-colors rounded-b-xl"
-                    >
-                      Keluar
-                    </button>
-                  </div>
-                )}
-              </div>
+              <UserProfileMenu user={user} onLogout={onLogout} />
             </div>
           </header>
 
@@ -386,6 +367,16 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 mb-6 md:mb-8">
               {/* Form Transaksi Keluar Baru */}
               <div className="lg:col-span-2 bg-white rounded-[20px] p-4 md:p-8 shadow-sm border border-gray-100 relative">
+                {!isAdmin && (
+                  <div className="mb-4 p-3.5 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-2.5 text-amber-800 text-xs">
+                    <Eye className="w-4 h-4 shrink-0 text-amber-600" />
+                    <div>
+                      <p className="font-bold">Mode Pengunjung (Read-Only)</p>
+                      <p className="text-[11px] text-amber-700 mt-0.5">Pencatatan distribusi barang keluar hanya dapat dilakukan oleh akun Administrator.</p>
+                    </div>
+                  </div>
+                )}
+
                 <h3 className="text-sm md:text-base font-bold text-gray-800 mb-1">Transaksi Keluar Baru</h3>
                 <p className="text-[10px] md:text-xs text-gray-400 mb-6 md:mb-8 font-medium">Daftarkan alat tulis kantor (ATK) yang keluar untuk distribusi divisi.</p>
 
@@ -645,23 +636,31 @@ const BarangKeluar = ({ onLogout, onNavigate }) => {
                     </div>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row items-center justify-between pt-4 border-t border-gray-50 mt-4 gap-4 sm:gap-0">
-                    <button onClick={handleBatalkanDraft} className="text-gray-400 text-xs md:text-sm font-bold hover:text-gray-600 transition-colors w-full sm:w-auto text-center">Batalkan Draft</button>
-                    <button
-                      onClick={handleKonfirmasiPengiriman}
-                      disabled={!selectedBarang || !isStokCukup || isSubmitting}
-                      className={`flex items-center justify-center gap-2 px-6 md:px-8 py-2.5 md:py-3 rounded-xl font-bold text-xs md:text-sm transition-all w-full sm:w-auto ${!selectedBarang || !isStokCukup || isSubmitting
-                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                          : 'bg-[#5452F6] text-white shadow-lg shadow-indigo-500/30 hover:bg-[#4341E3]'
-                        }`}
-                    >
-                      {isSubmitting ? (
-                        <><Loader2 className="w-3.5 h-3.5 md:w-4 md:h-4 animate-spin" /> Memproses...</>
-                      ) : (
-                        <>Konfirmasi Pengiriman <ArrowUpRight className="w-3.5 h-3.5 md:w-4 md:h-4" /></>
-                      )}
-                    </button>
-                  </div>
+                  {isAdmin ? (
+                    <div className="flex flex-col sm:flex-row items-center justify-between pt-4 border-t border-gray-50 mt-4 gap-4 sm:gap-0">
+                      <button onClick={handleBatalkanDraft} className="text-gray-400 text-xs md:text-sm font-bold hover:text-gray-600 transition-colors w-full sm:w-auto text-center">Batalkan Draft</button>
+                      <button
+                        onClick={handleKonfirmasiPengiriman}
+                        disabled={!selectedBarang || !isStokCukup || isSubmitting}
+                        className={`flex items-center justify-center gap-2 px-6 md:px-8 py-2.5 md:py-3 rounded-xl font-bold text-xs md:text-sm transition-all w-full sm:w-auto ${!selectedBarang || !isStokCukup || isSubmitting
+                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                            : 'bg-[#5452F6] text-white shadow-lg shadow-indigo-500/30 hover:bg-[#4341E3]'
+                          }`}
+                      >
+                        {isSubmitting ? (
+                          <><Loader2 className="w-3.5 h-3.5 md:w-4 md:h-4 animate-spin" /> Memproses...</>
+                        ) : (
+                          <>Konfirmasi Pengiriman <ArrowUpRight className="w-3.5 h-3.5 md:w-4 md:h-4" /></>
+                        )}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="pt-4 border-t border-gray-50 mt-4">
+                      <div className="w-full py-3.5 text-center bg-gray-100 text-gray-400 rounded-xl text-xs font-semibold border border-gray-200 flex items-center justify-center gap-2">
+                        <Eye className="w-4 h-4 text-gray-400" /> Akses Pengiriman Terbatas (Admin Only)
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 

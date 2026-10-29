@@ -14,10 +14,6 @@ use App\Http\Controllers\LaporanController;
 // ========================
 // AUTH ROUTES (public)
 // ========================
-// Route::get('/fix-password', [AuthController::class, 'fixPassword']);
-Route::post('/login', [AuthController::class, 'login']);
-// Login — maksimal 5x percobaan per menit per IP
-// Login — pakai rate limiter 'login' yang sudah didefinisikan
 Route::middleware('throttle:login')->post('/login', [AuthController::class, 'login']);
 
 // ========================
@@ -28,50 +24,59 @@ Route::middleware('auth:sanctum')->group(function () {
     // Auth
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    // Barang
-        Route::get('/barang',          [BarangController::class, 'index']);
+    // ----------------------------------------------------
+    // READ-ONLY ROUTES (Admin & Viewer / Pengunjung)
+    // ----------------------------------------------------
+    Route::get('/barang',                 [BarangController::class, 'index']);
+    Route::get('/barang/{id}',            [BarangController::class, 'show']);
+
+    Route::get('/supplier',               [SupplierController::class, 'index']);
+    Route::get('/supplier/{id}',          [SupplierController::class, 'show']);
+
+    Route::get('/konsumen',               [KonsumenController::class, 'index']);
+    Route::get('/konsumen/{id}',          [KonsumenController::class, 'show']);
+
+    Route::get('/transaksi-masuk',         [TransaksiMasukController::class, 'index']);
+    Route::get('/transaksi-masuk/{id}',     [TransaksiMasukController::class, 'show']);
+
+    Route::get('/transaksi-keluar',        [TransaksiKeluarController::class, 'index']);
+    Route::get('/transaksi-keluar/{id}',   [TransaksiKeluarController::class, 'show']);
+
+    Route::get('/stok',                   [StokController::class, 'index']);
+    Route::get('/stok/rendah',            [StokController::class, 'stokRendah']);
+    Route::get('/notifikasi',             [StokController::class, 'notifikasi']);
+
+    Route::get('/dashboard',              [DashboardController::class, 'index']);
+
+    Route::get('/laporan/transaksi-masuk', [LaporanController::class, 'transaksiMasuk']);
+    Route::get('/laporan/transaksi-keluar',[LaporanController::class, 'transaksiKeluar']);
+    Route::get('/laporan/stok',            [LaporanController::class, 'stok']);
+
+    // ----------------------------------------------------
+    // WRITE ROUTES (Hanya Admin - viewer dilarang)
+    // ----------------------------------------------------
+    Route::middleware('admin.only')->group(function () {
+        // Barang (CUD)
         Route::post('/barang',         [BarangController::class, 'store']);
-        Route::get('/barang/{id}',     [BarangController::class, 'show']);
         Route::put('/barang/{id}',     [BarangController::class, 'update']);
         Route::delete('/barang/{id}',  [BarangController::class, 'destroy']);
-    
-    // Supplier`
-        Route::get('/supplier',         [SupplierController::class, 'index']);
+
+        // Supplier (CUD)
         Route::post('/supplier',        [SupplierController::class, 'store']);
-        Route::get('/supplier/{id}',    [SupplierController::class, 'show']);
         Route::put('/supplier/{id}',    [SupplierController::class, 'update']);
         Route::delete('/supplier/{id}', [SupplierController::class, 'destroy']);
-    
-    
-    // Konsumen
-        Route::get('/konsumen',         [KonsumenController::class, 'index']);
+
+        // Konsumen (CUD)
         Route::post('/konsumen',        [KonsumenController::class, 'store']);
-        Route::get('/konsumen/{id}',    [KonsumenController::class, 'show']);
         Route::put('/konsumen/{id}',    [KonsumenController::class, 'update']);
         Route::delete('/konsumen/{id}', [KonsumenController::class, 'destroy']);
 
-    // Transaksi Masuk
-        Route::get('/transaksi-masuk',          [TransaksiMasukController::class, 'index']);
-        Route::post('/transaksi-masuk',         [TransaksiMasukController::class, 'store']);
-        Route::get('/transaksi-masuk/{id}',     [TransaksiMasukController::class, 'show']);
-        Route::delete('/transaksi-masuk/{id}',  [TransaksiMasukController::class, 'destroy']);
+        // Transaksi Masuk (C, D)
+        Route::post('/transaksi-masuk',        [TransaksiMasukController::class, 'store']);
+        Route::delete('/transaksi-masuk/{id}', [TransaksiMasukController::class, 'destroy']);
 
-    // Transaksi Keluar
-        Route::get('/transaksi-keluar',         [TransaksiKeluarController::class, 'index']);
+        // Transaksi Keluar (C, D)
         Route::post('/transaksi-keluar',        [TransaksiKeluarController::class, 'store']);
-        Route::get('/transaksi-keluar/{id}',    [TransaksiKeluarController::class, 'show']);
         Route::delete('/transaksi-keluar/{id}', [TransaksiKeluarController::class, 'destroy']);
-
-    // Stok & Notifikasi
-        Route::get('/stok',          [StokController::class, 'index']);
-        Route::get('/stok/rendah',   [StokController::class, 'stokRendah']);
-        Route::get('/notifikasi',    [StokController::class, 'notifikasi']);
-
-    // Dashboard
-        Route::get('/dashboard', [DashboardController::class, 'index']);
-
-    // Laporan
-        Route::get('/laporan/transaksi-masuk',  [LaporanController::class, 'transaksiMasuk']);
-        Route::get('/laporan/transaksi-keluar', [LaporanController::class, 'transaksiKeluar']);
-        Route::get('/laporan/stok',             [LaporanController::class, 'stok']);
+    });
 });

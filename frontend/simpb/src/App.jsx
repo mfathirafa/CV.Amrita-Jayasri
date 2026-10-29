@@ -16,7 +16,14 @@ import LogoutModal from './components/modals/LogoutModal';
 const App = () => {
   // === 2. UBAH DEFAULT STATE MENJADI 'landing' ===
   const [activePage, setActivePage] = useState('landing'); 
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    try {
+      const savedUser = localStorage.getItem('user');
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch (e) {
+      return null;
+    }
+  });
   
   // === STATE BARU UNTUK MENYIMPAN ID BARANG YANG AKAN DIEDIT ===
   const [selectedItemId, setSelectedItemId] = useState(null);
@@ -75,6 +82,8 @@ const App = () => {
     setSelectedItemId(id); // Simpan ID jika ada yang dikirim
   };
 
+  const isViewer = user?.role === 'viewer';
+
   const renderPage = () => {
     switch (activePage) {
       // === 3. TAMBAHKAN CASE UNTUK LANDING PAGE ===
@@ -82,33 +91,40 @@ const App = () => {
         return <LandingPage onNavigate={handleNavigate} />;
         
       case 'login':
-        return <Login onLogin={handleLogin} />;
+        return <Login onLogin={handleLogin} onNavigate={handleNavigate} />;
       case 'dashboard':
         return <Dashboard onNavigate={handleNavigate} onLogout={handleShowLogoutModal} user={user} />;
       case 'data-barang':
-        return <DataBarang onNavigate={handleNavigate} onLogout={handleShowLogoutModal} />;
+        return <DataBarang onNavigate={handleNavigate} onLogout={handleShowLogoutModal} user={user} />;
       case 'tambah-barang':
-        return <TambahBarang onNavigate={handleNavigate} onLogout={handleShowLogoutModal} />;
+        if (isViewer) {
+          return <DataBarang onNavigate={handleNavigate} onLogout={handleShowLogoutModal} user={user} />;
+        }
+        return <TambahBarang onNavigate={handleNavigate} onLogout={handleShowLogoutModal} user={user} />;
       case 'edit-barang':
+        if (isViewer) {
+          return <DataBarang onNavigate={handleNavigate} onLogout={handleShowLogoutModal} user={user} />;
+        }
         return (
           <EditBarang 
             onNavigate={handleNavigate} 
             onLogout={handleShowLogoutModal} 
             itemId={selectedItemId} // Kirimkan ID yang disimpan ke komponen Edit
+            user={user}
           />
         );
       case 'pemasok':
-        return <Pemasok onNavigate={handleNavigate} onLogout={handleShowLogoutModal} />;
+        return <Pemasok onNavigate={handleNavigate} onLogout={handleShowLogoutModal} user={user} />;
       case 'konsumen':
-        return <Konsumen onNavigate={handleNavigate} onLogout={handleShowLogoutModal} />;
+        return <Konsumen onNavigate={handleNavigate} onLogout={handleShowLogoutModal} user={user} />;
       case 'barang-masuk':
-        return <BarangMasuk onNavigate={handleNavigate} onLogout={handleShowLogoutModal} />;
+        return <BarangMasuk onNavigate={handleNavigate} onLogout={handleShowLogoutModal} user={user} />;
       case 'barang-keluar':
-        return <BarangKeluar onNavigate={handleNavigate} onLogout={handleShowLogoutModal} />;
+        return <BarangKeluar onNavigate={handleNavigate} onLogout={handleShowLogoutModal} user={user} />;
       case 'monitoring-stok':
-        return <MonitoringStok onNavigate={handleNavigate} onLogout={handleShowLogoutModal} />;
+        return <MonitoringStok onNavigate={handleNavigate} onLogout={handleShowLogoutModal} user={user} />;
       case 'laporan':
-        return <Laporan onNavigate={handleNavigate} onLogout={handleShowLogoutModal} />;
+        return <Laporan onNavigate={handleNavigate} onLogout={handleShowLogoutModal} user={user} />;
       default:
         // Default dikembalikan ke Landing Page jika halaman tidak ditemukan
         return <LandingPage onNavigate={handleNavigate} />; 

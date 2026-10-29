@@ -16,8 +16,11 @@ import autoTable from 'jspdf-autotable';
 // === IMPORT LOGO ===
 import logoAmrita from '../assets/Logo Amrita.png';
 import NotificationBell from '../components/NotificationBell';
+import UserProfileMenu from '../components/UserProfileMenu';
+import { isUserAdmin } from '../utils/utils';
 
-const MonitoringStok = ({ onLogout, onNavigate }) => {
+const MonitoringStok = ({ onLogout, onNavigate, user }) => {
+  const isAdmin = isUserAdmin(user);
   // === STATE UNTUK MENU HP ===
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -384,29 +387,7 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
             </div>
             <NotificationBell onNavigate={onNavigate || handleNavigation} />
             <div className="h-6 w-px bg-gray-200 hidden md:block"></div>
-            <div className="relative">
-              <button
-                onClick={() => setIsProfileOpen(prev => !prev)}
-                className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
-              >
-                <CircleUser className="w-7 h-7 md:w-8 md:h-8 text-[#5452F6]" strokeWidth={1.5} />
-                <span className="text-sm font-semibold text-[#1E232C] hidden md:block">Administrator</span>
-              </button>
-              {isProfileOpen && (
-                <div className="absolute right-0 top-full mt-2 w-44 bg-white rounded-xl shadow-lg border border-gray-100 z-50 py-1 animate-in fade-in zoom-in-95">
-                  <div className="px-4 py-2.5 border-b border-gray-100">
-                    <p className="text-xs font-bold text-gray-800">Administrator</p>
-                    <p className="text-[10px] text-gray-400 truncate">admin@amrita.com</p>
-                  </div>
-                  <button
-                    onClick={() => { setIsProfileOpen(false); onLogout && onLogout(); }}
-                    className="w-full text-left px-4 py-2.5 text-xs font-semibold text-red-500 hover:bg-red-50 transition-colors rounded-b-xl"
-                  >
-                    Keluar
-                  </button>
-                </div>
-              )}
-            </div>
+            <UserProfileMenu user={user} onLogout={onLogout} />
           </div>
         </header>
 
@@ -568,7 +549,7 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
                       <th className="py-3 md:py-5 px-4 md:px-6 text-right">TOTAL HARGA</th>
                       <th className="py-3 md:py-5 px-4 md:px-6 text-center">STOK</th>
                       <th className="py-3 md:py-5 px-4 md:px-6 text-center">STATUS</th>
-                      <th className="py-3 md:py-5 px-4 md:px-6 text-right">AKSI</th>
+                      {isAdmin && <th className="py-3 md:py-5 px-4 md:px-6 text-right">AKSI</th>}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -613,14 +594,16 @@ const MonitoringStok = ({ onLogout, onNavigate }) => {
                               {status.label}
                             </span>
                           </td>
-                          <td className="py-3 md:py-4 px-4 md:px-6 text-right">
-                            <button
-                              onClick={() => onNavigate('edit-barang', item.id)}
-                              className="p-1.5 md:p-2 text-[#5452F6] hover:bg-indigo-50 rounded-lg transition-colors"
-                            >
-                              <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                            </button>
-                          </td>
+                          {isAdmin && (
+                            <td className="py-3 md:py-4 px-4 md:px-6 text-right">
+                              <button
+                                onClick={() => onNavigate('edit-barang', item.id)}
+                                className="p-1.5 md:p-2 text-[#5452F6] hover:bg-indigo-50 rounded-lg transition-colors"
+                              >
+                                <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                              </button>
+                            </td>
+                          )}
                         </tr>
                       );
                     })}

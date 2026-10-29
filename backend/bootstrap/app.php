@@ -15,6 +15,9 @@ return Application::configure(basePath: dirname(__DIR__))
         //
         $middleware->throttleApi();
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+        $middleware->alias([
+            'admin.only' => \App\Http\Middleware\AdminOnly::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
