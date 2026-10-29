@@ -47,7 +47,8 @@ const App = () => {
     const token = localStorage.getItem('token');
 
     try {
-      await fetch('https://cvamritajayasri.my.id/api/logout', {
+      const rawApiUrl = import.meta.env.VITE_API_URL || 'https://cvamritajayasri.my.id/api';
+      await fetch(`${rawApiUrl}/logout`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

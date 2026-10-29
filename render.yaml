@@ -1,0 +1,37 @@
+services:
+  - type: web
+    name: amrita-backend
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: Dockerfile
+    plan: free
+    region: singapore
+    envVars:
+      - key: APP_NAME
+        value: Amrita_Backend
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_KEY
+        value: "base64:EduUNyHosgmSZ1qEkX9z0+I1yqu8sya091imaAx/rxs="
+      - key: APP_URL
+        sync: false
+      - key: DB_CONNECTION
+        value: mysql
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: "3306"
+      - key: DB_DATABASE
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: IMGBB_API_KEY
+        value: 71507bd19ac55d50ea2a23beef1fb9b9
+      - key: SESSION_DRIVER
+        value: file
+      - key: CACHE_STORE
+        value: file

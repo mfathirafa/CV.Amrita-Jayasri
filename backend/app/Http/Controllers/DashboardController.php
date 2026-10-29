@@ -43,12 +43,12 @@ class DashboardController extends Controller
                 'total_nilai_stok'       => (float) $totalNilaiStok,
                 'total_stok_kritis'      => Barang::whereColumn('stok', '<=', 'stok_minimum')->count(),
                 'bulan_ini' => [
-                    'transaksi_masuk'  => TransaksiMasuk::where(
-                        DB::raw('DATE_FORMAT(tanggal_masuk, "%Y-%m")'), $bulanIni
-                    )->count(),
-                    'transaksi_keluar' => TransaksiKeluar::where(
-                        DB::raw('DATE_FORMAT(tanggal_keluar, "%Y-%m")'), $bulanIni
-                    )->count(),
+                    'transaksi_masuk'  => TransaksiMasuk::whereYear('tanggal_masuk', now()->year)
+                        ->whereMonth('tanggal_masuk', now()->month)
+                        ->count(),
+                    'transaksi_keluar' => TransaksiKeluar::whereYear('tanggal_keluar', now()->year)
+                        ->whereMonth('tanggal_keluar', now()->month)
+                        ->count(),
                 ],
             ];
         });

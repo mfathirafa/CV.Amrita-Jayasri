@@ -15,7 +15,9 @@ return [
         'http://103.253.213.251'
     ],
 
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => [
+        '#^https:\/\/.*\.vercel\.app$#',
+    ],
 
     'allowed_headers' => [    'Content-Type',
             'Authorization',
