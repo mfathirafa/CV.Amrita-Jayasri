@@ -12,11 +12,15 @@ return [
         'http://127.0.0.1:5173',
         'http://127.0.0.1:3000',
         'https://cv-amrita-jayasri.vercel.app',
+        'https://cv-amrita-jayasrii.vercel.app',
+        'https://www.amritajayasri.my.id',
+        'https://amritajayasri.my.id',
         'http://103.253.213.251'
     ],
 
     'allowed_origins_patterns' => [
         '#^https:\/\/.*\.vercel\.app$#',
+        '#^https:\/\/(www\.)?amritajayasri\.my\.id$#',
     ],
 
     'allowed_headers' => [    'Content-Type',
