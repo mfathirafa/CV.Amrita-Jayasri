@@ -132,7 +132,7 @@ const App = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] overflow-hidden relative">
+    <div className={`min-h-screen relative ${activePage === 'landing' ? '' : 'bg-[#F8F9FA] overflow-hidden'}`}>
       {/* 1. RENDER HALAMAN AKTIF */}
       {renderPage()}
 

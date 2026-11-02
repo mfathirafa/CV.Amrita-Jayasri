@@ -1,9 +1,21 @@
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&family=Manrope:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
+  --font-sans: 'Manrope', sans-serif;
+  --font-serif: 'Instrument Serif', serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-border: var(--border);
+
   --color-on-secondary-fixed: #171c25;
   --color-inverse-primary: #c1c1ff;
-  --color-primary: #3933dd;
   --color-surface-container-low: #f2f4f6;
   --color-outline: #767587;
   --color-surface-container-high: #e6e8ea;
@@ -22,7 +34,6 @@
   --color-secondary-fixed-dim: #c2c6d3;
   --color-surface-container-highest: #e0e3e5;
   --color-tertiary-fixed-dim: #ffb694;
-  --color-background: #f7f9fb;
   --color-on-primary: #ffffff;
   --color-surface-tint: #4743e9;
   --color-error-container: #ffdad6;
@@ -73,4 +84,53 @@
   --font-body-sm: "Inter", sans-serif;
   --font-mono-data: "Inter", sans-serif;
   --font-headline-xl-mobile: "Inter", sans-serif;
+}
+
+:root {
+  --background: #ffffff;
+  --foreground: #111111;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --border: #e5e7eb;
+}
+
+.dark {
+  --background: #09090b;
+  --foreground: #fafafa;
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+  --border: #27272a;
+}
+
+/* Grid Background */
+.grid-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-image: 
+    linear-gradient(to right, rgba(0,0,0,0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0,0,0,0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
+  z-index: -2;
+  pointer-events: none;
+}
+.dark .grid-bg {
+  background-image: 
+    linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
+}
+
+/* Noise overlay */
+.noise {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  opacity: 0.05;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
 }
