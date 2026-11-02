@@ -15,7 +15,7 @@ class AdminSeeder extends Seeder
             ['email' => 'admin@amrita.com'],
             [
                 'name'      => 'Admin Amrita',
-                'password'  => Hash::make('password123'),
+                'password'  => Hash::make('akhirhayat'),
                 'is_active' => 1,
                 'role'      => 'admin',
             ]

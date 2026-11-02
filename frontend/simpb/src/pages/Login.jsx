@@ -8,7 +8,6 @@ import {
   ArrowRight,
   ShieldCheck,
   Loader2,
-  Shield,
   UserCheck
 } from 'lucide-react';
 
@@ -42,6 +41,11 @@ const Login = ({ onLogin, onNavigate }) => {
         })
       });
 
+      if (!response.ok && response.status >= 500) {
+        setError('Server atau database sedang mengalami cold start. Harap coba 15 menit lagi.');
+        return;
+      }
+
       const result = await response.json();
 
       if (result.success) {
@@ -55,7 +59,7 @@ const Login = ({ onLogin, onNavigate }) => {
         setError(result.message || 'Email atau Kata sandi salah');
       }
     } catch (err) {
-      setError('Gagal terhubung ke server. Periksa koneksi internet Anda.');
+      setError('Gagal terhubung ke server atau database (kemungkinan cold start). Harap coba 15 menit lagi.');
     } finally {
       setIsLoading(false);
     }
@@ -136,20 +140,13 @@ const Login = ({ onLogin, onNavigate }) => {
             <div className="flex items-center gap-2 mb-2">
               <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Pilih Akun Cepat:</span>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('admin@amrita.com', 'password123')}
-                className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-semibold bg-indigo-50/80 hover:bg-indigo-100 text-[#5452F6] border border-indigo-100 transition-colors"
-              >
-                <Shield className="w-3.5 h-3.5" /> Admin
-              </button>
+            <div>
               <button
                 type="button"
                 onClick={() => handleQuickLogin('pengunjung@amrita.com', 'password123')}
-                className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-semibold bg-amber-50/80 hover:bg-amber-100 text-amber-700 border border-amber-200 transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold bg-amber-50/80 hover:bg-amber-100 text-amber-700 border border-amber-200 transition-colors"
               >
-                <UserCheck className="w-3.5 h-3.5" /> Pengunjung
+                <UserCheck className="w-3.5 h-3.5" /> Pengunjung (Mode Tamu / Demo)
               </button>
             </div>
           </div>

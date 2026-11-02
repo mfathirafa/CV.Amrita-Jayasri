@@ -23,6 +23,7 @@ const DataBarang = ({ onNavigate, onLogout, user }) => {
 
   const [tableData, setTableData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
 
   // --- STATES UNTUK MENU HP & NOTIFIKASI ---
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -155,6 +156,12 @@ const DataBarang = ({ onNavigate, onLogout, user }) => {
             }
           });
 
+          if (!response.ok && response.status >= 500) {
+            setFetchError("Database sedang dalam proses cold start. Harap coba lagi dalam 15 menit.");
+            hasMore = false;
+            break;
+          }
+
           const data = await response.json();
 
           if (response.ok || data.success) {
@@ -185,6 +192,7 @@ const DataBarang = ({ onNavigate, onLogout, user }) => {
         setTableData(allData);
       } catch (error) {
         console.error("Error Fetching:", error);
+        setFetchError("Gagal terhubung ke server/database (kemungkinan cold start). Harap coba lagi dalam 15 menit.");
       } finally {
         setIsLoading(false);
       }
@@ -459,6 +467,16 @@ const DataBarang = ({ onNavigate, onLogout, user }) => {
                 </button>
               ))}
             </div>
+
+            {fetchError && (
+              <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="text-xs md:text-sm font-bold text-amber-800">Peringatan Database / Cold Start</h4>
+                  <p className="text-xs text-amber-700 mt-0.5">{fetchError}</p>
+                </div>
+              </div>
+            )}
 
             <div className="bg-white rounded-[20px] shadow-sm border border-gray-100 overflow-hidden relative min-h-[300px]">
               {isLoading ? (

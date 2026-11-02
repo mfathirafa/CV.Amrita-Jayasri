@@ -23,7 +23,7 @@ if [ -n "$DB_HOST" ] || [ "$DB_CONNECTION" = "sqlite" ]; then
     php artisan migrate --force || echo "Migration skipped or failed"
     
     echo "Running database seeder..."
-    php artisan db:seed --class=AdminSeeder --force || echo "Seeder skipped or failed"
+    php artisan db:seed --force || echo "Seeder skipped or failed"
 fi
 
 echo "Starting Apache web server..."

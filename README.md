@@ -171,7 +171,7 @@ Saat database pertama kali di-seed (`AdminSeeder`), akun pengguna default beriku
 
 | Email | Password | Role / Jabatan |
 | :--- | :--- | :--- |
-| `admin@amrita.com` | `password123` | **Admin Utama** |
+| `admin@amrita.com` | `akhirhayat` | **Admin Utama** |
 | `backend@amrita.com` | `password123` | Pengembang / Backend |
 | `frontend@amrita.com` | `password123` | Staff Gudang |
 | `tester@amrita.com` | `password123` | Manager Amrita |
