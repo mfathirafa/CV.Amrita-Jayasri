@@ -1,0 +1,8 @@
+# robots.txt for CV. Amrita Jayasri (https://amritajayasri.my.id/)
+User-agent: *
+Allow: /
+Disallow: /api/
+
+# Host and Sitemap
+Host: https://amritajayasri.my.id
+Sitemap: https://amritajayasri.my.id/sitemap.xml

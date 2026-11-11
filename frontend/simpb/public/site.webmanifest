@@ -1,0 +1,21 @@
+{
+  "name": "CV. Amrita Jayasri - Layanan Pengadaan Barang & Jasa",
+  "short_name": "Amrita Jayasri",
+  "description": "Solusi Layanan Pengadaan Barang & Jasa Terpadu di Purwokerto, Banyumas, dan Jawa Tengah.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#5452F6",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
